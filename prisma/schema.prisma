@@ -1,0 +1,311 @@
+// CFA MVP — Prisma Schema (canonical root location)
+// Design: full schema per design.md Database Schema section
+// Tech: PostgreSQL + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// AUTH (BetterAuth managed tables)
+// ==========================================
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  isAnonymous   Boolean   @default(false)
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  sessions     Session[]
+  accounts     Account[]
+  babyProfiles BabyProfile[]
+  plates       Plate[]
+  subscription Subscription?
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// ==========================================
+// DOMAIN: Baby Profiles
+// ==========================================
+
+model BabyProfile {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  birthDate   DateTime  @db.Date
+  acStartDate DateTime? @db.Date // Alimentación complementaria start
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plates      Plate[]
+  foodLogs    FoodLog[]
+  weeklyMenus WeeklyMenu[]
+
+  @@index([userId])
+}
+
+// ==========================================
+// DOMAIN: Foods
+// ==========================================
+
+enum FoodGroup {
+  FRUIT
+  VEGETABLE
+  PROTEIN
+  CEREAL_TUBER
+  HEALTHY_FAT
+}
+
+enum ALClassification {
+  ASTRINGENT
+  LAXATIVE
+  NEUTRAL
+}
+
+model Food {
+  id               String           @id @default(cuid())
+  name             String           @unique
+  group            FoodGroup
+  alClassification ALClassification
+  alScore          Float            // -1.0 (astringent) to +1.0 (laxative)
+  isAllergen       Boolean          @default(false)
+  allergenType     String?          // e.g., "leche", "gluten", "huevo"
+  ageMonths        Int              @default(6) // minimum recommended age in months
+  description      String?
+  needsValidation  Boolean          @default(false) // flag for nutriólogo review
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  plateItems PlateItem[]
+  foodLogs   FoodLog[]
+
+  @@index([group])
+  @@index([alClassification])
+  @@index([ageMonths])
+}
+
+// ==========================================
+// DOMAIN: Plates
+// ==========================================
+
+model Plate {
+  id              String    @id @default(cuid())
+  userId          String
+  babyProfileId   String?
+  name            String    @default("Mi plato")
+  groupCount      Int       @default(4) // 4 or 5 groups
+  balanceScore    Float     @default(0) // -1.0 to +1.0
+  astringentCount Int       @default(0)
+  laxativeCount   Int       @default(0)
+  neutralCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // Soft delete (AD12)
+
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  babyProfile BabyProfile? @relation(fields: [babyProfileId], references: [id], onDelete: SetNull)
+  items       PlateItem[]
+  menuMeals   MenuMeal[]
+
+  @@index([userId, deletedAt])
+  @@index([babyProfileId])
+}
+
+model PlateItem {
+  id              String    @id @default(cuid())
+  plateId         String
+  foodId          String
+  groupAssignment FoodGroup // which group slot this food occupies
+  servingAmount   String?   // e.g., "2 cucharadas", "1/4 taza"
+  createdAt       DateTime  @default(now())
+
+  plate Plate @relation(fields: [plateId], references: [id], onDelete: Cascade)
+  food  Food  @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@index([plateId])
+  @@index([foodId])
+}
+
+// ==========================================
+// DOMAIN: Food Log (Bitácora)
+// ==========================================
+
+enum ReactionSeverity {
+  NONE
+  MILD
+  MODERATE
+  SEVERE
+}
+
+model FoodLog {
+  id            String           @id @default(cuid())
+  userId        String
+  babyProfileId String
+  foodId        String
+  date          DateTime         @db.Date
+  reaction      String?          // description of reaction
+  severity      ReactionSeverity @default(NONE)
+  notes         String?
+  photoUrl      String?          // Pro feature
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?        // Soft delete
+
+  babyProfile BabyProfile @relation(fields: [babyProfileId], references: [id], onDelete: Cascade)
+  food        Food        @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@index([userId, babyProfileId, date])
+  @@index([foodId])
+}
+
+// ==========================================
+// DOMAIN: Weekly Menu Planner
+// ==========================================
+
+model WeeklyMenu {
+  id            String    @id @default(cuid())
+  userId        String
+  babyProfileId String
+  weekStart     DateTime  @db.Date // Monday of the week
+  balanceScore  Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // Soft delete
+
+  babyProfile BabyProfile @relation(fields: [babyProfileId], references: [id], onDelete: Cascade)
+  days        MenuDay[]
+
+  @@index([userId, weekStart])
+  @@index([babyProfileId])
+}
+
+model MenuDay {
+  id        String @id @default(cuid())
+  menuId    String
+  dayOfWeek Int    // 0=Mon ... 6=Sun
+  createdAt DateTime @default(now())
+
+  menu  WeeklyMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  meals MenuMeal[]
+
+  @@unique([menuId, dayOfWeek])
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK_1
+  SNACK_2
+}
+
+model MenuMeal {
+  id        String   @id @default(cuid())
+  menuDayId String
+  mealType  MealType
+  plateId   String?  // Optional link to a saved plate
+  notes     String?
+  createdAt DateTime @default(now())
+
+  menuDay MenuDay @relation(fields: [menuDayId], references: [id], onDelete: Cascade)
+  plate   Plate?  @relation(fields: [plateId], references: [id], onDelete: SetNull)
+
+  @@unique([menuDayId, mealType])
+}
+
+// ==========================================
+// DOMAIN: Payments & Subscriptions
+// ==========================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String             @unique
+  stripeCustomerId String?            @unique
+  stripeSubId      String?            @unique
+  stripePriceId    String?
+  status           SubscriptionStatus @default(TRIALING)
+  interval         BillingInterval    @default(MONTHLY)
+  currentPeriodEnd DateTime?
+  trialEnd         DateTime?
+  cancelAtPeriodEnd Boolean           @default(false)
+  canceledAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeSubId])
+}

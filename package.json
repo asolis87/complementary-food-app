@@ -1,0 +1,29 @@
+{
+  "name": "complementary-food",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CFA - Complementary Food App MVP",
+  "scripts": {
+    "dev": "pnpm --parallel --filter api --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm --filter @cfa/shared build && pnpm --filter api build && pnpm --filter web build",
+    "typecheck": "pnpm --filter @cfa/shared typecheck && pnpm --filter api typecheck && pnpm --filter web typecheck",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:seed": "pnpm --filter api db:seed",
+    "db:push": "pnpm --filter api db:push",
+    "lint": "pnpm --recursive lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
