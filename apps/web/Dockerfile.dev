@@ -1,0 +1,28 @@
+# ── Dev Dockerfile: Vite dev server with HMR ──────────────────────────────────
+FROM node:20-alpine
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace manifests
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/web/package.json ./apps/web/
+
+# Install all deps
+RUN pnpm install --frozen-lockfile
+
+# Copy shared package source and build it
+COPY packages/shared/ ./packages/shared/
+COPY tsconfig.json ./
+RUN pnpm --filter @pakulab/shared build
+
+# Copy web source (will be overridden by volume mounts for src/public)
+COPY apps/web/ ./apps/web/
+
+EXPOSE 5174
+
+# Run Vite dev server — host 0.0.0.0 so it's reachable from outside the container
+CMD ["pnpm", "--filter", "web", "dev", "--host", "0.0.0.0"]

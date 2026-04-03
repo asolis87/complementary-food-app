@@ -2,10 +2,8 @@
   <div class="auth-layout" :class="`auth-layout--${variant}`">
     <!-- Illustration panel (left on desktop, top on mobile) -->
     <div class="auth-illustration" aria-hidden="true">
-      <!-- Decorative blobs -->
-      <div class="blob blob-1" />
-      <div class="blob blob-2" />
-      <div class="blob blob-3" />
+      <!-- Background image with overlay for text legibility -->
+      <div class="auth-illustration__overlay" />
 
       <!-- Logo + brand -->
       <div class="auth-brand">
@@ -23,14 +21,6 @@
         <p class="auth-tagline-sub">
           {{ tagline }}
         </p>
-      </div>
-
-      <!-- Decorative food icons (desktop only) -->
-      <div class="auth-deco">
-        <span class="material-symbols-outlined deco-icon deco-1">nutrition</span>
-        <span class="material-symbols-outlined deco-icon deco-2">restaurant</span>
-        <span class="material-symbols-outlined deco-icon deco-3">local_florist</span>
-        <span class="material-symbols-outlined deco-icon deco-4">grass</span>
       </div>
     </div>
 
@@ -94,59 +84,23 @@ const tagline = computed(() =>
   justify-content: center;
   overflow: hidden;
   padding: var(--md3-space-6);
+  background-image: url('/images/login-bg.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-/* Login variant → mint green (primary-container based) */
-.auth-layout--login .auth-illustration {
-  background: linear-gradient(
-    145deg,
-    var(--md3-primary-container) 0%,
-    #7bf5c2 50%,
-    var(--md3-group-vegetable) 100%
-  );
-}
-
-/* Signup variant → warm coral (secondary-container based) */
-.auth-layout--signup .auth-illustration {
-  background: linear-gradient(
-    145deg,
-    var(--md3-secondary-container) 0%,
-    #ffb49a 50%,
-    var(--md3-group-protein) 100%
-  );
-}
-
-/* ─── Decorative blobs ─── */
-.blob {
+/* ─── Semi-transparent overlay for text legibility ─── */
+.auth-illustration__overlay {
   position: absolute;
-  border-radius: var(--md3-rounded-full);
-  opacity: 0.25;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.15) 50%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
   pointer-events: none;
-}
-
-.auth-layout--login .blob { background: var(--md3-on-primary-container); }
-.auth-layout--signup .blob { background: var(--md3-on-secondary-container); }
-
-.blob-1 {
-  width: 280px;
-  height: 280px;
-  top: -80px;
-  right: -60px;
-}
-
-.blob-2 {
-  width: 160px;
-  height: 160px;
-  bottom: -40px;
-  left: -30px;
-}
-
-.blob-3 {
-  width: 100px;
-  height: 100px;
-  bottom: 30%;
-  right: 10%;
-  opacity: 0.15;
 }
 
 /* ─── Brand ─── */
@@ -166,16 +120,8 @@ const tagline = computed(() =>
   align-items: center;
   justify-content: center;
   box-shadow: var(--md3-shadow-card);
-}
-
-.auth-layout--login .auth-brand-icon {
-  background: var(--md3-on-primary-container);
-  color: var(--md3-primary-container);
-}
-
-.auth-layout--signup .auth-brand-icon {
-  background: var(--md3-on-secondary-container);
-  color: var(--md3-secondary-container);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--md3-primary);
 }
 
 .auth-brand-icon .material-symbols-outlined {
@@ -187,10 +133,9 @@ const tagline = computed(() =>
   font-size: var(--md3-headline-sm);
   font-weight: var(--md3-weight-bold);
   letter-spacing: var(--md3-headline-tracking);
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-
-.auth-layout--login .auth-brand-name { color: var(--md3-on-primary-container); }
-.auth-layout--signup .auth-brand-name { color: var(--md3-on-secondary-container); }
 
 /* ─── Tagline — desktop only ─── */
 .auth-tagline {
@@ -220,47 +165,18 @@ const tagline = computed(() =>
   font-weight: var(--md3-weight-bold);
   line-height: var(--md3-headline-line-height);
   letter-spacing: var(--md3-headline-tracking);
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
-
-.auth-layout--login .auth-tagline-headline { color: var(--md3-on-primary-container); }
-.auth-layout--signup .auth-tagline-headline { color: var(--md3-on-secondary-container); }
 
 .auth-tagline-sub {
   margin: 0;
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   line-height: var(--md3-body-line-height);
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-
-.auth-layout--login .auth-tagline-sub { color: var(--md3-on-primary-container); }
-.auth-layout--signup .auth-tagline-sub { color: var(--md3-on-secondary-container); }
-
-/* ─── Decorative icons — desktop only ─── */
-.auth-deco {
-  display: none;
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-@media (min-width: 768px) {
-  .auth-deco { display: block; }
-}
-
-.deco-icon {
-  position: absolute;
-  font-size: 2.5rem !important;
-  opacity: 0.12;
-}
-
-.auth-layout--login .deco-icon { color: var(--md3-on-primary-container); }
-.auth-layout--signup .deco-icon { color: var(--md3-on-secondary-container); }
-
-.deco-1 { bottom: 15%; left: 8%; font-size: 3rem !important; }
-.deco-2 { bottom: 10%; right: 12%; font-size: 2rem !important; }
-.deco-3 { top: 30%; left: 5%; font-size: 2.5rem !important; opacity: 0.08; }
-.deco-4 { top: 25%; right: 8%; font-size: 2rem !important; opacity: 0.1; }
 
 /* ─── Form content panel ─── */
 .auth-content {

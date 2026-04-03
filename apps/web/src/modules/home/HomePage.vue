@@ -3,12 +3,9 @@
 
     <!-- ① Hero -->
     <section class="hero" aria-label="Bienvenida">
-      <div class="hero-content">
-        <div class="hero-badge" aria-hidden="true">
-          <span class="material-symbols-outlined hero-badge-icon">eco</span>
-          Alimentación Complementaria
-        </div>
+      <div class="hero__overlay" aria-hidden="true" />
 
+      <div class="hero-content">
         <h1 class="hero-title">
           Alimentación complementaria,
           <span class="hero-highlight">simplificada.</span>
@@ -30,38 +27,10 @@
           </RouterLink>
         </div>
       </div>
-
-      <!-- Hero image visual -->
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hero-image-wrap">
-          <!-- Decorative blur circle behind the image -->
-          <div class="hero-image-deco-circle" aria-hidden="true"></div>
-          <div class="hero-image-container">
-            <img
-              src="/images/hero-baby-eating.png"
-              alt="Bebé comiendo purés de vegetales con mucha alegría"
-              class="hero-image"
-              width="480"
-              height="360"
-            />
-          </div>
-        </div>
-
-        <!-- Floating "Meta Diaria" card -->
-        <div class="hero-meta-float">
-          <div class="hero-meta-icon">
-            <span class="material-symbols-outlined">nutrition</span>
-          </div>
-          <div class="hero-meta-body">
-            <span class="hero-meta-label">Meta Diaria</span>
-            <span class="hero-meta-value">Hierro y Vitamina C</span>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- ② Features / Bento Grid -->
-    <section class="features-section" aria-label="Características principales">
+    <section class="features-section reveal" aria-label="Características principales">
       <header class="section-header">
         <h2 class="section-title">¿Qué podés hacer con Pakulab?</h2>
         <p class="section-subtitle">
@@ -71,7 +40,7 @@
 
       <div class="bento-grid" role="list">
         <!-- Wide card: Plate builder -->
-        <article class="feature-card card-wide" role="listitem">
+        <article class="feature-card card-wide reveal-child" role="listitem">
           <div class="feature-card-icon-wrap icon-primary">
             <span class="material-symbols-outlined feature-icon">restaurant</span>
           </div>
@@ -81,20 +50,20 @@
               Armá el plato de tu bebé eligiendo de cada grupo de alimentos y visualizá la distribución
               en tiempo real. Grupos de 4 (básico) o 5 (con grasas saludables).
             </p>
-          </div>
-          <div class="feature-card-tags">
-            <span class="tag tag-primary">
-              <span class="material-symbols-outlined tag-icon">check</span>Interactivo
-            </span>
-            <span class="tag tag-secondary">
-              <span class="material-symbols-outlined tag-icon">offline_bolt</span>Sin internet
-            </span>
+            <div class="feature-card-tags">
+              <span class="tag tag-primary">
+                <span class="material-symbols-outlined tag-icon">check</span>Interactivo
+              </span>
+              <span class="tag tag-secondary">
+                <span class="material-symbols-outlined tag-icon">offline_bolt</span>Sin internet
+              </span>
+            </div>
           </div>
           <!-- Plate builder image with hover overlay -->
           <div class="plate-builder-img-wrap">
             <img
-              src="/images/plate-builder-food.png"
-              alt="Plato de silicona dividido con aguacate, zanahorias y pasta para bebé"
+              src="/images/Plato_toon.jpeg"
+              alt="Plato ilustrado dividido en frutas, verduras, cereales y proteínas"
               class="plate-builder-img"
               loading="lazy"
               width="480"
@@ -110,7 +79,7 @@
         </article>
 
         <!-- Catalog card -->
-        <article class="feature-card" role="listitem">
+        <article class="feature-card reveal-child" style="--reveal-delay: 0.1s" role="listitem">
           <div class="feature-card-icon-wrap icon-secondary">
             <span class="material-symbols-outlined feature-icon">menu_book</span>
           </div>
@@ -121,7 +90,7 @@
         </article>
 
         <!-- Diary card -->
-        <article class="feature-card" role="listitem">
+        <article class="feature-card reveal-child" style="--reveal-delay: 0.2s" role="listitem">
           <div class="feature-card-icon-wrap icon-tertiary">
             <span class="material-symbols-outlined feature-icon">book</span>
           </div>
@@ -132,7 +101,7 @@
         </article>
 
         <!-- Balance card -->
-        <article class="feature-card card-accent" role="listitem">
+        <article class="feature-card card-accent reveal-child" style="--reveal-delay: 0.3s" role="listitem">
           <div class="feature-card-icon-wrap icon-surface">
             <span class="material-symbols-outlined feature-icon">balance</span>
           </div>
@@ -145,7 +114,7 @@
     </section>
 
     <!-- ③ How it works -->
-    <section class="how-section" aria-label="Cómo funciona">
+    <section class="how-section reveal" aria-label="Cómo funciona">
       <header class="section-header section-header-center">
         <h2 class="section-title">¿Cómo funciona?</h2>
         <p class="section-subtitle">Tres pasos y el plato de tu bebé está listo.</p>
@@ -219,7 +188,7 @@
     </section>
 
     <!-- ④ Plate Preview / Balance showcase -->
-    <section class="preview-section" aria-label="Vista previa del armador">
+    <section class="preview-section reveal" aria-label="Vista previa del armador">
       <div class="preview-card">
         <div class="preview-content">
           <h2 class="preview-title">El Indicador de Equilibrio</h2>
@@ -278,7 +247,7 @@
     </section>
 
     <!-- ⑤ Final CTA -->
-    <section class="cta-section" aria-label="Comenzar">
+    <section class="cta-section reveal" aria-label="Comenzar">
       <div class="cta-card">
         <span class="cta-deco-icon material-symbols-outlined" aria-hidden="true">flatware</span>
         <h2 class="cta-title">¿Lista para comenzar el viaje?</h2>
@@ -303,7 +272,32 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
+
+onMounted(() => {
+  // Add animate-ready class after a tick so elements start visible for layout,
+  // then become hidden for the reveal animation
+  requestAnimationFrame(() => {
+    document.querySelector('.home-page')?.classList.add('animate-ready')
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.15 },
+    )
+
+    document.querySelectorAll('.reveal, .reveal-child').forEach((el) => {
+      observer.observe(el)
+    })
+  })
+})
 </script>
 
 <style scoped>
@@ -321,52 +315,50 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
    ① HERO
    ═══════════════════════════════════════════════ */
 .hero {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--md3-space-8);
-  flex-wrap: wrap;
-  padding-top: var(--md3-space-8);
-  padding-bottom: var(--md3-space-6);
+  min-height: 70vh;
+  padding: var(--md3-space-12) var(--md3-space-6);
+  background-image: url('/images/hero_img.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--md3-rounded-lg);
+  overflow: hidden;
+  margin-top: var(--md3-space-4);
+}
+
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  pointer-events: none;
 }
 
 .hero-content {
-  flex: 1;
-  min-width: 280px;
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-4);
-}
-
-/* Badge */
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--md3-space-2);
-  background: var(--md3-primary-container);
-  color: var(--md3-on-primary-container);
-  border-radius: var(--md3-rounded-full);
-  padding: 0.3rem 0.875rem;
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-md);
-  font-weight: var(--md3-weight-bold);
-  letter-spacing: var(--md3-label-tracking);
-  width: fit-content;
-}
-
-.hero-badge-icon {
-  font-size: 1rem;
-  font-variation-settings: 'FILL' 1;
 }
 
 /* Title */
 .hero-title {
   margin: 0;
   font-family: var(--md3-font-headline);
-  font-size: clamp(var(--md3-headline-lg), 5vw, var(--md3-display-lg));
+  font-size: clamp(2rem, 6vw, 3.5rem);
   font-weight: var(--md3-weight-bold);
   color: var(--md3-on-surface);
-  line-height: var(--md3-display-line-height);
-  letter-spacing: var(--md3-display-tracking);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .hero-highlight {
@@ -377,10 +369,10 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 .hero-subtitle {
   margin: 0;
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-lg);
+  font-size: clamp(1rem, 2vw, 1.25rem);
   color: var(--md3-on-surface-variant);
-  line-height: var(--md3-body-line-height);
-  max-width: 460px;
+  line-height: 1.6;
+  max-width: 500px;
 }
 
 /* CTAs */
@@ -452,106 +444,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   padding: 1rem 2rem;
 }
 
-/* ── Hero visual ── */
-.hero-visual {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--md3-space-3);
-  position: relative;
-  max-width: 480px;
-  width: 100%;
-}
 
-/* Hero image container */
-.hero-image-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.hero-image-deco-circle {
-  position: absolute;
-  inset: -24px;
-  background: var(--md3-primary-container);
-  border-radius: 50%;
-  opacity: 0.2;
-  filter: blur(48px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.hero-image-container {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  border-radius: var(--md3-rounded-lg);
-  box-shadow: var(--md3-shadow-ambient);
-  aspect-ratio: 4 / 3;
-}
-
-.hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform var(--md3-transition-normal);
-}
-
-.hero-image-container:hover .hero-image {
-  transform: scale(1.05);
-}
-
-/* Floating "Meta Diaria" card */
-.hero-meta-float {
-  display: flex;
-  align-items: center;
-  gap: var(--md3-space-3);
-  background: var(--md3-surface-container-lowest);
-  border-radius: var(--md3-rounded-md);
-  padding: var(--md3-space-3) var(--md3-space-4);
-  box-shadow: var(--md3-shadow-ambient);
-  align-self: flex-end;
-  margin-right: var(--md3-space-4);
-}
-
-.hero-meta-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--md3-tertiary-container);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--md3-on-tertiary-container);
-  flex-shrink: 0;
-}
-
-.hero-meta-icon .material-symbols-outlined {
-  font-variation-settings: 'FILL' 1;
-}
-
-.hero-meta-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.hero-meta-label {
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
-  font-weight: var(--md3-weight-bold);
-  color: var(--md3-on-surface-variant);
-  text-transform: uppercase;
-  letter-spacing: var(--md3-label-tracking);
-}
-
-.hero-meta-value {
-  font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-md);
-  font-weight: var(--md3-weight-bold);
-  color: var(--md3-on-surface);
-}
 
 
 /* ═══════════════════════════════════════════════
@@ -595,9 +488,9 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-6);
-  background: var(--md3-surface-container-low);
+  background: #faf6f0;
   border-radius: var(--md3-rounded-lg);
-  padding: var(--md3-space-6);
+  padding: var(--md3-space-8) var(--md3-space-6);
 }
 
 .bento-grid {
@@ -700,7 +593,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   display: flex;
   flex-wrap: wrap;
   gap: var(--md3-space-2);
-  margin-top: auto;
+  margin-top: var(--md3-space-3);
 }
 
 .tag {
@@ -741,7 +634,8 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   height: auto;
   object-fit: cover;
   display: block;
-  max-height: 240px;
+  max-height: 320px;
+  transform: scale(1.15);
 }
 
 .plate-builder-overlay {
@@ -773,6 +667,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-6);
+  padding: var(--md3-space-4) 0;
 }
 
 .steps-list {
@@ -916,7 +811,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 }
 
 .preview-card {
-  background: var(--md3-surface-container-low);
+  background: #00694b;
   border-radius: var(--md3-rounded-lg);
   padding: var(--md3-space-8);
   display: flex;
@@ -938,7 +833,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   font-family: var(--md3-font-headline);
   font-size: var(--md3-headline-lg);
   font-weight: var(--md3-weight-bold);
-  color: var(--md3-on-surface);
+  color: #ffffff;
   letter-spacing: var(--md3-headline-tracking);
   line-height: var(--md3-headline-line-height);
 }
@@ -947,7 +842,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   margin: 0;
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-lg);
-  color: var(--md3-on-surface-variant);
+  color: rgba(255, 255, 255, 0.85);
   line-height: var(--md3-body-line-height);
 }
 
@@ -967,14 +862,14 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   font-weight: var(--md3-weight-medium);
-  color: var(--md3-on-surface);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .preview-check {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--md3-primary-container);
+  background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -983,13 +878,22 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 
 .preview-check .material-symbols-outlined {
   font-size: 0.875rem;
-  color: var(--md3-on-primary-container);
+  color: #ffffff;
   font-weight: 700;
 }
 
 .preview-cta {
   width: fit-content;
   margin-top: var(--md3-space-2);
+  background: #ffffff;
+  color: #00694b;
+  box-shadow: none;
+}
+
+.preview-cta:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Balance viz */
@@ -1072,7 +976,7 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 .preview-deco-circle {
   width: 120px;
   height: 120px;
-  background: var(--md3-tertiary-container);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   position: absolute;
   bottom: -24px;
@@ -1182,15 +1086,10 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
     gap: var(--md3-space-12);
   }
 
-  /* Hero: side by side */
+  /* Hero: more padding on desktop */
   .hero {
-    flex-wrap: nowrap;
-    gap: var(--md3-space-12);
-  }
-
-  .hero-visual {
-    max-width: 420px;
-    flex-shrink: 0;
+    min-height: 75vh;
+    padding: var(--md3-space-16) var(--md3-space-12);
   }
 
   .hero-title {
@@ -1277,6 +1176,75 @@ import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 
   .cta-card {
     padding: var(--md3-space-12) var(--md3-space-16);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
+/* ── Reveal on scroll (fade-in + slide-up) ── */
+/* Elements start VISIBLE so browser calculates layout correctly.
+   Once JS adds .animate-ready, we hide them for the reveal effect. */
+.animate-ready .reveal,
+.animate-ready .reveal-child {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.animate-ready .reveal-child {
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.animate-ready .revealed,
+.animate-ready .revealed .reveal-child {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Hover lift on feature cards ── */
+.feature-card {
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Subtle CTA pulse glow ── */
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 105, 75, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 105, 75, 0); }
+}
+
+.cta-card .btn-primary {
+  animation: cta-glow 3s ease-in-out infinite;
+}
+
+/* ── Respect reduced motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ready .reveal,
+  .animate-ready .reveal-child {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .feature-card:hover {
+    transform: none;
+  }
+
+  .cta-card .btn-primary {
+    animation: none;
   }
 }
 </style>
