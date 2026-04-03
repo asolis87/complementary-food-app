@@ -1,5 +1,5 @@
 /**
- * API client — thin fetch wrapper for the CFA API.
+ * API client — thin fetch wrapper for the Pakulab API.
  * Handles base URL, JSON parsing, error normalization, and offline detection.
  * Design: AD7 — throws OfflineError when navigator.onLine is false so stores
  * can fall back to IndexedDB / sync queue transparently.

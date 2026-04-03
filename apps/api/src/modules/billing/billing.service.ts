@@ -1,5 +1,5 @@
 /**
- * Billing service — Stripe integration for CFA subscriptions.
+ * Billing service — Stripe integration for Pakulab subscriptions.
  * Spec: REQ-PAY-01, REQ-PAY-02
  * Design: AD5 — Free → Pro flow via Stripe Checkout.
  *
@@ -11,7 +11,7 @@
 
 import Stripe from 'stripe'
 import type { PrismaClient } from '@prisma/client'
-import { TRIAL_TRIGGER } from '@cfa/shared'
+import { TRIAL_TRIGGER } from '@pakulab/shared'
 import { AppError } from '../../shared/errors/index.js'
 
 // ─── Stripe client ─────────────────────────────────────────────────────────

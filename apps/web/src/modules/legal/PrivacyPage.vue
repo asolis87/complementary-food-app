@@ -1,13 +1,16 @@
 <template>
   <div class="legal-page">
     <div class="legal-content">
-      <RouterLink to="/" class="back-link" aria-label="Volver al inicio">← Volver</RouterLink>
+      <RouterLink to="/" class="back-link" aria-label="Volver al inicio">
+        <span class="material-symbols-outlined back-icon" aria-hidden="true">arrow_back</span>
+        Volver
+      </RouterLink>
 
       <h1 class="page-title">Aviso de Privacidad</h1>
       <p class="effective-date">Vigente desde: marzo 2026</p>
 
       <p class="intro">
-        En <strong>CFA — Alimentación Complementaria</strong> (en adelante "CFA", "nosotros"), respetamos tu privacidad y estamos comprometidos con la protección de tus datos personales, de conformidad con la <em>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</em> (LFPDPPP) de México.
+        En <strong>Pakulab — Alimentación Complementaria</strong> (en adelante "Pakulab", "nosotros"), respetamos tu privacidad y estamos comprometidos con la protección de tus datos personales, de conformidad con la <em>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</em> (LFPDPPP) de México.
       </p>
 
       <section class="legal-section" aria-labelledby="sec-datos">
@@ -17,7 +20,7 @@
           <li><strong>Perfiles de bebés</strong> — nombre y fecha de nacimiento de tu bebé, que vos proporcionás voluntariamente.</li>
           <li><strong>Platos y registros alimentarios</strong> — los platos que armás y tu bitácora de alimentos.</li>
           <li><strong>Datos de sesión</strong> — cookies de sesión para mantenerte autenticado.</li>
-          <li><strong>Datos de pago</strong> — procesados directamente por Stripe. CFA NO almacena números de tarjeta.</li>
+          <li><strong>Datos de pago</strong> — procesados directamente por Stripe. Pakulab NO almacena números de tarjeta.</li>
           <li><strong>Datos anónimos</strong> — si usás la app sin registrarte, se genera una sesión anónima temporal.</li>
         </ul>
       </section>
@@ -25,7 +28,7 @@
       <section class="legal-section" aria-labelledby="sec-finalidad">
         <h2 id="sec-finalidad">2. ¿Para qué usamos tus datos?</h2>
         <ul>
-          <li>Brindarte el servicio de CFA y almacenar tus platos y bitácora.</li>
+          <li>Brindarte el servicio de Pakulab y almacenar tus platos y bitácora.</li>
           <li>Gestionar tu suscripción y pagos (a través de Stripe).</li>
           <li>Enviarte correos transaccionales (confirmación de cuenta, recibos).</li>
           <li>Mejorar la app mediante análisis anónimos de uso.</li>
@@ -66,7 +69,7 @@
         </ul>
         <p>
           Para ejercer tus derechos ARCO, escribinos a:
-          <a href="mailto:privacidad@cfa-app.mx">privacidad@cfa-app.mx</a>
+          <a href="mailto:privacidad@pakulab.mx">privacidad@pakulab.mx</a>
         </p>
       </section>
 
@@ -81,7 +84,7 @@
       <section class="legal-section" aria-labelledby="sec-menores">
         <h2 id="sec-menores">7. Datos de menores</h2>
         <p>
-          CFA recopila información de bebés únicamente a través de sus padres o tutores. No recopilamos datos directamente de menores de edad.
+          Pakulab recopila información de bebés únicamente a través de sus padres o tutores. No recopilamos datos directamente de menores de edad.
         </p>
       </section>
 
@@ -95,7 +98,7 @@
       <section class="legal-section" aria-labelledby="sec-contacto">
         <h2 id="sec-contacto">9. Contacto</h2>
         <p>
-          Para cualquier consulta sobre privacidad: <a href="mailto:privacidad@cfa-app.mx">privacidad@cfa-app.mx</a>
+          Para cualquier consulta sobre privacidad: <a href="mailto:privacidad@pakulab.mx">privacidad@pakulab.mx</a>
         </p>
       </section>
     </div>
@@ -108,9 +111,9 @@
 
 <style scoped>
 .legal-page {
-  max-width: 720px;
+  max-width: 800px;
   margin: 0 auto;
-  padding-bottom: 3rem;
+  padding: var(--md3-space-3) var(--md3-space-3) var(--md3-space-12);
 }
 
 .legal-content {
@@ -120,70 +123,91 @@
 }
 
 .back-link {
-  color: #10b981;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  color: var(--md3-primary);
   text-decoration: none;
-  font-size: 0.875rem;
-  display: inline-block;
-  margin-bottom: 1.5rem;
-  font-weight: 600;
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  margin-bottom: var(--md3-space-4);
+  transition: color var(--md3-transition-fast);
 }
 
 .back-link:hover {
+  color: var(--md3-primary-dim);
   text-decoration: underline;
 }
 
+.back-icon {
+  font-size: 1.125rem !important;
+}
+
 .page-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #111827;
+  margin: 0 0 var(--md3-space-1);
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-md);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  letter-spacing: var(--md3-headline-tracking);
+  line-height: var(--md3-headline-line-height);
 }
 
 .effective-date {
-  margin: 0 0 1.5rem;
-  font-size: 0.8rem;
-  color: #9ca3af;
+  margin: 0 0 var(--md3-space-4);
+  font-size: var(--md3-label-md);
+  color: var(--md3-outline);
+  letter-spacing: var(--md3-label-tracking);
 }
 
 .intro {
-  margin: 0 0 1.5rem;
-  font-size: 0.95rem;
-  color: #374151;
-  line-height: 1.7;
+  margin: 0 0 var(--md3-space-4);
+  font-size: var(--md3-body-lg);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
 .legal-section {
-  margin-bottom: 1.75rem;
+  margin-bottom: var(--md3-space-6);
 }
 
 .legal-section h2 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.75rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 2px solid #e5e7eb;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-title-lg);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface);
+  margin: 0 0 var(--md3-space-3);
+  padding-bottom: var(--md3-space-2);
+  border-bottom: 2px solid var(--md3-outline-variant);
+  letter-spacing: var(--md3-headline-tracking);
 }
 
 .legal-section p,
 .legal-section ul {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-  color: #4b5563;
-  line-height: 1.7;
+  margin: 0 0 var(--md3-space-2);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
 .legal-section ul {
-  padding-left: 1.5rem;
+  padding-left: var(--md3-space-4);
 }
 
 .legal-section li {
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--md3-space-2);
+  color: var(--md3-on-surface-variant);
+}
+
+.legal-section strong {
+  color: var(--md3-on-surface);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .legal-section a {
-  color: #10b981;
+  color: var(--md3-primary);
   text-decoration: none;
+  font-weight: var(--md3-weight-medium);
 }
 
 .legal-section a:hover {
@@ -191,10 +215,11 @@
 }
 
 code {
-  background: #f3f4f6;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.25rem;
-  font-size: 0.8rem;
-  color: #374151;
+  background: var(--md3-surface-container);
+  padding: 0.1rem var(--md3-space-1);
+  border-radius: var(--md3-rounded-sm);
+  font-size: var(--md3-label-md);
+  color: var(--md3-on-surface);
+  font-family: monospace;
 }
 </style>

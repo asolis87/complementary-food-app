@@ -1,130 +1,121 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-card">
-      <!-- Logo / Title -->
-      <div class="auth-header">
-        <span class="auth-logo" aria-hidden="true">🥦</span>
-        <h1 class="auth-title">Crear cuenta gratis</h1>
-        <p class="auth-subtitle">Guardá tus platos y realizá seguimiento de tu bebé</p>
-      </div>
+  <AuthLayout variant="signup">
+    <div class="signup-form">
+      <h1 class="signup-form__title">Creá tu cuenta gratis</h1>
+      <p class="signup-form__subtitle">Guardá tus platos y realizá seguimiento de tu bebé</p>
 
       <!-- Error banner -->
       <div v-if="authStore.error" class="error-banner" role="alert">
-        <span aria-hidden="true">⚠️</span>
+        <span class="material-symbols-outlined error-banner__icon" aria-hidden="true">warning</span>
         {{ authStore.error }}
       </div>
 
-      <!-- Signup form -->
-      <form class="auth-form" novalidate @submit.prevent="handleSubmit">
-        <!-- Name -->
-        <div class="form-group">
-          <label for="name" class="form-label">Tu nombre</label>
-          <input
-            id="name"
+      <form novalidate @submit.prevent="handleSubmit">
+        <div class="form-fields">
+          <AppInput
             v-model="name"
             type="text"
-            class="form-input"
-            :class="{ 'input-error': errors.name }"
+            label="Tu nombre"
             placeholder="Ana García"
-            autocomplete="name"
+            :error="errors.name"
+            icon="person"
             required
             :disabled="authStore.loading"
           />
-          <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
-        </div>
 
-        <!-- Email -->
-        <div class="form-group">
-          <label for="email" class="form-label">Correo electrónico</label>
-          <input
-            id="email"
+          <AppInput
             v-model="email"
             type="email"
-            class="form-input"
-            :class="{ 'input-error': errors.email }"
-            placeholder="tu@correo.com"
-            autocomplete="email"
+            label="Correo electrónico"
+            placeholder="tu@email.com"
+            :error="errors.email"
+            icon="mail"
             required
             :disabled="authStore.loading"
           />
-          <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
+
+          <AppInput
+            v-model="password"
+            type="password"
+            label="Contraseña"
+            placeholder="Mínimo 8 caracteres"
+            :error="errors.password"
+            icon="lock"
+            required
+            :disabled="authStore.loading"
+          />
+
+          <AppInput
+            v-model="confirmPassword"
+            type="password"
+            label="Confirmar contraseña"
+            placeholder="Repetí tu contraseña"
+            :error="errors.confirmPassword"
+            icon="lock_reset"
+            required
+            :disabled="authStore.loading"
+          />
         </div>
 
-        <!-- Password -->
-        <div class="form-group">
-          <label for="password" class="form-label">Contraseña</label>
-          <div class="input-wrapper">
-            <input
-              id="password"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              class="form-input"
-              :class="{ 'input-error': errors.password }"
-              placeholder="Mínimo 8 caracteres"
-              autocomplete="new-password"
-              required
-              :disabled="authStore.loading"
-            />
-            <button
-              type="button"
-              class="toggle-pwd"
-              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-              @click="showPassword = !showPassword"
-            >
-              {{ showPassword ? '🙈' : '👁️' }}
-            </button>
-          </div>
-          <span v-if="errors.password" class="field-error" role="alert">{{ errors.password }}</span>
-        </div>
+        <!-- Terms acceptance -->
+        <label class="terms-check">
+          <input
+            type="checkbox"
+            v-model="acceptedTerms"
+            class="terms-check__checkbox"
+            required
+          />
+          <span class="terms-check__label">
+            Acepto los
+            <router-link to="/terminos" target="_blank" class="terms-check__link">términos de uso</router-link>
+            y la
+            <router-link to="/privacidad" target="_blank" class="terms-check__link">política de privacidad</router-link>
+          </span>
+        </label>
 
-        <!-- Confirm Password -->
-        <div class="form-group">
-          <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
-          <div class="input-wrapper">
-            <input
-              id="confirmPassword"
-              v-model="confirmPassword"
-              :type="showPassword ? 'text' : 'password'"
-              class="form-input"
-              :class="{ 'input-error': errors.confirmPassword }"
-              placeholder="Repetí tu contraseña"
-              autocomplete="new-password"
-              required
-              :disabled="authStore.loading"
-            />
-          </div>
-          <span v-if="errors.confirmPassword" class="field-error" role="alert">{{ errors.confirmPassword }}</span>
+        <div class="form-actions">
+          <AppButton
+            type="submit"
+            variant="primary"
+            :full-width="true"
+            :loading="authStore.loading"
+            :disabled="!acceptedTerms"
+            size="lg"
+          >
+            Crear Cuenta
+          </AppButton>
         </div>
-
-        <!-- Submit -->
-        <button
-          type="submit"
-          class="btn btn-primary btn-full"
-          :disabled="authStore.loading"
-        >
-          <span v-if="authStore.loading" class="spinner-sm" aria-hidden="true" />
-          {{ authStore.loading ? 'Creando cuenta...' : 'Crear cuenta gratis' }}
-        </button>
       </form>
 
-      <!-- Login link -->
-      <p class="auth-link">
-        ¿Ya tenés cuenta?
-        <RouterLink to="/auth/login">Iniciá sesión</RouterLink>
-      </p>
+      <div class="divider">
+        <span class="divider__text">o registrate con</span>
+      </div>
 
-      <!-- Terms notice -->
-      <p class="terms-note">
-        Al registrarte aceptás nuestros términos de uso. Tu información está protegida.
+      <AppButton
+        variant="outline"
+        :full-width="true"
+        icon="language"
+        :disabled="authStore.loading"
+        @click="handleGoogleSignup"
+      >
+        Continuar con Google
+      </AppButton>
+
+      <p class="login-link">
+        ¿Ya tenés cuenta?
+        <router-link to="/auth/login">Iniciá sesión</router-link>
       </p>
     </div>
-  </div>
+  </AuthLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/shared/stores/authStore.js'
+import AuthLayout from '@/shared/components/AuthLayout.vue'
+import AppButton from '@/shared/components/AppButton.vue'
+import AppInput from '@/shared/components/AppInput.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -134,7 +125,7 @@ const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const showPassword = ref(false)
+const acceptedTerms = ref(false)
 const errors = reactive({
   name: '',
   email: '',
@@ -186,7 +177,7 @@ function validate(): boolean {
   return valid
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────
+// ─── Handlers ──────────────────────────────────────────────────────────────
 async function handleSubmit() {
   if (!validate()) return
   try {
@@ -196,203 +187,156 @@ async function handleSubmit() {
     // Error is displayed via authStore.error
   }
 }
+
+async function handleGoogleSignup() {
+  // Google sign-up — to be implemented when OAuth provider is configured
+  // authStore.signInWithGoogle()
+}
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: #f9fafb;
-}
-
-.auth-card {
+/* ─── Form container ─── */
+.signup-form {
   width: 100%;
-  max-width: 420px;
-  background: white;
-  border-radius: 1.5rem;
-  padding: 2rem 1.75rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--md3-space-4);
 }
 
-.auth-header {
-  text-align: center;
-}
-
-.auth-logo {
-  font-size: 2.5rem;
-}
-
-.auth-title {
-  margin: 0.5rem 0 0.25rem;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-.auth-subtitle {
+/* ─── Heading ─── */
+.signup-form__title {
   margin: 0;
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-md);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  line-height: var(--md3-headline-line-height);
+  letter-spacing: var(--md3-headline-tracking);
 }
 
-/* Error */
+.signup-form__subtitle {
+  margin: 0;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
+}
+
+/* ─── Error banner ─── */
 .error-banner {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  color: #b91c1c;
+  gap: var(--md3-space-2);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: var(--md3-on-error);
+  border: 1px solid var(--md3-error-container);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-error);
+  line-height: var(--md3-body-line-height);
 }
 
-/* Form */
-.auth-form {
+.error-banner__icon {
+  font-size: 1.125rem !important;
+  flex-shrink: 0;
+}
+
+/* ─── Form fields ─── */
+.form-fields {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--md3-space-3);
 }
 
-.form-group {
+/* ─── Terms checkbox ─── */
+.terms-check {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.65rem 1rem;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  color: #111827;
-  outline: none;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
-
-.form-input:focus {
-  border-color: #10b981;
-}
-
-.form-input.input-error {
-  border-color: #ef4444;
-}
-
-.form-input:disabled {
-  background: #f9fafb;
-  color: #9ca3af;
-}
-
-.toggle-pwd {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
+  align-items: flex-start;
+  gap: var(--md3-space-2);
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.25rem;
-  line-height: 1;
+  margin-top: var(--md3-space-2);
 }
 
-.field-error {
-  font-size: 0.75rem;
-  color: #ef4444;
-}
-
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-size: 0.95rem;
-  font-weight: 600;
+.terms-check__checkbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--md3-secondary);
   cursor: pointer;
-  border: none;
-  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.terms-check__label {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-label-line-height);
+  user-select: none;
+}
+
+.terms-check__link {
+  color: var(--md3-secondary);
+  font-weight: var(--md3-weight-semibold);
   text-decoration: none;
+  transition: color var(--md3-transition-fast);
 }
 
-.btn-full {
-  width: 100%;
-}
-
-.btn-primary {
-  background: #10b981;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #059669;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Spinner */
-.spinner-sm {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Link */
-.auth-link {
-  text-align: center;
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0;
-}
-
-.auth-link a {
-  color: #10b981;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.auth-link a:hover {
+.terms-check__link:hover {
+  color: var(--md3-secondary-dim);
   text-decoration: underline;
 }
 
-.terms-note {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #9ca3af;
+/* ─── Form actions ─── */
+.form-actions {
+  margin-top: var(--md3-space-3);
+}
+
+/* ─── Divider ─── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-3);
+  color: var(--md3-outline-variant);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--md3-outline-variant);
+}
+
+.divider__text {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-outline);
+  white-space: nowrap;
+}
+
+/* ─── Login link ─── */
+.login-link {
   margin: 0;
-  line-height: 1.5;
+  text-align: center;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
+}
+
+.login-link a {
+  color: var(--md3-secondary);
+  font-weight: var(--md3-weight-semibold);
+  text-decoration: none;
+  transition: color var(--md3-transition-fast);
+}
+
+.login-link a:hover {
+  color: var(--md3-secondary-dim);
+  text-decoration: underline;
 }
 </style>

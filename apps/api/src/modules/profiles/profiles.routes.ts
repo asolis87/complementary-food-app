@@ -15,7 +15,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { NotFoundError, TierLimitError } from '../../shared/errors/index.js'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { requireTier } from '../../shared/hooks/requireTier.js'
-import { BABY_PROFILE_LIMITS } from '@cfa/shared'
+import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 

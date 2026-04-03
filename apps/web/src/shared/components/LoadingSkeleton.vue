@@ -55,19 +55,19 @@ function lineClass(n: number): string {
   gap: 0.75rem;
 }
 
-/* Base shimmer */
+/* Base shimmer — uses MD3 surface tokens */
 .skeleton-line,
 .skeleton-circle,
 .skeleton-card {
   background: linear-gradient(
     90deg,
-    #f3f4f6 25%,
-    #e5e7eb 50%,
-    #f3f4f6 75%
+    var(--md3-surface-container) 25%,
+    var(--md3-surface-container-high) 50%,
+    var(--md3-surface-container) 75%
   );
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
-  border-radius: 0.375rem;
+  border-radius: var(--md3-rounded-sm);
 }
 
 /* Lines */
@@ -81,23 +81,22 @@ function lineClass(n: number): string {
 
 /* Card shape */
 .skeleton-card {
-  background: #f9fafb;
-  border-radius: 0.875rem;
-  padding: 1rem;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-md);
+  padding: var(--md3-space-3);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  border: 1px solid #f3f4f6;
-  /* Override shimmer on container — only children shimmer */
+  gap: var(--md3-space-2);
+  /* No border — surface hierarchy handles separation */
   animation: none;
 }
 
 .skeleton-card .skeleton-line {
   background: linear-gradient(
     90deg,
-    #e5e7eb 25%,
-    #d1d5db 50%,
-    #e5e7eb 75%
+    var(--md3-surface-container) 25%,
+    var(--md3-surface-container-high) 50%,
+    var(--md3-surface-container) 75%
   );
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;

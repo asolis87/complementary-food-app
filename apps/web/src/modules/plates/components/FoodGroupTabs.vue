@@ -21,8 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import type { FoodGroup } from '@cfa/shared'
-import { FOOD_GROUP_LABELS } from '@cfa/shared'
+import type { FoodGroup } from '@pakulab/shared'
+import { FOOD_GROUP_LABELS } from '@pakulab/shared'
 
 defineProps<{
   groups: FoodGroup[]
@@ -34,13 +34,15 @@ const emit = defineEmits<{
   select: [group: FoodGroup]
 }>()
 
+// Colors match MD3 food group tokens: --md3-group-{fruit,vegetable,protein,cereal,fat}-on
+// Using the "-on" values (darker) so active tabs have enough contrast on the container background
 function groupColor(group: FoodGroup): string {
   const colors: Record<FoodGroup, string> = {
-    FRUIT: '#F59E0B',
-    VEGETABLE: '#10B981',
-    PROTEIN: '#F43F5E',
-    CEREAL_TUBER: '#D97706',
-    HEALTHY_FAT: '#8B5CF6',
+    FRUIT: '#6e391a',       // --md3-group-fruit-on
+    VEGETABLE: '#004d36',   // --md3-group-vegetable-on
+    PROTEIN: '#6e391a',     // --md3-group-protein-on
+    CEREAL_TUBER: '#004d36', // --md3-group-cereal-on
+    HEALTHY_FAT: '#3b1f8c', // --md3-group-fat-on
   }
   return colors[group]
 }
@@ -60,7 +62,7 @@ function groupIcon(group: FoodGroup): string {
 <style scoped>
 .food-group-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -77,27 +79,29 @@ function groupIcon(group: FoodGroup): string {
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 0.85rem;
-  border-radius: 9999px;
-  border: 2px solid #e5e7eb;
-  background: white;
+  border-radius: var(--md3-rounded-full);
+  border: 2px solid var(--md3-outline-variant);
+  background: var(--md3-surface-container-lowest);
   cursor: pointer;
-  font-size: 0.8rem;
-  color: #6b7280;
-  transition: all 0.15s;
-  font-weight: 500;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  color: var(--md3-on-surface-variant);
+  transition: all var(--md3-transition-fast);
+  font-weight: var(--md3-weight-medium);
   white-space: nowrap;
 }
 
 .tab-btn:hover {
   border-color: var(--group-color);
   color: var(--group-color);
+  background: var(--md3-surface-container-low);
 }
 
 .tab-btn.active {
   border-color: var(--group-color);
   background: var(--group-color);
-  color: white;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--group-color) 40%, transparent);
+  color: var(--md3-surface-container-lowest);
+  box-shadow: var(--md3-shadow-card);
 }
 
 .tab-btn.has-items:not(.active)::before {
@@ -130,15 +134,15 @@ function groupIcon(group: FoodGroup): string {
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  border-radius: 9999px;
+  border-radius: var(--md3-rounded-full);
   background: rgba(255, 255, 255, 0.35);
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-bold);
   padding: 0 4px;
 }
 
 .tab-btn:not(.active) .tab-count {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
 }
 </style>

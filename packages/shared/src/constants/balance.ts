@@ -9,6 +9,13 @@ export const BALANCE_THRESHOLD = 0.34
 /** Score range for "leaning" classification (0.34 < |score| ≤ threshold) */
 export const IMBALANCE_THRESHOLD = 0.67
 
+/**
+ * Threshold for "good" balance in weekly menu summary.
+ * Plates with balanceScore >= GOOD_THRESHOLD are counted as "balanced" meals.
+ * REQ-007: Balance summary threshold.
+ */
+export const GOOD_THRESHOLD = 0.2
+
 /** Balance visual colors (for reference — actual CSS in the component) */
 export const BALANCE_COLORS = {
   balanced: '#22c55e', // green-500

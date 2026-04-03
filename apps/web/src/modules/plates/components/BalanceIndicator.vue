@@ -1,250 +1,270 @@
 <template>
   <div class="balance-indicator" role="region" aria-label="Indicador de equilibrio A/L">
-    <!-- Empty state -->
-    <div v-if="!balance" class="balance-empty">
-      <span class="balance-empty-icon">🍽️</span>
-      <p class="balance-empty-text">Agregá alimentos para ver el equilibrio A/L</p>
-    </div>
+    <!-- Title -->
+    <h3 class="balance-title">
+      <span class="material-symbols-outlined balance-title-icon" aria-hidden="true">balance</span>
+      Balance Digestivo
+    </h3>
 
-    <template v-else>
-      <!-- Score label -->
-      <div class="balance-header">
-        <span class="balance-label" :class="labelClass">{{ balance.labelEs }}</span>
-        <span class="balance-score">{{ scoreDisplay }}</span>
-      </div>
-
-      <!-- Gauge bar — meter role for a11y -->
+    <!-- Scale indicator -->
+    <div class="scale-wrapper">
+      <!-- Gradient bar -->
       <div
-        class="gauge"
+        class="gradient-bar"
         role="meter"
         :aria-valuenow="balance ? Math.round(balance.score * 100) : 0"
         aria-valuemin="-100"
         aria-valuemax="100"
         :aria-label="`Balance del plato: ${balance?.labelEs ?? 'Sin datos'}`"
       >
-        <!-- Background zones -->
-        <div class="gauge-zone zone-astringent" aria-hidden="true" />
-        <div class="gauge-zone zone-balanced" aria-hidden="true" />
-        <div class="gauge-zone zone-laxative" aria-hidden="true" />
-
-        <!-- Needle / marker -->
+        <!-- Needle -->
         <div
-          class="gauge-needle"
+          class="needle"
           :style="{ left: needlePosition }"
           aria-hidden="true"
-        />
+        >
+          <div class="needle-bar" />
+          <div class="needle-dot" />
+        </div>
       </div>
 
-      <!-- Zone labels -->
-      <div class="gauge-labels" aria-hidden="true">
-        <span class="label-astringent">Astringente</span>
-        <span class="label-balanced">Equilibrado</span>
-        <span class="label-laxative">Laxante</span>
+      <!-- 3-column labels -->
+      <div class="scale-labels" aria-hidden="true">
+        <div class="scale-label scale-label--left">
+          <p class="scale-label-name scale-label-name--secondary">Laxante</p>
+          <p class="scale-label-example">Ciruelas, Pera</p>
+        </div>
+        <div class="scale-label scale-label--center">
+          <p class="scale-label-name scale-label-name--primary">Equilibrado</p>
+          <p class="scale-label-example">Mezcla Óptima</p>
+        </div>
+        <div class="scale-label scale-label--right">
+          <p class="scale-label-name scale-label-name--tertiary">Astringente</p>
+          <p class="scale-label-example">Arroz, Manzana</p>
+        </div>
       </div>
+    </div>
 
-      <!-- Counts -->
-      <div class="balance-counts" aria-label="Conteo por clasificación">
-        <span class="count count-astringent" :title="`${balance.astringent} alimento(s) astringente(s)`">
-          🔴 {{ balance.astringent }} ast.
-        </span>
-        <span class="count count-neutral" :title="`${balance.neutral} alimento(s) neutro(s)`">
-          ⚪ {{ balance.neutral }} neut.
-        </span>
-        <span class="count count-laxative" :title="`${balance.laxative} alimento(s) laxante(s)`">
-          🟢 {{ balance.laxative }} lax.
-        </span>
+    <!-- ProTip card -->
+    <div class="protip-card">
+      <div class="protip-icon-wrap" aria-hidden="true">
+        <span class="material-symbols-outlined protip-icon">tips_and_updates</span>
       </div>
-    </template>
-
-    <!-- Medical disclaimer — REQUIRED on every A/L screen (REQ-AL-02) -->
-    <p class="disclaimer" role="note">
-      ⚕️ Esta información es orientativa. Consultá siempre con tu pediatra.
-    </p>
+      <div class="protip-content">
+        <p class="protip-heading">Consejo Pro</p>
+        <p class="protip-text">{{ proTip }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { BalanceResult } from '@cfa/shared'
-import { BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@cfa/shared'
+import type { BalanceResult } from '@pakulab/shared'
 
 const props = defineProps<{
   balance: BalanceResult | null
 }>()
 
-/** Convert score (-1 to +1) to a left % position for the needle */
+/**
+ * Convert score (-1 to +1) to a left % position for the needle.
+ * Stitch layout: Laxante (left) → Equilibrado (center) → Astringente (right)
+ * score -1.0 (laxative) → 0%
+ * score  0.0 (balanced) → 50%
+ * score +1.0 (astringent) → 100%
+ */
 const needlePosition = computed(() => {
-  if (!props.balance) return '50%'
-  // score: -1 (laxative, right) to +1 (astringent, left)
-  // We want astringent on LEFT → needle at low % when score is high positive
-  // Map: score +1 → 5%, score 0 → 50%, score -1 → 95%
-  const pct = 50 - props.balance.score * 45
+  const score = props.balance?.score ?? 0
+  const pct = (score + 1) * 50
   return `${Math.max(2, Math.min(98, pct))}%`
 })
 
-const labelClass = computed(() => {
-  if (!props.balance) return ''
-  switch (props.balance.label) {
-    case 'balanced':
-      return 'label-green'
-    case 'astringent':
-      return 'label-red'
-    case 'laxative':
-      return 'label-orange'
-    default:
-      return ''
+/** Reactive ProTip based on balance state */
+const proTip = computed(() => {
+  if (!props.balance || props.balance.label === 'balanced') {
+    return 'Añadí grasas saludables como palta para ayudar a absorber las vitaminas.'
   }
-})
-
-const scoreDisplay = computed(() => {
-  if (!props.balance) return ''
-  const score = props.balance.score
-  const abs = Math.abs(score)
-  if (abs <= BALANCE_THRESHOLD) return '✓'
-  if (abs <= IMBALANCE_THRESHOLD) return score > 0 ? '↑' : '↓'
-  return score > 0 ? '↑↑' : '↓↓'
+  if (props.balance.label === 'astringent') {
+    return 'El plato tiene tendencia astringente. Sumá frutas como ciruela o pera para equilibrar.'
+  }
+  // laxative
+  return 'El plato tiene tendencia laxante. Sumá arroz, manzana o zanahoria para equilibrar.'
 })
 </script>
 
 <style scoped>
+/* ── Container ──────────────────────────────────────────────────────────────── */
 .balance-indicator {
-  background: white;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f3f4f6;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-lg);
+  padding: var(--md3-space-6);
+  font-family: var(--md3-font-body);
 }
 
-.balance-empty {
+/* ── Title ──────────────────────────────────────────────────────────────────── */
+.balance-title {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  font-family: var(--md3-font-headline);
+  font-weight: var(--md3-weight-bold);
+  font-size: var(--md3-headline-sm);
+  color: var(--md3-on-surface);
+  margin: 0 0 var(--md3-space-6) 0;
+}
+
+.balance-title-icon {
+  color: var(--md3-primary);
+  font-size: 1.5rem;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Scale wrapper ───────────────────────────────────────────────────────────── */
+.scale-wrapper {
+  padding-top: var(--md3-space-6);
+  padding-bottom: var(--md3-space-3);
+}
+
+/* ── Gradient bar ────────────────────────────────────────────────────────────── */
+.gradient-bar {
+  height: 1rem;
+  width: 100%;
+  border-radius: var(--md3-rounded-full);
+  /* secondary-container → primary-container → tertiary-container
+     matching the 40%-opacity Stitch gradient using the container tones */
+  background: linear-gradient(
+    to right,
+    var(--md3-secondary-container) 0%,
+    var(--md3-primary-container) 50%,
+    var(--md3-tertiary-container) 100%
+  );
+  position: relative;
+}
+
+/* ── Needle ──────────────────────────────────────────────────────────────────── */
+.needle {
+  position: absolute;
+  top: -0.25rem;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 0;
-  color: #9ca3af;
-}
-
-.balance-empty-icon {
-  font-size: 2rem;
-}
-
-.balance-empty-text {
-  margin: 0;
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.balance-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.balance-label {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.label-green {
-  color: #10b981;
-}
-
-.label-red {
-  color: #ef4444;
-}
-
-.label-orange {
-  color: #f59e0b;
-}
-
-.balance-score {
-  font-size: 1.25rem;
-  color: #6b7280;
-}
-
-/* Gauge */
-.gauge {
-  position: relative;
-  height: 16px;
-  border-radius: 9999px;
-  display: flex;
-  overflow: visible;
-  margin-bottom: 0.35rem;
-}
-
-.gauge-zone {
-  flex: 1;
-}
-
-.zone-astringent {
-  background: linear-gradient(to right, #ef4444, #fca5a5);
-  border-radius: 9999px 0 0 9999px;
-}
-
-.zone-balanced {
-  background: #10b981;
-}
-
-.zone-laxative {
-  background: linear-gradient(to right, #fde68a, #f59e0b);
-  border-radius: 0 9999px 9999px 0;
-}
-
-.gauge-needle {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  background: white;
-  border: 3px solid #374151;
-  border-radius: 9999px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: left 0.3s ease;
   z-index: 1;
 }
 
-.gauge-labels {
+.needle-bar {
+  width: 0.25rem;
+  height: 2rem;
+  background: var(--md3-on-surface);
+  border-radius: var(--md3-rounded-full);
+  box-shadow: var(--md3-shadow-soft);
+}
+
+.needle-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--md3-on-surface);
+  border-radius: 50%;
+  margin-top: -0.25rem;
+  box-shadow: var(--md3-shadow-soft);
+}
+
+/* ── 3-column labels ─────────────────────────────────────────────────────────── */
+.scale-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.65rem;
-  color: #9ca3af;
-  margin-bottom: 0.75rem;
+  margin-top: 1.5rem;
 }
 
-.label-astringent {
-  color: #ef4444;
-}
-
-.label-balanced {
-  color: #10b981;
-}
-
-.label-laxative {
-  color: #f59e0b;
-}
-
-.balance-counts {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.count {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Disclaimer */
-.disclaimer {
-  margin: 0;
-  font-size: 0.7rem;
-  color: #9ca3af;
+.scale-label {
   text-align: center;
-  border-top: 1px solid #f3f4f6;
-  padding-top: 0.5rem;
+}
+
+.scale-label--left {
+  text-align: left;
+}
+
+.scale-label--right {
+  text-align: right;
+}
+
+.scale-label-name {
+  margin: 0;
+  font-size: 0.625rem; /* 10px */
+  font-weight: var(--md3-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--md3-label-tracking);
+  font-family: var(--md3-font-label);
+}
+
+.scale-label-name--secondary {
+  color: var(--md3-secondary);
+}
+
+.scale-label-name--primary {
+  color: var(--md3-primary);
+}
+
+.scale-label-name--tertiary {
+  color: var(--md3-tertiary);
+}
+
+.scale-label-example {
+  margin: 0;
+  font-size: var(--md3-label-md);
+  color: var(--md3-on-surface-variant);
+  font-family: var(--md3-font-body);
+  margin-top: 0.125rem;
+}
+
+/* ── ProTip card ─────────────────────────────────────────────────────────────── */
+.protip-card {
+  margin-top: var(--md3-space-6);
+  padding: var(--md3-space-3);
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-md);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.protip-icon-wrap {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--md3-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.protip-icon {
+  color: var(--md3-primary);
+  font-size: 1.25rem;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.protip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.protip-heading {
+  margin: 0;
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  font-family: var(--md3-font-body);
+}
+
+.protip-text {
+  margin: 0;
+  font-size: var(--md3-label-md);
+  color: var(--md3-on-surface-variant);
+  font-family: var(--md3-font-body);
+  line-height: var(--md3-body-line-height);
 }
 </style>

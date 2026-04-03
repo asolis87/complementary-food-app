@@ -20,7 +20,7 @@
         aria-label="Editar perfil"
         @click="$emit('edit', profile)"
       >
-        ✏️
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
       </button>
       <button
         class="action-btn action-delete"
@@ -28,7 +28,7 @@
         aria-label="Eliminar perfil"
         @click="confirmDelete"
       >
-        🗑️
+        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
       </button>
     </div>
   </div>
@@ -36,8 +36,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { BabyProfile } from '@cfa/shared'
-import { ageInMonths, formatAgeEs } from '@cfa/shared'
+import type { BabyProfile } from '@pakulab/shared'
+import { ageInMonths, formatAgeEs } from '@pakulab/shared'
 
 const props = defineProps<{
   profile: BabyProfile
@@ -77,26 +77,31 @@ function confirmDelete() {
 .profile-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.125rem;
-  background: white;
-  border-radius: 1rem;
-  border: 1px solid #f3f4f6;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-md);
+  box-shadow: var(--md3-shadow-card);
+  transition: box-shadow var(--md3-transition-fast);
+}
+
+.profile-card:hover {
+  box-shadow: var(--md3-shadow-elevated);
 }
 
 .profile-avatar {
   flex-shrink: 0;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #6ee7b7, #10b981);
-  border-radius: 50%;
+  background: var(--md3-primary-container);
+  border-radius: var(--md3-rounded-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: white;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-title-lg);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-primary-container);
 }
 
 .profile-info {
@@ -105,10 +110,11 @@ function confirmDelete() {
 }
 
 .profile-name {
-  margin: 0 0 0.15rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
+  margin: 0 0 var(--md3-space-1);
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-title-md);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -117,39 +123,47 @@ function confirmDelete() {
 .profile-age,
 .profile-ac {
   margin: 0;
-  font-size: 0.8rem;
-  color: #6b7280;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .profile-ac {
-  margin-top: 0.1rem;
+  margin-top: var(--md3-space-1);
 }
 
 .profile-actions {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--md3-space-2);
   flex-shrink: 0;
 }
 
 .action-btn {
-  background: #f3f4f6;
+  background: var(--md3-surface-container-low);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--md3-rounded-sm);
   width: 36px;
   height: 36px;
   cursor: pointer;
-  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+  color: var(--md3-on-surface-variant);
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.action-btn .material-symbols-outlined {
+  font-size: 1.125rem;
+  line-height: 1;
 }
 
 .action-btn:hover {
-  background: #e5e7eb;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
 }
 
 .action-delete:hover {
-  background: #fee2e2;
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 </style>

@@ -10,6 +10,7 @@
  */
 
 import type { BalanceLabel, BalanceResult } from '../types/balance.js'
+import type { PlateBalanceLabel } from '../types/diary.js'
 import { BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '../constants/balance.js'
 
 type FoodWithClassification = {
@@ -93,4 +94,28 @@ export function getBalanceSeverity(score: number): 'green' | 'yellow' | 'red' {
   if (abs <= BALANCE_THRESHOLD) return 'green'
   if (abs <= IMBALANCE_THRESHOLD) return 'yellow'
   return 'red'
+}
+
+/**
+ * Derive a PlateBalanceLabel snapshot from a numeric A/L score.
+ *
+ * Uses the same thresholds as the balance calculation (AD8).
+ * Intended to be stored as a denormalized snapshot on FoodLog records.
+ *
+ * @param score - A/L balance score (-1.0 laxative to +1.0 astringent)
+ * @returns PlateBalanceLabel enum-style string
+ *
+ * @example
+ * derivePlateBalanceLabel(0.0)   // 'BALANCED'
+ * derivePlateBalanceLabel(0.5)   // 'SLIGHTLY_ASTRINGENT'
+ * derivePlateBalanceLabel(0.8)   // 'VERY_ASTRINGENT'
+ * derivePlateBalanceLabel(-0.5)  // 'SLIGHTLY_LAXATIVE'
+ * derivePlateBalanceLabel(-0.9)  // 'VERY_LAXATIVE'
+ */
+export function derivePlateBalanceLabel(score: number): PlateBalanceLabel {
+  const abs = Math.abs(score)
+  if (abs <= BALANCE_THRESHOLD) return 'BALANCED'
+  const direction = score > 0 ? 'ASTRINGENT' : 'LAXATIVE'
+  if (abs <= IMBALANCE_THRESHOLD) return `SLIGHTLY_${direction}` as PlateBalanceLabel
+  return `VERY_${direction}` as PlateBalanceLabel
 }

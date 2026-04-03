@@ -1,5 +1,5 @@
 /**
- * Tier limits and feature access matrix for the CFA freemium model.
+ * Tier limits and feature access matrix for the Pakulab freemium model.
  */
 
 import type { UserTier } from '../types/user.js'

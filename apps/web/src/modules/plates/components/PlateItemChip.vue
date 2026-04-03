@@ -104,32 +104,33 @@ const chipClass = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--md3-surface-container-lowest);
+  border: 1px solid var(--md3-outline-variant);
   border-left-width: 3px;
-  border-radius: 0.5rem;
+  border-radius: var(--md3-rounded-sm);
   padding: 0.35rem 0.5rem;
-  font-size: 0.75rem;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
   width: 100%;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.15s ease;
+  box-shadow: var(--md3-shadow-soft);
+  transition: box-shadow var(--md3-transition-fast);
 }
 
 .plate-item-chip:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--md3-shadow-card);
 }
 
 /* Left border accent color per A/L classification */
 .chip-astringent {
-  border-left-color: #ef4444;
+  border-left-color: var(--md3-error);
 }
 
 .chip-laxative {
-  border-left-color: #10b981;
+  border-left-color: var(--md3-primary);
 }
 
 .chip-neutral {
-  border-left-color: #9ca3af;
+  border-left-color: var(--md3-outline-variant);
 }
 
 /* ── Rows ──────────────────────────────────────────────────────────── */
@@ -155,25 +156,26 @@ const chipClass = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #111827;
-  font-weight: 500;
-  font-size: 0.8rem;
+  color: var(--md3-on-surface);
+  font-weight: var(--md3-weight-medium);
+  font-size: var(--md3-body-sm);
   line-height: 1.2;
 }
 
 /* ── Allergen warning ──────────────────────────────────────────────── */
 .chip-allergen {
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: var(--md3-body-sm);
   line-height: 1;
   cursor: help;
 }
 
 .chip-allergen-type {
-  font-size: 0.65rem;
-  color: #b45309;
-  background: #fef3c7;
-  border-radius: 0.25rem;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-tertiary-container);
+  background: var(--md3-tertiary-container);
+  border-radius: var(--md3-rounded-sm);
   padding: 0.05rem 0.25rem;
   white-space: nowrap;
   overflow: hidden;
@@ -187,8 +189,8 @@ const chipClass = computed(() => {
   background: none;
   border: none;
   cursor: pointer;
-  color: #d1d5db;
-  font-size: 0.7rem;
+  color: var(--md3-outline-variant);
+  font-size: var(--md3-label-sm);
   line-height: 1;
   padding: 0.1rem;
   margin-left: auto;
@@ -197,13 +199,13 @@ const chipClass = computed(() => {
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 9999px;
-  transition: color 0.15s, background 0.15s;
+  border-radius: var(--md3-rounded-full);
+  transition: color var(--md3-transition-fast), background var(--md3-transition-fast);
 }
 
 .chip-remove:hover {
-  color: #ef4444;
-  background: #fee2e2;
+  color: var(--md3-on-error-container);
+  background: var(--md3-error-container);
 }
 
 /* ── A/L badge ─────────────────────────────────────────────────────── */
@@ -211,50 +213,47 @@ const chipClass = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  border-radius: 9999px;
+  border-radius: var(--md3-rounded-full);
   padding: 0.1rem 0.35rem 0.1rem 0.2rem;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-bold);
   line-height: 1;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--md3-label-tracking);
 }
 
 .al-dot {
   width: 6px;
   height: 6px;
-  border-radius: 9999px;
+  border-radius: var(--md3-rounded-full);
   flex-shrink: 0;
-}
-
-.al-label {
-  /* inherits color from parent .al-badge */
 }
 
 /* Badge variants */
 .badge-astringent {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--md3-error);
+  background: var(--md3-error-container);
 }
 
 .badge-astringent .al-dot {
-  background: #ef4444;
+  background: var(--md3-error);
 }
 
 .badge-laxative {
-  color: #059669;
-  background: #ecfdf5;
+  color: var(--md3-on-primary-container);
+  background: var(--md3-primary-container);
 }
 
 .badge-laxative .al-dot {
-  background: #10b981;
+  background: var(--md3-primary);
 }
 
 .badge-neutral {
-  color: #6b7280;
-  background: #f9fafb;
+  color: var(--md3-on-surface-variant);
+  background: var(--md3-surface-container);
 }
 
 .badge-neutral .al-dot {
-  background: #9ca3af;
+  background: var(--md3-outline);
 }
 </style>

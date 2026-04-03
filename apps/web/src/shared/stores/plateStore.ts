@@ -4,8 +4,8 @@
  * Design: AD4 — Pinia for server-synced state.
  */
 
-import type { Food, FoodGroup, Plate, BalanceResult } from '@cfa/shared'
-import { calculateBalance, PLATE_LIMITS } from '@cfa/shared'
+import type { Food, FoodGroup, Plate, BalanceResult } from '@pakulab/shared'
+import { calculateBalance, PLATE_LIMITS } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, OfflineError } from '../api/client.js'
@@ -197,6 +197,33 @@ export const usePlateStore = defineStore('plates', () => {
     savedPlates.value = savedPlates.value.filter((p) => p.id !== plateId)
   }
 
+  /**
+   * Update an existing plate (edit mode).
+   * Sends name, groupCount, and items via PUT /plates/:id.
+   */
+  async function updatePlate(plateId: string): Promise<Plate> {
+    error.value = null
+
+    const itemsPayload = draftItems.value.map((item) => ({
+      foodId: item.food.id,
+      groupAssignment: item.groupAssignment,
+    }))
+
+    const result = await apiClient.put<{ data: Plate }>(`/plates/${plateId}`, {
+      name: draftName.value,
+      groupCount: draftGroupCount.value,
+      items: itemsPayload,
+    })
+
+    // Update in local savedPlates cache if present
+    const idx = savedPlates.value.findIndex((p) => p.id === plateId)
+    if (idx !== -1) {
+      savedPlates.value[idx] = result.data
+    }
+
+    return result.data
+  }
+
   return {
     // State
     draftItems,
@@ -220,6 +247,7 @@ export const usePlateStore = defineStore('plates', () => {
     fetchSavedPlates,
     loadPlate,
     saveDraftAsPlate,
+    updatePlate,
     deletePlate,
   }
 })

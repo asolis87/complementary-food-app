@@ -14,10 +14,10 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/icon-192x192.svg', 'icons/icon-512x512.svg'],
 
       manifest: {
-        name: 'CFA - Alimentación Complementaria',
-        short_name: 'CFA',
+        name: 'Pakulab - Alimentación Complementaria',
+        short_name: 'Pakulab',
         description: 'Armá platos balanceados para tu bebé',
-        theme_color: '#10B981',
+        theme_color: '#00694b',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -51,6 +51,26 @@ export default defineConfig({
 
         // Runtime cache strategies
         runtimeCaching: [
+          {
+            // Google Fonts stylesheets — StaleWhileRevalidate (stylesheet URLs change with params)
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+            },
+          },
+          {
+            // Google Fonts webfont files — CacheFirst (font binaries never change at the same URL)
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 365 days
+              },
+            },
+          },
           {
             // Food catalog — CacheFirst (catalog rarely changes, IndexedDB is the true cache)
             urlPattern: /\/api\/foods/,
@@ -105,7 +125,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@cfa/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
+      '@pakulab/shared': resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
 

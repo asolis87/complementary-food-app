@@ -3,8 +3,8 @@
  * Design: AD11 — frontend counterpart to backend requireTier hook.
  */
 
-import type { UserTier } from '@cfa/shared'
-import { FEATURE_TIERS, tierAtLeast } from '@cfa/shared'
+import type { UserTier } from '@pakulab/shared'
+import { FEATURE_TIERS, tierAtLeast } from '@pakulab/shared'
 import { computed } from 'vue'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 

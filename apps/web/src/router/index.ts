@@ -146,7 +146,7 @@ router.beforeEach(async (to) => {
 
   // Tier-gated pages — redirect to pricing if tier is insufficient
   if (to.meta.requiredTier && authStore.user) {
-    const { tierAtLeast } = await import('@cfa/shared')
+    const { tierAtLeast } = await import('@pakulab/shared')
     if (!tierAtLeast(authStore.user.tier, to.meta.requiredTier as 'FREE' | 'PRO')) {
       return { name: 'pricing' }
     }

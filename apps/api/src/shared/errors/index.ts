@@ -1,5 +1,5 @@
 /**
- * Centralized error types for the CFA API.
+ * Centralized error types for the Pakulab API.
  * Use these to ensure consistent error response format.
  */
 
@@ -29,6 +29,22 @@ export class UnauthorizedError extends AppError {
 export class ForbiddenError extends AppError {
   constructor(message = 'Acceso denegado') {
     super(message, 403, 'FORBIDDEN')
+  }
+}
+
+export class InsufficientTierError extends AppError {
+  public readonly required: string
+  public readonly current: string
+
+  constructor(required: string, current: string) {
+    super(
+      `Esta función requiere plan ${required === 'PRO' ? 'Pro' : 'gratuito con cuenta'}. ` +
+        `Tu plan actual es: ${current}`,
+      403,
+      'INSUFFICIENT_TIER',
+    )
+    this.required = required
+    this.current = current
   }
 }
 

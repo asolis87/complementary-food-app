@@ -4,7 +4,7 @@
 
     <!-- General error -->
     <div v-if="submitError" class="error-banner" role="alert">
-      <span aria-hidden="true">⚠️</span>
+      <span class="material-symbols-outlined error-banner__icon" aria-hidden="true">warning</span>
       {{ submitError }}
     </div>
 
@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import type { BabyProfile } from '@cfa/shared'
+import type { BabyProfile } from '@pakulab/shared'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -183,73 +183,81 @@ defineExpose({ setError })
 .profile-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 1.25rem;
-  border: 1px solid #f3f4f6;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-6);
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-md);
+  box-shadow: var(--md3-shadow-elevated);
 }
 
 .form-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #111827;
+  margin: 0 0 var(--md3-space-1);
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .error-banner {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   padding: 0.75rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  color: #b91c1c;
+  background: var(--md3-on-error);
+  border: 1.5px solid var(--md3-error-container);
+  border-radius: var(--md3-rounded-sm);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-error);
+}
+
+.error-banner__icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--md3-space-2);
 }
 
 .form-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface);
 }
 
 .label-optional {
-  font-weight: 400;
-  color: #9ca3af;
-  font-size: 0.8rem;
+  font-weight: var(--md3-weight-regular);
+  color: var(--md3-on-surface-variant);
+  font-size: var(--md3-label-md);
 }
 
 .form-input {
   padding: 0.65rem 1rem;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  color: #111827;
+  border: 1.5px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-sm);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-lg);
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container-lowest);
   outline: none;
-  transition: border-color 0.15s;
-  font-family: inherit;
+  transition: border-color var(--md3-transition-fast);
 }
 
 .form-input:focus {
-  border-color: #10b981;
+  border-color: var(--md3-primary);
 }
 
 .form-input.input-error {
-  border-color: #ef4444;
+  border-color: var(--md3-error);
 }
 
 .form-input:disabled {
-  background: #f9fafb;
-  color: #9ca3af;
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface-variant);
 }
 
 .form-textarea {
@@ -258,13 +266,15 @@ defineExpose({ setError })
 }
 
 .field-error {
-  font-size: 0.75rem;
-  color: #ef4444;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-error);
 }
 
 .field-hint {
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .char-count {
@@ -273,31 +283,34 @@ defineExpose({ setError })
 
 .form-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--md3-space-3);
   justify-content: flex-end;
-  margin-top: 0.25rem;
+  margin-top: var(--md3-space-1);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--md3-space-2);
   padding: 0.65rem 1.25rem;
-  border-radius: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   cursor: pointer;
   border: none;
-  transition: all 0.15s;
+  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
 }
 
 .btn-primary {
-  background: #10b981;
-  color: white;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+  box-shadow: var(--md3-shadow-card);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #059669;
+  background: var(--md3-primary-dim);
+  box-shadow: var(--md3-shadow-elevated);
 }
 
 .btn-primary:disabled {
@@ -306,12 +319,13 @@ defineExpose({ setError })
 }
 
 .btn-ghost {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface-variant);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
 }
 
 .btn-ghost:disabled {
@@ -323,7 +337,7 @@ defineExpose({ setError })
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: white;
+  border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

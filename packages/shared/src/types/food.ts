@@ -1,5 +1,5 @@
 /**
- * Food entity types and enums for the Complementary Food App.
+ * Food entity types and enums for Pakulab.
  * These mirror the Prisma schema enums for use on the frontend too.
  */
 

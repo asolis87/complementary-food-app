@@ -1,5 +1,5 @@
 {
-  "name": "@cfa/api",
+  "name": "@pakulab/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "schema": "../../prisma/schema.prisma"
   },
   "dependencies": {
-    "@cfa/shared": "workspace:*",
+    "@pakulab/shared": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "@fastify/helmet": "^13.0.0",
     "@fastify/rate-limit": "^10.0.0",

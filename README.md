@@ -1,10 +1,10 @@
-# CFA — Complementary Food App
+# Pakulab — Complementary Food App
 
 **La primera app de alimentación complementaria con balance astringente/laxante para padres en México.**
 
-CFA ayuda a los padres a armar platos balanceados para sus bebés durante la etapa de alimentación complementaria (6–24 meses), mostrando en tiempo real si el plato es astringente, laxante o equilibrado.
+Pakulab ayuda a los padres a armar platos balanceados para sus bebés durante la etapa de alimentación complementaria (6–24 meses), mostrando en tiempo real si el plato es astringente, laxante o equilibrado.
 
-> ⚕️ **Aviso**: CFA es informativa. No sustituye la consulta con tu pediatra.
+> ⚕️ **Aviso**: Pakulab es informativa. No sustituye la consulta con tu pediatra.
 
 ---
 
@@ -14,7 +14,7 @@ CFA ayuda a los padres a armar platos balanceados para sus bebés durante la eta
 |------|-----------|
 | API | Fastify 5, Prisma 6, PostgreSQL 16, BetterAuth, Stripe SDK v21 |
 | Frontend | Vue 3, Vite, Pinia, Vue Router, PWA (vite-plugin-pwa) |
-| Shared | TypeScript package `@cfa/shared` — tipos y lógica A/L |
+| Shared | TypeScript package `@pakulab/shared` — tipos y lógica A/L |
 | Monorepo | pnpm workspaces |
 
 ---
@@ -22,7 +22,7 @@ CFA ayuda a los padres a armar platos balanceados para sus bebés durante la eta
 ## Estructura del proyecto
 
 ```
-complementary-food/
+pakulab/
 ├── apps/
 │   ├── api/              # Fastify API (Node 20)
 │   │   └── src/
@@ -33,7 +33,7 @@ complementary-food/
 │           ├── modules/  # auth, billing, diary, foods, home, legal, menus, plates, profiles
 │           └── shared/   # components, composables, layouts, stores, services
 ├── packages/
-│   └── shared/           # @cfa/shared — tipos TS + balance engine
+│   └── shared/           # @pakulab/shared — tipos TS + balance engine
 ├── prisma/
 │   └── schema.prisma     # Schema único canónico
 ├── docker-compose.yml
@@ -55,8 +55,8 @@ complementary-food/
 ### 1. Clonar e instalar dependencias
 
 ```bash
-git clone https://github.com/tu-usuario/complementary-food.git
-cd complementary-food
+git clone https://github.com/tu-usuario/pakulab.git
+cd pakulab
 pnpm install
 ```
 
@@ -76,7 +76,7 @@ cp apps/web/.env.example apps/web/.env
 
 | Variable | Descripción |
 |----------|-------------|
-| `DATABASE_URL` | `postgresql://user:pass@localhost:5432/cfa_dev` |
+| `DATABASE_URL` | `postgresql://user:pass@localhost:5432/pakulab_dev` |
 | `BETTER_AUTH_SECRET` | Secret para BetterAuth (mín. 32 chars) |
 | `STRIPE_SECRET_KEY` | Secret key de Stripe (`sk_test_...`) |
 | `STRIPE_WEBHOOK_SECRET` | Webhook secret de Stripe (`whsec_...`) |
@@ -174,8 +174,9 @@ score = (astringent_count - laxative_count) / total_items
 
 La lógica vive en `packages/shared/src/balance.ts` y corre tanto en el servidor como en el cliente (offline-first).
 
+
 ---
 
 ## Aviso médico
 
-CFA es una **herramienta informativa**. La clasificación A/L de los alimentos es orientativa y no sustituye la consulta con tu pediatra. Ver [Términos de uso](/terminos) y [Aviso de privacidad](/privacidad).
+Pakulab es una **herramienta informativa**. La clasificación A/L de los alimentos es orientativa y no sustituye la consulta con tu pediatra. Ver [Términos de uso](/terminos) y [Aviso de privacidad](/privacidad).

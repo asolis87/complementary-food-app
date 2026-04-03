@@ -5,14 +5,14 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
-import type { Food } from '@cfa/shared'
+import type { Food } from '@pakulab/shared'
 
 // ─── DB Schema ───────────────────────────────────────────────────────────────
 
-const DB_NAME = 'cfa-offline'
+const DB_NAME = 'pakulab-offline'
 const DB_VERSION = 1
 
-interface CfaDB {
+interface PakulabDB {
   foods: {
     key: string
     value: Food
@@ -25,11 +25,11 @@ interface CfaDB {
 
 // ─── Singleton DB handle ──────────────────────────────────────────────────────
 
-let dbPromise: Promise<IDBPDatabase<CfaDB>> | null = null
+let dbPromise: Promise<IDBPDatabase<PakulabDB>> | null = null
 
-function getDB(): Promise<IDBPDatabase<CfaDB>> {
+function getDB(): Promise<IDBPDatabase<PakulabDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<CfaDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<PakulabDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains('foods')) {
           db.createObjectStore('foods', { keyPath: 'id' })

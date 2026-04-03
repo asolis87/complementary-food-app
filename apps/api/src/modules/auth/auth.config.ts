@@ -20,6 +20,12 @@ export const auth = betterAuth({
   baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3001',
   secret: process.env['BETTER_AUTH_SECRET'] ?? 'dev-secret-change-in-production-min-32-chars',
 
+  // Trusted origins for CORS (frontend URLs)
+  trustedOrigins: [
+    process.env['FRONTEND_URL'] ?? 'http://localhost:5174',
+    process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
+  ],
+
   // Email + password auth
   emailAndPassword: {
     enabled: true,

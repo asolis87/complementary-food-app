@@ -2,7 +2,7 @@
  * Plate entity types — the core of the plate builder feature.
  */
 
-import type { FoodGroup, FoodSummary } from './food.js'
+import type { FoodGroup, FoodSummary, ALClassification } from './food.js'
 
 /** A plate item — a food placed in a specific group on the plate */
 export interface PlateItem {
@@ -11,6 +11,20 @@ export interface PlateItem {
   foodId: string
   groupAssignment: FoodGroup // Which plate section this food is in
   food?: FoodSummary // Populated when fetching plate details
+}
+
+/** Minimal plate item summary for menu meal responses (includes essential food details) */
+export interface PlateItemSummary {
+  id: string
+  foodId: string
+  groupAssignment: FoodGroup
+  food?: {
+    id: string
+    name: string
+    group: FoodGroup
+    alClassification: ALClassification
+    isAllergen: boolean
+  }
 }
 
 /** A saved plate */

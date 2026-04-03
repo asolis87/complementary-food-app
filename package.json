@@ -1,14 +1,14 @@
 {
-  "name": "complementary-food",
+  "name": "pakulab",
   "version": "0.1.0",
   "private": true,
-  "description": "CFA - Complementary Food App MVP",
+  "description": "Pakulab - Complementary Food App MVP",
   "scripts": {
     "dev": "pnpm --parallel --filter api --filter web dev",
     "dev:api": "pnpm --filter api dev",
     "dev:web": "pnpm --filter web dev",
-    "build": "pnpm --filter @cfa/shared build && pnpm --filter api build && pnpm --filter web build",
-    "typecheck": "pnpm --filter @cfa/shared typecheck && pnpm --filter api typecheck && pnpm --filter web typecheck",
+    "build": "pnpm --filter @pakulab/shared build && pnpm --filter api build && pnpm --filter web build",
+    "typecheck": "pnpm --filter @pakulab/shared typecheck && pnpm --filter api typecheck && pnpm --filter web typecheck",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:seed": "pnpm --filter api db:seed",
     "db:push": "pnpm --filter api db:push",
@@ -21,6 +21,15 @@
     "eslint": "^9.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "vue-demi"
+    ]
   },
   "engines": {
     "node": ">=20.0.0",

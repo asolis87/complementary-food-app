@@ -9,7 +9,7 @@ export const useUiStore = defineStore('ui', () => {
   const isOnline = ref(navigator.onLine)
   const showUpgradeModal = ref(false)
   const upgradeReason = ref<string>('')
-  const toasts = ref<Array<{ id: string; message: string; type: 'success' | 'error' | 'info' }>>([])
+  const toasts = ref<Array<{ id: string; message: string; type: 'success' | 'error' | 'warning' | 'info' }>>([])
 
   // Track online/offline status
   window.addEventListener('online', () => { isOnline.value = true })
@@ -20,7 +20,7 @@ export const useUiStore = defineStore('ui', () => {
     showUpgradeModal.value = true
   }
 
-  function addToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+  function addToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
     const id = Date.now().toString()
     toasts.value.push({ id, message, type })
     setTimeout(() => {

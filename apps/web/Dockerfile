@@ -20,7 +20,7 @@ COPY apps/web/ ./apps/web/
 COPY tsconfig.json ./
 
 # Build shared package first, then PWA
-RUN pnpm --filter @cfa/shared build
+RUN pnpm --filter @pakulab/shared build
 RUN pnpm --filter web build
 
 # ── Stage 2: Serve with nginx ────────────────────────────────────────────────

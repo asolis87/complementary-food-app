@@ -4,8 +4,8 @@
  * Design: AD11 (tier enforcement), AD12 (soft delete)
  */
 
-import { calculateBalance } from '@cfa/shared'
-import type { BalanceResult } from '@cfa/shared'
+import { calculateBalance } from '@pakulab/shared'
+import type { BalanceResult } from '@pakulab/shared'
 import type { PrismaClient } from '@prisma/client'
 import { TierLimitError } from '../../shared/errors/index.js'
 import type { CalculateBalanceInput, CreatePlateInput, ListPlatesQuery, UpdatePlateInput } from './plates.schema.js'

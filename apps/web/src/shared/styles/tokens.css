@@ -1,0 +1,145 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MD3 Design Tokens — Pakulab Nursery
+   Source: Stitch design system (Pakulab Nursery theme)
+   Import once in main.ts — cascades to all scoped styles via var(--md3-*)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── COLORS: Primary (Pakulab Green) ─── */
+  --md3-primary: #00694b;
+  --md3-primary-dim: #005b41;
+  --md3-on-primary: #c7ffe3;
+  --md3-primary-container: #8cfece;
+  --md3-on-primary-container: #006145;
+
+  /* ─── COLORS: Secondary (Warm Brown / Peach) ─── */
+  --md3-secondary: #864d2c;
+  --md3-secondary-dim: #784121;
+  --md3-on-secondary: #fff0e9;
+  --md3-secondary-container: #ffc5a7;
+  --md3-on-secondary-container: #6e391a;
+
+  /* ─── COLORS: Tertiary (Golden Yellow) ─── */
+  --md3-tertiary: #705900;
+  --md3-tertiary-dim: #624d00;
+  --md3-on-tertiary: #fff2d4;
+  --md3-tertiary-container: #f9d461;
+  --md3-on-tertiary-container: #5c4900;
+
+  /* ─── COLORS: Surface hierarchy (No-Line Rule) ─── */
+  --md3-surface: #f5f7f7;
+  --md3-surface-dim: #d0d5d6;
+  --md3-surface-bright: #f5f7f7;
+  --md3-surface-container-lowest: #ffffff;
+  --md3-surface-container-low: #eef1f1;
+  --md3-surface-container: #e5e9e9;
+  --md3-surface-container-high: #dfe3e3;
+  --md3-surface-container-highest: #d9dede;
+
+  /* ─── COLORS: On Surface ─── */
+  --md3-on-surface: #2c2f30;
+  --md3-on-surface-variant: #595c5c;
+  --md3-outline: #747778;
+  --md3-outline-variant: #abadae;
+
+  /* ─── COLORS: Error ─── */
+  --md3-error: #b31b25;
+  --md3-on-error: #ffefee;
+  --md3-error-container: #fb5151;
+  --md3-on-error-container: #570008;
+
+  /* ─── COLORS: Inverse ─── */
+  --md3-inverse-surface: #0b0f0f;
+  --md3-inverse-on-surface: #9b9d9e;
+  --md3-inverse-primary: #8cfece;
+
+  /* ─── COLORS: Surface Tint ─── */
+  --md3-surface-tint: #00694b;
+
+  /* ─── TYPOGRAPHY: Font Families ─── */
+  --md3-font-headline: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --md3-font-body: 'Be Vietnam Pro', system-ui, sans-serif;
+  --md3-font-label: 'Be Vietnam Pro', system-ui, sans-serif;
+
+  /* ─── TYPOGRAPHY: Type Scale ─── */
+  --md3-display-lg: 3.5rem;
+  --md3-display-md: 2.75rem;
+  --md3-headline-lg: 2rem;
+  --md3-headline-md: 1.75rem;
+  --md3-headline-sm: 1.25rem;
+  --md3-title-lg: 1.375rem;
+  --md3-title-md: 1rem;
+  --md3-body-lg: 1rem;
+  --md3-body-md: 0.875rem;
+  --md3-body-sm: 0.75rem;
+  --md3-label-lg: 0.875rem;
+  --md3-label-md: 0.75rem;
+  --md3-label-sm: 0.6875rem;
+
+  /* ─── TYPOGRAPHY: Line Heights ─── */
+  --md3-display-line-height: 1.1;
+  --md3-headline-line-height: 1.2;
+  --md3-title-line-height: 1.4;
+  --md3-body-line-height: 1.6;
+  --md3-label-line-height: 1.4;
+
+  /* ─── TYPOGRAPHY: Letter Spacing ─── */
+  --md3-display-tracking: -0.02em;
+  --md3-headline-tracking: -0.01em;
+  --md3-label-tracking: 0.02em;
+
+  /* ─── TYPOGRAPHY: Font Weights ─── */
+  --md3-weight-regular: 400;
+  --md3-weight-medium: 500;
+  --md3-weight-semibold: 600;
+  --md3-weight-bold: 700;
+
+  /* ─── SHAPE: Border Radius ─── */
+  --md3-rounded-sm: 0.5rem;
+  --md3-rounded-md: 1rem;
+  --md3-rounded-lg: 2rem;
+  --md3-rounded-xl: 3rem;
+  --md3-rounded-full: 9999px;
+
+  /* ─── SPACING ─── */
+  --md3-space-1: 0.25rem;
+  --md3-space-2: 0.5rem;
+  --md3-space-3: 1rem;
+  --md3-space-4: 1.4rem;
+  --md3-space-6: 2rem;
+  --md3-space-8: 2.75rem;
+  --md3-space-12: 4rem;
+  --md3-space-16: 5.5rem;
+
+  /* ─── ELEVATION: Shadows (ambient, no hard edges) ─── */
+  --md3-shadow-ambient: 0 32px 48px -12px rgba(44, 47, 48, 0.06);
+  --md3-shadow-soft: 0 16px 32px -8px rgba(44, 47, 48, 0.04);
+  --md3-shadow-card: 0 4px 16px -4px rgba(44, 47, 48, 0.08);
+  --md3-shadow-elevated: 0 8px 32px -8px rgba(44, 47, 48, 0.12);
+
+  /* ─── GLASS: Glassmorphism Effects ─── */
+  --md3-glass-bg: rgba(245, 247, 247, 0.8);
+  --md3-glass-blur: blur(20px);
+  --md3-glass-blur-sm: blur(12px);
+  --md3-ghost-border: rgba(123, 129, 127, 0.15);
+
+  /* ─── GRADIENTS ─── */
+  --md3-gradient-cta: linear-gradient(135deg, #00694b 0%, #005b41 100%);
+  --md3-gradient-cta-hover: linear-gradient(135deg, #005b41 0%, #004d36 100%);
+
+  /* ─── FOOD GROUP COLORS ─── */
+  --md3-group-cereal: #8cfece;
+  --md3-group-cereal-on: #004d36;
+  --md3-group-fruit: #ffc5a7;
+  --md3-group-fruit-on: #6e391a;
+  --md3-group-vegetable: #7eefc0;
+  --md3-group-vegetable-on: #004d36;
+  --md3-group-protein: #feb289;
+  --md3-group-protein-on: #6e391a;
+  --md3-group-fat: #d3bcfd;
+  --md3-group-fat-on: #3b1f8c;
+
+  /* ─── TRANSITIONS ─── */
+  --md3-transition-fast: 150ms ease;
+  --md3-transition-normal: 250ms ease;
+}

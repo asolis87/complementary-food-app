@@ -11,8 +11,8 @@
  * Design: AD8 — offline-first balance via pure shared function.
  */
 
-import type { BalanceResult } from '@cfa/shared'
-import { calculateBalance, getBalanceSeverity } from '@cfa/shared'
+import type { BalanceResult } from '@pakulab/shared'
+import { calculateBalance, getBalanceSeverity } from '@pakulab/shared'
 import type { Ref } from 'vue'
 import { computed } from 'vue'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'

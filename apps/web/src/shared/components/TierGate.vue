@@ -7,8 +7,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { UserTier } from '@cfa/shared'
-import { tierAtLeast } from '@cfa/shared'
+import type { UserTier } from '@pakulab/shared'
+import { tierAtLeast } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import UpgradePrompt from './UpgradePrompt.vue'
 

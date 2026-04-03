@@ -12,7 +12,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import fp from 'fastify-plugin'
 import { fromNodeHeaders } from 'better-auth/node'
 import { auth } from '../../modules/auth/auth.config.js'
-import type { UserTier } from '@cfa/shared'
+import type { UserTier } from '@pakulab/shared'
 
 declare module 'fastify' {
   interface FastifyRequest {

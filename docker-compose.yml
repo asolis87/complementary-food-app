@@ -5,7 +5,7 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: cfa_dev
+      POSTGRES_DB: pakulab_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -31,8 +31,9 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/cfa_dev
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pakulab_dev
       PORT: '3000'
+      CORS_ORIGIN: http://localhost:8080
     restart: unless-stopped
 
   # ── Vue PWA (served by nginx) ────────────────────────────────────────────
@@ -41,7 +42,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports:
-      - '5173:80'
+      - '8080:80'
     depends_on:
       - api
     environment:

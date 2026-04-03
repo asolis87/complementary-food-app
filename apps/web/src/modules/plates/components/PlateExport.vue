@@ -2,7 +2,7 @@
   <!-- Hidden export canvas target (rendered off-screen) -->
   <div ref="exportRef" class="export-frame" aria-hidden="true">
     <div class="export-header">
-      <span class="export-logo">🥦 CFA</span>
+      <span class="export-logo">Pakulab</span>
       <span class="export-title">{{ plateName }}</span>
       <span class="export-date">{{ formattedDate }}</span>
     </div>
@@ -14,25 +14,25 @@
     <div v-if="balance" class="export-balance">
       <span class="export-balance-label" :class="balanceClass">{{ balance.labelEs }}</span>
       <span class="export-counts">
-        🔴 {{ balance.astringent }} ast. &nbsp;
-        ⚪ {{ balance.neutral }} neut. &nbsp;
-        🟢 {{ balance.laxative }} lax.
+        A {{ balance.astringent }} ast. &nbsp;
+        N {{ balance.neutral }} neut. &nbsp;
+        L {{ balance.laxative }} lax.
       </span>
     </div>
 
     <!-- Disclaimer -->
     <p class="export-disclaimer">
-      ⚕️ Información orientativa. Consultá siempre con tu pediatra.
+      Información orientativa. Consultá siempre con tu pediatra.
     </p>
 
     <!-- Watermark (free / anonymous) -->
-    <div v-if="showWatermark" class="watermark" aria-hidden="true">CFA</div>
+    <div v-if="showWatermark" class="watermark" aria-hidden="true">Pakulab</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { BalanceResult } from '@cfa/shared'
+import type { BalanceResult } from '@pakulab/shared'
 
 const props = defineProps<{
   plateName: string
@@ -101,75 +101,76 @@ defineExpose({ capture })
   top: -9999px;
   left: -9999px;
   width: 400px;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  font-family: system-ui, sans-serif;
+  background: var(--md3-surface-container-lowest);
+  padding: var(--md3-space-6);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
 }
 
 .export-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--md3-space-3);
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--md3-outline-variant);
 }
 
 .export-logo {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #10b981;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-body-lg);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-primary);
 }
 
 .export-title {
   flex: 1;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #111827;
+  font-weight: var(--md3-weight-semibold);
+  font-size: var(--md3-body-lg);
+  color: var(--md3-on-surface);
 }
 
 .export-date {
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .export-balance {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1rem;
+  margin-top: var(--md3-space-3);
   padding: 0.75rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-sm);
 }
 
 .export-balance-label {
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: var(--md3-weight-bold);
+  font-size: var(--md3-body-lg);
 }
 
 .text-green {
-  color: #10b981;
+  color: var(--md3-primary);
 }
 
 .text-red {
-  color: #ef4444;
+  color: var(--md3-error);
 }
 
 .text-orange {
-  color: #f59e0b;
+  color: var(--md3-tertiary);
 }
 
 .export-counts {
-  font-size: 0.8rem;
-  color: #6b7280;
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .export-disclaimer {
   margin: 0.75rem 0 0;
-  font-size: 0.65rem;
-  color: #9ca3af;
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
   text-align: center;
 }
 
@@ -180,7 +181,7 @@ defineExpose({ capture })
   right: 1rem;
   font-size: 3rem;
   font-weight: 900;
-  color: rgba(0, 0, 0, 0.07);
+  color: var(--md3-surface-dim);
   letter-spacing: 0.1em;
   pointer-events: none;
   user-select: none;

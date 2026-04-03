@@ -1,7 +1,9 @@
 <template>
   <Transition name="offline-banner">
     <div v-if="!isOnline || isSyncing" class="offline-banner" role="status" aria-live="polite">
-      <span class="offline-icon" aria-hidden="true">{{ isSyncing ? '🔄' : '📵' }}</span>
+      <span class="material-symbols-outlined offline-icon" aria-hidden="true">
+        {{ isSyncing ? 'sync' : 'wifi_off' }}
+      </span>
       <span class="offline-text">{{ bannerText }}</span>
     </div>
   </Transition>
@@ -28,21 +30,31 @@ const bannerText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background: #1f2937;
-  color: #f9fafb;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 0.4rem 1rem;
+  gap: var(--md3-space-2);
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-medium);
+  padding: var(--md3-space-2) var(--md3-space-4);
   text-align: center;
   position: sticky;
   top: 0;
   z-index: 200;
+  /* No border — background shift handles visual separation */
 }
 
 .offline-icon {
   font-size: 1rem;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
   flex-shrink: 0;
+  /* Sync icon gets a rotation animation */
+  animation: v-bind("isSyncing ? 'spin 1.2s linear infinite' : 'none'");
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* Slide down / up transition */

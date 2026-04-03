@@ -8,7 +8,7 @@
 
     <!-- Error / Not found -->
     <div v-else-if="!plate" class="state-center error-state" role="alert">
-      <span aria-hidden="true">⚠️</span>
+      <span class="material-symbols-outlined" aria-hidden="true">warning</span>
       <p>Plato no encontrado.</p>
       <RouterLink to="/plates" class="back-link">← Volver a mis platos</RouterLink>
     </div>
@@ -21,7 +21,8 @@
         </RouterLink>
         <div class="header-actions">
           <button class="icon-btn btn-edit" title="Editar plato" aria-label="Editar plato" @click="goEdit">
-            ✏️ Editar
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+            Editar
           </button>
           <button
             class="icon-btn btn-delete"
@@ -29,7 +30,7 @@
             aria-label="Eliminar plato"
             @click="handleDelete"
           >
-            🗑️
+            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
           </button>
         </div>
       </div>
@@ -42,7 +43,7 @@
 
       <!-- Medical disclaimer (REQ-AL-02) -->
       <div class="disclaimer-banner" role="note">
-        <span aria-hidden="true">⚕️</span>
+        <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">health_and_safety</span>
         <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
       </div>
 
@@ -63,7 +64,7 @@
             :style="{ '--group-color': groupColor(group) }"
           >
             <div class="group-header">
-              <span aria-hidden="true">{{ groupIcon(group) }}</span>
+              <span class="material-symbols-outlined group-header-icon" aria-hidden="true">{{ groupIcon(group) }}</span>
               <span>{{ FOOD_GROUP_LABELS[group] }}</span>
             </div>
 
@@ -83,7 +84,7 @@
                   :title="alLabel(item.food?.alClassification ?? 'NEUTRAL')"
                 />
                 <span class="item-name">{{ item.food?.name ?? item.foodId }}</span>
-                <span v-if="item.food?.isAllergen" class="allergen-tag" title="Alérgeno">⚠️</span>
+                <span v-if="item.food?.isAllergen" class="material-symbols-outlined allergen-tag" title="Alérgeno" aria-label="Alérgeno">warning</span>
               </li>
             </ul>
 
@@ -92,18 +93,44 @@
         </div>
       </section>
 
+      <!-- Log meal button -->
+      <div class="log-area">
+        <button
+          class="log-btn"
+          :disabled="!profileStore.activeProfile"
+          :title="!profileStore.activeProfile ? 'Crea un perfil de bebé primero' : 'Registrar este plato en la bitácora'"
+          :aria-label="!profileStore.activeProfile ? 'Crea un perfil de bebé primero' : 'Dar este plato'"
+          @click="showQuickLog = true"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">restaurant</span>
+          Dar este plato
+        </button>
+        <p v-if="!profileStore.activeProfile" class="log-hint">
+          <RouterLink to="/profile">Crea un perfil de bebé</RouterLink> para registrar comidas.
+        </p>
+      </div>
+
       <!-- Export button -->
       <div class="export-area">
         <button class="export-btn" :disabled="exporting" @click="handleExport">
           <span v-if="exporting" class="btn-spinner" aria-hidden="true" />
-          <span v-else aria-hidden="true">📷</span>
+          <span v-else class="material-symbols-outlined" aria-hidden="true">photo_camera</span>
           {{ exporting ? 'Exportando...' : 'Exportar como imagen' }}
         </button>
         <p v-if="!authStore.isPro" class="watermark-note">
-          Las imágenes tendrán marca de agua CFA. <RouterLink to="/pricing">Actualizá a Pro</RouterLink> para exportar sin marca.
+          Las imágenes tendrán marca de agua Pakulab. <RouterLink to="/pricing">Actualizá a Pro</RouterLink> para exportar sin marca.
         </p>
       </div>
     </template>
+
+    <!-- Quick Log Modal -->
+    <QuickLogModal
+      v-if="plate"
+      v-model="showQuickLog"
+      :plate="plate"
+      :baby-profile-id="profileStore.activeProfile?.id ?? ''"
+      @logged="onMealLogged"
+    />
 
     <!-- Delete confirmation modal -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
@@ -127,22 +154,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Plate, FoodGroup, ALClassification, BalanceResult } from '@cfa/shared'
-import { FOOD_GROUP_LABELS, BASE_GROUPS, OPTIONAL_GROUPS, BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@cfa/shared'
+import type { Plate, FoodGroup, ALClassification, BalanceResult } from '@pakulab/shared'
+import { FOOD_GROUP_LABELS, BASE_GROUPS, OPTIONAL_GROUPS, BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
+import { useProfileStore } from '@/shared/stores/profileStore.js'
+import { useUiStore } from '@/shared/stores/uiStore.js'
 import BalanceIndicator from './components/BalanceIndicator.vue'
+import QuickLogModal from '@/modules/diary/components/QuickLogModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const plateStore = usePlateStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
+const uiStore = useUiStore()
 
 const plate = ref<Plate | null>(null)
 const loading = ref(true)
 const exporting = ref(false)
 const deleting = ref(false)
 const showDeleteModal = ref(false)
+const showQuickLog = ref(false)
 
 onMounted(async () => {
   const id = route.params.id as string
@@ -207,20 +240,22 @@ function formatDate(iso: string): string {
   })
 }
 
+// Colors match MD3 food group tokens: --md3-group-{fruit,vegetable,protein,cereal,fat}
 const GROUP_COLORS: Record<FoodGroup, string> = {
-  FRUIT: '#F59E0B',
-  VEGETABLE: '#10B981',
-  PROTEIN: '#F43F5E',
-  CEREAL_TUBER: '#D97706',
-  HEALTHY_FAT: '#8B5CF6',
+  FRUIT: '#ffc5a7',       // --md3-group-fruit
+  VEGETABLE: '#7eefc0',   // --md3-group-vegetable
+  PROTEIN: '#feb289',     // --md3-group-protein
+  CEREAL_TUBER: '#8cfece', // --md3-group-cereal
+  HEALTHY_FAT: '#d3bcfd', // --md3-group-fat
 }
 
+// Material Symbols Outlined icon names for each food group
 const GROUP_ICONS: Record<FoodGroup, string> = {
-  FRUIT: '🍎',
-  VEGETABLE: '🥦',
-  PROTEIN: '🥩',
-  CEREAL_TUBER: '🌽',
-  HEALTHY_FAT: '🥑',
+  FRUIT: 'nutrition',
+  VEGETABLE: 'eco',
+  PROTEIN: 'egg',
+  CEREAL_TUBER: 'bakery_dining',
+  HEALTHY_FAT: 'water_drop',
 }
 
 function groupColor(group: FoodGroup): string {
@@ -276,6 +311,11 @@ async function confirmDelete() {
   }
 }
 
+function onMealLogged(): void {
+  showQuickLog.value = false
+  // Toast is already shown by QuickLogModal — no duplicate needed
+}
+
 async function handleExport() {
   exporting.value = true
   try {
@@ -294,7 +334,7 @@ async function handleExport() {
     const dataUrl = canvas.toDataURL('image/png')
     const link = document.createElement('a')
     link.href = dataUrl
-    link.download = `${plate.value?.name ?? 'plato'}-cfa.png`
+    link.download = `${plate.value?.name ?? 'plato'}-pakulab.png`
     link.click()
   } catch {
     // silent
@@ -310,7 +350,7 @@ async function handleExport() {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--md3-space-3);
 }
 
 /* States */
@@ -320,18 +360,19 @@ async function handleExport() {
   align-items: center;
   gap: 0.75rem;
   padding: 3rem 0;
-  color: #6b7280;
+  font-family: var(--md3-font-body);
+  color: var(--md3-on-surface-variant);
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--md3-error);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #10b981;
+  border: 3px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -343,9 +384,10 @@ async function handleExport() {
 }
 
 .back-link {
-  color: #10b981;
+  color: var(--md3-primary);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
 }
 
 /* Header */
@@ -353,25 +395,26 @@ async function handleExport() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
 }
 
 .back-btn {
-  color: #6b7280;
+  color: var(--md3-on-surface-variant);
   text-decoration: none;
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
-  transition: background 0.15s;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  padding: 0.25rem var(--md3-space-2);
+  border-radius: var(--md3-rounded-sm);
+  transition: background var(--md3-transition-fast);
 }
 
 .back-btn:hover {
-  background: #f3f4f6;
+  background: var(--md3-surface-container);
 }
 
 .header-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
 }
 
 .icon-btn {
@@ -380,29 +423,37 @@ async function handleExport() {
   gap: 0.3rem;
   padding: 0.4rem 0.75rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--md3-rounded-sm);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.15s;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  transition: all var(--md3-transition-fast);
+}
+
+.icon-btn .material-symbols-outlined {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .btn-edit {
-  background: #ecfdf5;
-  color: #10b981;
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
 .btn-edit:hover {
-  background: #d1fae5;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
 }
 
 .btn-delete {
-  background: #fff1f2;
-  color: #f43f5e;
+  background: var(--md3-surface-container);
+  color: var(--md3-error);
 }
 
 .btn-delete:hover {
-  background: #ffe4e6;
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
 /* Title */
@@ -415,43 +466,52 @@ async function handleExport() {
 
 .plate-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .plate-date {
-  font-size: 0.8rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 /* Disclaimer */
 .disclaimer-banner {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   align-items: center;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 0.5rem;
-  padding: 0.6rem 0.875rem;
-  font-size: 0.8rem;
-  color: #166534;
+  background: var(--md3-primary-container);
+  border-radius: var(--md3-rounded-sm);
+  padding: 0.6rem var(--md3-space-3);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-primary-container);
 }
 
-/* Section */
+.disclaimer-icon {
+  font-size: 1.1rem;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+}
+
+/* Section card */
 .section {
-  background: white;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-md);
+  padding: var(--md3-space-3);
+  box-shadow: var(--md3-shadow-soft);
+  border: 1px solid var(--md3-surface-container);
 }
 
 .section-title {
   margin: 0 0 0.875rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #374151;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-body-lg);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 /* Groups grid */
@@ -469,23 +529,29 @@ async function handleExport() {
 
 .group-block {
   border: 2px solid color-mix(in srgb, var(--group-color) 30%, transparent);
-  border-radius: 0.875rem;
+  border-radius: var(--md3-rounded-sm);
   padding: 0.625rem;
-  background: color-mix(in srgb, var(--group-color) 6%, white);
+  background: color-mix(in srgb, var(--group-color) 8%, var(--md3-surface-container-lowest));
 }
 
 .group-header {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-bold);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--group-color);
+  letter-spacing: var(--md3-label-tracking);
+  color: color-mix(in srgb, var(--group-color) 80%, var(--md3-on-surface));
   margin-bottom: 0.5rem;
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--group-color) 20%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--group-color) 25%, transparent);
+}
+
+.group-header-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .items-list {
@@ -501,7 +567,8 @@ async function handleExport() {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
 }
 
 .al-dot {
@@ -512,20 +579,20 @@ async function handleExport() {
 }
 
 .dot-astringent {
-  background: #ef4444;
+  background: var(--md3-error);
 }
 
 .dot-laxative {
-  background: #10b981;
+  background: var(--md3-primary);
 }
 
 .dot-neutral {
-  background: #9ca3af;
+  background: var(--md3-outline-variant);
 }
 
 .item-name {
   flex: 1;
-  color: #374151;
+  color: var(--md3-on-surface);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -533,14 +600,74 @@ async function handleExport() {
 
 .allergen-tag {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--md3-error);
 }
 
 .empty-group {
   margin: 0;
-  font-size: 0.75rem;
-  color: #d1d5db;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-outline-variant);
   font-style: italic;
+}
+
+/* Log meal area */
+.log-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.log-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem var(--md3-space-5);
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+  border: none;
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
+  box-shadow: var(--md3-shadow-card);
+}
+
+.log-btn .material-symbols-outlined {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.log-btn:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+.log-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.log-hint {
+  margin: 0;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
+}
+
+.log-hint a {
+  color: var(--md3-primary);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .log-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Export area */
@@ -555,15 +682,17 @@ async function handleExport() {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.65rem 1.25rem;
-  background: #6366f1;
-  color: white;
+  padding: 0.65rem var(--md3-space-4);
+  background: var(--md3-secondary);
+  color: var(--md3-on-secondary);
   border: none;
-  border-radius: 0.75rem;
+  border-radius: var(--md3-rounded-full);
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: background 0.15s;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  transition: background var(--md3-transition-fast);
+  box-shadow: var(--md3-shadow-card);
 }
 
 .export-btn:disabled {
@@ -572,17 +701,18 @@ async function handleExport() {
 }
 
 .export-btn:not(:disabled):hover {
-  background: #4f46e5;
+  background: var(--md3-secondary-dim);
 }
 
 .watermark-note {
   margin: 0;
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .watermark-note a {
-  color: #f59e0b;
+  color: var(--md3-tertiary);
   text-decoration: none;
 }
 
@@ -591,7 +721,7 @@ async function handleExport() {
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: white;
+  border-top-color: var(--md3-on-secondary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -600,72 +730,75 @@ async function handleExport() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(11, 15, 15, 0.6); /* --md3-inverse-surface at 60% */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
-  padding: 1rem;
+  padding: var(--md3-space-3);
 }
 
 .modal {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-md);
+  padding: var(--md3-space-6);
   max-width: 380px;
   width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--md3-shadow-ambient);
 }
 
 .modal-title {
   margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .modal-body {
   margin: 0 0 1.25rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.6;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
 .modal-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   justify-content: flex-end;
 }
 
 .modal-btn {
-  padding: 0.55rem 1rem;
-  border-radius: 0.625rem;
+  padding: 0.55rem var(--md3-space-3);
+  border-radius: var(--md3-rounded-full);
   border: none;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  transition: background 0.15s;
+  transition: background var(--md3-transition-fast);
 }
 
 .btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface);
 }
 
 .btn-cancel:hover {
-  background: #e5e7eb;
+  background: var(--md3-surface-container-high);
 }
 
 .btn-confirm-delete {
-  background: #ef4444;
-  color: white;
+  background: var(--md3-error);
+  color: var(--md3-on-error);
 }
 
 .btn-confirm-delete:not(:disabled):hover {
-  background: #dc2626;
+  opacity: 0.88;
 }
 
 .btn-confirm-delete:disabled {

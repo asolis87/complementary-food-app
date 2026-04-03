@@ -8,7 +8,7 @@
  * Response shape: { data: Food[], total: number, page: number, limit: number }
  */
 
-import type { Food, FoodGroup, ALClassification } from '@cfa/shared'
+import type { Food, FoodGroup, ALClassification } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, OfflineError } from '../api/client.js'
@@ -59,18 +59,32 @@ export const useFoodStore = defineStore('foods', () => {
 
   // ─── Getters ────────────────────────────────────────────────────────────────
 
-  /** Foods filtered by current filter state (client-side, works offline) */
+  /** Strip diacritical marks (accents) for accent-insensitive comparison */
+  function normalizeAccents(str: string): string {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
+  /** Foods filtered by current filter state (client-side, works offline).
+   *  Search is PURELY client-side — typing in the search input NEVER triggers an API
+   *  call. The full catalog is loaded into memory on mount, and this computed re-runs
+   *  instantly whenever `filters.value.search` changes. This avoids the race condition
+   *  where an API call with `unaccent()` could return empty results and overwrite
+   *  `foods.value`, causing the list to go blank.
+   *
+   *  Other filters (group, alClassification, ageMonths) still trigger API re-fetches
+   *  via `setFilter`, because the catalog may be paginated by those dimensions.
+   *
+   *  Search comparison is accent-insensitive: "platano" matches "Plátano maduro".
+   */
   const filteredFoods = computed(() => {
+    const rawQ = (filters.value.search ?? '').toLowerCase().trim()
+    const q = rawQ ? normalizeAccents(rawQ) : ''
     return foods.value.filter((food) => {
       if (filters.value.group && food.group !== filters.value.group) return false
       if (filters.value.alClassification && food.alClassification !== filters.value.alClassification)
         return false
-      if (
-        filters.value.search &&
-        !food.name.toLowerCase().includes(filters.value.search.toLowerCase())
-      )
-        return false
       if (filters.value.ageMonths !== null && food.ageMonths > filters.value.ageMonths) return false
+      if (q && !normalizeAccents(food.name.toLowerCase()).includes(q)) return false
       return true
     })
   })
@@ -179,17 +193,28 @@ export const useFoodStore = defineStore('foods', () => {
   }
 
   /**
-   * Update a single filter key and trigger an API fetch so the server
-   * applies the filter (important when we don't have the full catalog
-   * in memory, e.g. with pagination or a fresh load).
+   * Update a single filter key.
+   *
+   * - `search`: handled PURELY client-side. Updates the filter value and lets
+   *   `filteredFoods` recompute instantly. No API call is made — the full catalog
+   *   is already in memory, and firing an API call would overwrite `foods.value`
+   *   with potentially empty results (the `unaccent()` query may return nothing).
+   *
+   * - All other keys (group, alClassification, ageMonths): trigger an API re-fetch
+   *   because those dimensions may not be fully represented in the in-memory catalog
+   *   (e.g. pagination, fresh load).
    */
   function setFilter<K extends keyof typeof filters.value>(
     key: K,
     value: (typeof filters.value)[K],
   ) {
     filters.value[key] = value
-    // Re-fetch from API with the full current filter state so server-side
-    // filtering is applied (client-side filtering only covers loaded pages).
+
+    // Search is handled purely client-side — don't fire API call.
+    // The full catalog is already in memory, and filteredFoods applies the search filter.
+    if (key === 'search') return
+
+    // For other filters (group, alClassification, ageMonths), re-fetch from API.
     const currentFilters: FoodFilter = {}
     if (filters.value.search) currentFilters.q = filters.value.search
     if (filters.value.group) currentFilters.group = filters.value.group

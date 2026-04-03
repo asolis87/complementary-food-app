@@ -3,9 +3,9 @@
  * Manages CRUD state for baby profiles.
  */
 
-import type { BabyProfile } from '@cfa/shared'
+import type { BabyProfile } from '@pakulab/shared'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'
 
 interface ProfileCreateInput {
@@ -20,6 +20,19 @@ export const useProfileStore = defineStore('profiles', () => {
   const profiles = ref<BabyProfile[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const activeProfileId = ref<string | null>(localStorage.getItem('pakulab_active_profile'))
+
+  // ─── Computed ─────────────────────────────────────────────────────────────
+
+  /** The active baby profile — matches activeProfileId, or falls back to first profile */
+  const activeProfile = computed<BabyProfile | null>(() => {
+    if (!profiles.value.length) return null
+    if (activeProfileId.value) {
+      const found = profiles.value.find((p) => p.id === activeProfileId.value)
+      if (found) return found
+    }
+    return profiles.value[0] ?? null
+  })
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 
@@ -60,14 +73,22 @@ export const useProfileStore = defineStore('profiles', () => {
     error.value = null
   }
 
+  function setActiveProfile(id: string): void {
+    activeProfileId.value = id
+    localStorage.setItem('pakulab_active_profile', id)
+  }
+
   return {
     profiles,
     loading,
     error,
+    activeProfileId,
+    activeProfile,
     fetchProfiles,
     createProfile,
     updateProfile,
     deleteProfile,
     clearError,
+    setActiveProfile,
   }
 })

@@ -4,7 +4,7 @@
  * CRUD requires auth.
  */
 
-import { calculateBalance } from '@cfa/shared'
+import { calculateBalance } from '@pakulab/shared'
 import type { FastifyPluginAsync } from 'fastify'
 import { NotFoundError } from '../../shared/errors/index.js'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'

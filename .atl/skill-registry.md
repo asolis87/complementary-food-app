@@ -1,7 +1,7 @@
-# Skill Registry — complementary-food
+# Skill Registry — pakulab
 
 Generated: 2026-03-27
-Project: complementary-food
+Project: pakulab
 
 ## Available Skills
 

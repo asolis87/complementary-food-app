@@ -11,7 +11,7 @@
  *   upgradeAnonymous(email, pwd, name) — convert anonymous → registered
  */
 
-import type { AuthUser, UserTier } from '@cfa/shared'
+import type { AuthUser, UserTier } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'

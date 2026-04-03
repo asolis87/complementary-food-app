@@ -10,8 +10,8 @@
     <header class="app-header">
       <div class="header-content">
         <RouterLink to="/" class="logo">
-          <span class="logo-icon">🥦</span>
-          <span class="logo-text">CFA</span>
+          <span class="material-symbols-outlined logo-icon">eco</span>
+          <span class="logo-text">Pakulab</span>
         </RouterLink>
 
         <nav class="header-nav">
@@ -29,7 +29,7 @@
             title="Aviso médico importante"
             aria-label="Ver aviso médico"
           >
-            ⚕️
+            <span class="material-symbols-outlined">medical_services</span>
           </button>
 
           <!-- Auth actions -->
@@ -63,7 +63,9 @@
               class="past-due-dot"
               title="Pago pendiente — actualizá tu método de pago"
               aria-hidden="true"
-            >⚠️</span>
+            >
+              <span class="material-symbols-outlined">warning</span>
+            </span>
 
             <!-- Anonymous badge — not clickable -->
             <span
@@ -89,19 +91,19 @@
     <!-- Bottom navigation (mobile) -->
     <nav class="bottom-nav" aria-label="Navegación principal">
       <RouterLink to="/plate/new" class="bottom-nav-item" active-class="active">
-        <span class="bottom-nav-icon">🍽️</span>
+        <span class="material-symbols-outlined bottom-nav-icon">restaurant</span>
         <span class="bottom-nav-label">Plato</span>
       </RouterLink>
       <RouterLink to="/foods" class="bottom-nav-item" active-class="active">
-        <span class="bottom-nav-icon">🥕</span>
+        <span class="material-symbols-outlined bottom-nav-icon">nutrition</span>
         <span class="bottom-nav-label">Alimentos</span>
       </RouterLink>
       <RouterLink to="/diary" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated">
-        <span class="bottom-nav-icon">📔</span>
+        <span class="material-symbols-outlined bottom-nav-icon">auto_stories</span>
         <span class="bottom-nav-label">Bitácora</span>
       </RouterLink>
       <RouterLink to="/pricing" class="bottom-nav-item" active-class="active" v-if="!authStore.isPro">
-        <span class="bottom-nav-icon">⭐</span>
+        <span class="material-symbols-outlined bottom-nav-icon">star</span>
         <span class="bottom-nav-label">Pro</span>
       </RouterLink>
     </nav>
@@ -109,7 +111,10 @@
     <!-- Footer (legal links) -->
     <footer class="app-footer" aria-label="Pie de página">
       <div class="footer-content">
-        <span class="footer-brand">🥦 CFA — Alimentación Complementaria</span>
+        <span class="footer-brand">
+          <span class="material-symbols-outlined footer-brand-icon">eco</span>
+          Pakulab — Alimentación Complementaria
+        </span>
         <nav class="footer-links" aria-label="Links legales">
           <RouterLink to="/privacidad">Privacidad</RouterLink>
           <RouterLink to="/terminos">Términos</RouterLink>
@@ -121,7 +126,13 @@
     <!-- Medical Disclaimer Modal -->
     <div v-if="showDisclaimer" class="modal-overlay" @click="showDisclaimer = false">
       <div class="modal" @click.stop role="dialog" aria-modal="true" aria-label="Aviso médico">
-        <h2>⚕️ Aviso Médico Importante</h2>
+        <div class="modal-header">
+          <span class="material-symbols-outlined modal-header-icon">medical_services</span>
+          <h2>Aviso Médico Importante</h2>
+          <button class="modal-close-btn" @click="showDisclaimer = false" aria-label="Cerrar aviso médico">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
         <p>
           Esta aplicación es una <strong>herramienta informativa orientativa</strong>. 
           La información sobre alimentos astringentes y laxantes es de carácter general 
@@ -206,9 +217,9 @@ onMounted(async () => {
 
 // Pro tier badge label and tooltip
 const proTierLabel = computed(() => {
-  if (billingStore.subscription?.status === 'PAST_DUE') return 'Pro ⚠️'
+  if (billingStore.subscription?.status === 'PAST_DUE') return 'Pro !'
   if (billingStore.subscription?.status === 'TRIALING') return 'Pro (prueba)'
-  return 'Pro ⭐'
+  return 'Pro'
 })
 
 const proTierTitle = computed(() => {
@@ -245,109 +256,201 @@ async function handleSignOut() {
 </script>
 
 <style scoped>
+/* ─── App Layout Shell ─── */
 .app-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--md3-surface);
 }
 
+/* ─── Skip to content (a11y — T-030) ─── */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--md3-gradient-cta);
+  color: var(--md3-on-primary);
+  padding: var(--md3-space-2) var(--md3-space-3);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 0 0 var(--md3-rounded-sm) 0;
+  transition: top var(--md3-transition-fast);
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* ─── Header — Glassmorphism ─── */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 1rem;
+  background: var(--md3-glass-bg);
+  backdrop-filter: var(--md3-glass-blur);
+  -webkit-backdrop-filter: var(--md3-glass-blur);
+  /* Ghost border fallback for non-supporting browsers — no-line rule compliant */
+  border-bottom: 1px solid var(--md3-ghost-border);
+  padding: 0 var(--md3-space-3);
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--md3-space-3);
   max-width: 1200px;
   margin: 0 auto;
   height: 60px;
 }
 
+/* ─── Logo ─── */
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: bold;
-  font-size: 1.25rem;
+  gap: var(--md3-space-2);
+  font-family: var(--md3-font-headline);
+  font-weight: var(--md3-weight-bold);
+  font-size: var(--md3-headline-sm);
   text-decoration: none;
-  color: #16a34a;
+  color: var(--md3-primary);
+  flex-shrink: 0;
 }
 
+.logo-icon {
+  font-size: 1.5rem;
+  color: var(--md3-primary);
+}
+
+/* ─── Desktop Header Nav ─── */
 .header-nav {
   display: none;
-  gap: 1.5rem;
+  gap: var(--md3-space-2);
 }
 
 .header-nav a {
   text-decoration: none;
-  color: #374151;
-  font-size: 0.9rem;
+  color: var(--md3-on-surface-variant);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-medium);
+  padding: var(--md3-space-1) var(--md3-space-3);
+  border-radius: var(--md3-rounded-full);
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.header-nav a:hover {
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
+}
+
+.header-nav a.router-link-active {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  font-weight: var(--md3-weight-semibold);
 }
 
 @media (min-width: 768px) {
   .header-nav { display: flex; }
 }
 
+/* ─── Header Actions ─── */
 .header-actions {
   margin-left: auto;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   align-items: center;
 }
 
+/* ─── Medical disclaimer button ─── */
 .disclaimer-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0.25rem;
+  color: var(--md3-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--md3-space-1);
+  border-radius: var(--md3-rounded-full);
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
 }
 
+.disclaimer-btn:hover {
+  background: var(--md3-surface-container);
+  color: var(--md3-primary);
+}
+
+/* ─── Buttons ─── */
 .btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  padding: var(--md3-space-2) var(--md3-space-3);
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   cursor: pointer;
   text-decoration: none;
   border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
+  white-space: nowrap;
 }
 
 .btn-primary {
-  background: #16a34a;
-  color: white;
+  background: var(--md3-gradient-cta);
+  color: var(--md3-on-primary);
+  box-shadow: var(--md3-shadow-card);
+}
+
+.btn-primary:hover {
+  background: var(--md3-gradient-cta-hover);
+  opacity: 0.92;
 }
 
 .btn-ghost {
   background: transparent;
-  color: #374151;
+  color: var(--md3-on-surface-variant);
 }
 
+.btn-ghost:hover {
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
+}
+
+/* ─── Main content ─── */
 .app-main {
   flex: 1;
-  padding: 1rem;
-  padding-bottom: 5rem; /* Room for bottom nav */
+  padding: var(--md3-space-3);
+  padding-bottom: 5rem; /* Room for fixed bottom nav */
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
 
-/* Bottom navigation — mobile only */
+@media (min-width: 768px) {
+  .app-main {
+    padding: var(--md3-space-4) var(--md3-space-6);
+    padding-bottom: var(--md3-space-4);
+  }
+}
+
+/* ─── Bottom Navigation — mobile only, Glassmorphism ─── */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   display: flex;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  padding: 0.5rem 0;
+  background: var(--md3-glass-bg);
+  backdrop-filter: var(--md3-glass-blur);
+  -webkit-backdrop-filter: var(--md3-glass-blur);
+  /* No top border — surface color shift provides visual separation */
+  padding: var(--md3-space-2) var(--md3-space-2) calc(var(--md3-space-2) + env(safe-area-inset-bottom, 0px));
   z-index: 100;
+  box-shadow: var(--md3-shadow-ambient);
 }
 
 @media (min-width: 768px) {
@@ -359,108 +462,198 @@ async function handleSignOut() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.15rem;
   text-decoration: none;
-  color: #6b7280;
-  font-size: 0.7rem;
+  color: var(--md3-on-surface-variant);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-medium);
+  padding: var(--md3-space-1) var(--md3-space-2);
+  border-radius: var(--md3-rounded-lg);
+  transition: color var(--md3-transition-fast), background var(--md3-transition-fast);
 }
 
 .bottom-nav-item.active {
-  color: #16a34a;
+  color: var(--md3-on-primary-container);
+  background: var(--md3-primary-container);
 }
 
-.bottom-nav-icon { font-size: 1.3rem; }
+.bottom-nav-icon {
+  font-size: 1.5rem !important;
+  line-height: 1;
+}
 
-/* Modal */
+/* ─── Modal ─── */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(44, 47, 48, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
-  padding: 1rem;
+  padding: var(--md3-space-3);
 }
 
 .modal {
-  background: white;
-  border-radius: 1rem;
-  padding: 2rem;
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-lg);
+  padding: var(--md3-space-6);
   max-width: 480px;
   width: 100%;
+  box-shadow: var(--md3-shadow-elevated);
 }
 
-.modal h2 { margin-top: 0; }
-.modal ul { padding-left: 1.5rem; line-height: 1.8; }
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-bottom: var(--md3-space-3);
+}
 
-/* Tier badge */
+.modal-header-icon {
+  font-size: 1.5rem !important;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  line-height: var(--md3-headline-line-height);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--md3-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--md3-space-1);
+  border-radius: var(--md3-rounded-full);
+  flex-shrink: 0;
+  transition: background var(--md3-transition-fast);
+}
+
+.modal-close-btn:hover {
+  background: var(--md3-surface-container);
+}
+
+.modal p {
+  color: var(--md3-on-surface-variant);
+  font-size: var(--md3-body-md);
+  line-height: var(--md3-body-line-height);
+  margin-top: 0;
+}
+
+.modal ul {
+  padding-left: 1.5rem;
+  line-height: 1.8;
+  color: var(--md3-on-surface-variant);
+  font-size: var(--md3-body-md);
+  margin-bottom: var(--md3-space-4);
+}
+
+/* ─── Tier badges ─── */
 .tier-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: 9999px;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-bold);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--md3-rounded-full);
   white-space: nowrap;
   flex-shrink: 0;
+  letter-spacing: var(--md3-label-tracking);
 }
 
 .badge-pro {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #78350f;
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
 }
 
 .badge-free {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #6ee7b7;
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
 .badge-anon {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
 }
 
 .badge-past-due {
-  background: linear-gradient(135deg, #fca5a5, #f87171);
-  color: #7f1d1d;
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
 .past-due-dot {
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
   cursor: default;
+  color: var(--md3-error);
 }
 
-/* Skip to content (T-030) */
-.skip-to-content {
-  position: absolute;
-  top: -100%;
-  left: 0;
-  background: #16a34a;
-  color: white;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+/* Make the FREE badge look like a link (it IS a RouterLink) */
+a.tier-badge {
   text-decoration: none;
-  z-index: 9999;
-  border-radius: 0 0 0.5rem 0;
+  cursor: pointer;
+  transition: opacity var(--md3-transition-fast);
 }
 
-.skip-to-content:focus {
-  top: 0;
+a.tier-badge:hover {
+  opacity: 0.85;
 }
 
-/* Footer */
+/* ─── User button ─── */
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  max-width: 140px;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-bold);
+  flex-shrink: 0;
+}
+
+.user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface);
+}
+
+/* ─── Footer ─── */
 .app-footer {
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  padding: 1rem;
+  background: var(--md3-surface-container-low);
+  /* No top border — surface shift provides separation */
+  padding: var(--md3-space-3);
   padding-bottom: 5.5rem; /* room for bottom nav on mobile */
 }
 
 @media (min-width: 768px) {
   .app-footer {
-    padding-bottom: 1rem;
+    padding-bottom: var(--md3-space-3);
   }
 }
 
@@ -469,69 +662,40 @@ async function handleSignOut() {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   max-width: 1200px;
   margin: 0 auto;
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-size: var(--md3-label-md);
+  color: var(--md3-on-surface-variant);
 }
 
 .footer-brand {
-  font-weight: 600;
-  color: #6b7280;
+  font-family: var(--md3-font-label);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface-variant);
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+}
+
+.footer-brand-icon {
+  font-size: 1rem !important;
+  color: var(--md3-primary);
 }
 
 .footer-links {
   display: flex;
-  gap: 1rem;
+  gap: var(--md3-space-3);
 }
 
 .footer-links a {
-  color: #6b7280;
+  color: var(--md3-on-surface-variant);
   text-decoration: none;
-  transition: color 0.15s;
+  font-size: var(--md3-label-md);
+  transition: color var(--md3-transition-fast);
 }
 
 .footer-links a:hover {
-  color: #16a34a;
-}
-
-/* Make the FREE badge look like a link (it IS a RouterLink) */
-a.tier-badge {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-a.tier-badge:hover {
-  opacity: 0.85;
-}
-
-/* User button */
-.user-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  max-width: 140px;
-}
-
-.user-avatar {
-  width: 26px;
-  height: 26px;
-  background: #10b981;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.user-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.8rem;
+  color: var(--md3-primary);
 }
 </style>

@@ -9,7 +9,9 @@
           :class="`toast-${toast.type}`"
           role="status"
         >
-          <span class="toast-icon" aria-hidden="true">{{ toastIcon(toast.type) }}</span>
+          <span class="material-symbols-outlined toast-icon" aria-hidden="true">
+            {{ toastIcon(toast.type) }}
+          </span>
           <span class="toast-message">{{ toast.message }}</span>
         </div>
       </TransitionGroup>
@@ -22,11 +24,12 @@ import { useUiStore } from '@/shared/stores/uiStore.js'
 
 const uiStore = useUiStore()
 
-function toastIcon(type: 'success' | 'error' | 'info'): string {
+function toastIcon(type: 'success' | 'error' | 'warning' | 'info'): string {
   switch (type) {
-    case 'success': return '✓'
-    case 'error': return '✕'
-    case 'info': return 'ℹ'
+    case 'success': return 'check_circle'
+    case 'error':   return 'error'
+    case 'warning': return 'warning'
+    case 'info':    return 'info'
   }
 }
 </script>
@@ -41,7 +44,7 @@ function toastIcon(type: 'success' | 'error' | 'info'): string {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   pointer-events: none;
 }
 
@@ -49,43 +52,55 @@ function toastIcon(type: 'success' | 'error' | 'info'): string {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
 }
 
 .toast {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
   padding: 0.7rem 1.25rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  box-shadow: var(--md3-shadow-ambient);
   white-space: nowrap;
   pointer-events: all;
+  /* No border — MD3 container colors handle visual hierarchy */
 }
 
+/* ── Variant: Success ── */
 .toast-success {
-  background: #10b981;
-  color: white;
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
 }
 
+/* ── Variant: Error ── */
 .toast-error {
-  background: #ef4444;
-  color: white;
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
+/* ── Variant: Warning ── */
+.toast-warning {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+/* ── Variant: Info ── */
 .toast-info {
-  background: #374151;
-  color: white;
+  background: var(--md3-surface-container-lowest);
+  color: var(--md3-on-surface);
 }
 
 .toast-icon {
-  font-size: 0.9rem;
-  font-weight: 900;
+  font-size: 1.1rem;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  flex-shrink: 0;
 }
 
-/* Transitions */
+/* ── Transitions (preserved) ── */
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.25s ease;

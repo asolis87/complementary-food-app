@@ -1,4 +1,4 @@
-# CFA — Complementary Food App | Project Context
+# Pakulab — Complementary Food App | Project Context
 
 > Documento generado desde Engram memory para continuidad entre equipos/sesiones.
 > Fecha: 2026-03-27
@@ -7,14 +7,14 @@
 
 ## 1. Descripción del Proyecto
 
-**CFA** es una PWA para padres primerizos en **México** que inician la alimentación complementaria de sus bebés (6 meses a 2 años). Resuelve 3 problemas:
+**Pakulab** es una PWA para padres primerizos en **México** que inician la alimentación complementaria de sus bebés (6 meses a 2 años). Resuelve 3 problemas:
 
 1. **Balancear el plato del bebé** — visualizar si los alimentos son astringentes o laxantes
 2. **Bitácora de alimentos** — registrar qué se ofreció y si hubo reacciones
 3. **Menús semanales** — planear y compartir con la familia/pediatra
 
 ### Diferenciador único
-**NINGUNA app competidora ofrece balance astringente/laxante.** Validado contra 9 competidores (Solid Starts, PekeBocados, Alicia.mx, My Smart Solids, etc.). PekeBocados tiene una reseña de enero 2026 pidiendo exactamente esta feature.
+**NINGUNA app competidora ofrece balance astringente/laxante.** Validado contra 9 competidores (Solid Starts, PekeBocados, Alicia.mx, My Smart Solids, etc.). Pakulab es el único. PekeBocados tiene una reseña de enero 2026 pidiendo exactamente esta feature.
 
 ---
 
@@ -32,7 +32,7 @@
 
 ### Estructura del monorepo
 ```
-cfa/
+pakulab/
 ├── apps/
 │   ├── api/                    ← Fastify modular monolith (puerto 3002)
 │   │   └── src/modules/        ← 9 módulos (screaming architecture)
@@ -62,7 +62,7 @@ cfa/
 │               ├── components/ ← TierGate, UpgradePrompt, MedicalDisclaimer, OfflineIndicator...
 │               └── api/        ← fetch client con OfflineError
 ├── packages/
-│   └── shared/                 ← Tipos, constantes, utils compartidos
+│   └── shared/                 ← @pakulab/shared — Tipos, constantes, utils compartidos
 │       └── src/
 │           ├── types/          ← Food, Plate, PlateBalance, User, UserTier
 │           ├── constants/      ← tiers, food-groups, balance thresholds, allergens
@@ -119,6 +119,8 @@ cfa/
 | **Gratis (registrado)** | + 5 platos guardados + bitácora 7 días + 1 bebé | $0 |
 | **Pro mensual** | Todo ilimitado + menú semanal + 3 bebés + sin watermark | $99 MXN/mes |
 | **Pro anual** | Igual | $799 MXN/año |
+
+Pakulab opera bajo modelo freemium sin publicidad.
 
 ### Palancas de conversión
 1. **Bitácora 7 días** — padres registran una semana, crean hábito, no quieren perder historial
@@ -215,7 +217,7 @@ cfa/
 ### Setup rápido
 ```bash
 git clone <repo>
-cd complementary-food
+cd pakulab
 pnpm install
 
 # Crear .env files (ver apps/api/.env.example y apps/web/.env.example)
@@ -223,12 +225,12 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 
 # Editar apps/api/.env con:
-# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cfa_dev"
+# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/pakulab_dev"
 # PORT=3002
-# BETTER_AUTH_SECRET="cfa-dev-secret-key-at-least-32-characters-long"
+# BETTER_AUTH_SECRET="pakulab-dev-secret-key-at-least-32-characters-long"
 
 # Base de datos
-docker exec <postgres-container> psql -U postgres -c "CREATE DATABASE cfa_dev;"
+docker exec <postgres-container> psql -U postgres -c "CREATE DATABASE pakulab_dev;"
 # O crear DB manualmente
 
 pnpm db:push     # Crear tablas
@@ -242,7 +244,7 @@ pnpm dev:web     # Terminal 2 → http://localhost:5174
 ### Variables de entorno importantes
 ```
 # API (.env)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cfa_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pakulab_dev
 PORT=3002
 BETTER_AUTH_SECRET=<min 32 chars>
 BETTER_AUTH_URL=http://localhost:3002
@@ -262,19 +264,19 @@ Todos los artefactos de Spec-Driven Development están persistidos en Engram:
 
 | Artefacto | Topic Key | ID |
 |-----------|-----------|-----|
-| Project context | `sdd-init/complementary-food` | #158 |
-| Exploration (dominio) | `sdd/cfa-mvp/explore-domain` | — |
-| Exploration (competencia) | `sdd/cfa-mvp/explore-competition` | — |
-| Exploration (MVP scope) | `sdd/cfa-mvp/explore-mvp-scope` | — |
-| Proposal | `sdd/cfa-mvp/proposal` | — |
-| Spec (26 reqs, 41 scenarios) | `sdd/cfa-mvp/spec` | — |
-| Design (12 arch decisions) | `sdd/cfa-mvp/design` | — |
-| Tasks (45 tasks) | `sdd/cfa-mvp/tasks` | — |
-| Apply progress | `sdd/cfa-mvp/apply-progress` | #193 |
+| Project context | `sdd-init/pakulab` | #158 |
+| Exploration (dominio) | `sdd/pakulab-mvp/explore-domain` | — |
+| Exploration (competencia) | `sdd/pakulab-mvp/explore-competition` | — |
+| Exploration (MVP scope) | `sdd/pakulab-mvp/explore-mvp-scope` | — |
+| Proposal | `sdd/pakulab-mvp/proposal` | — |
+| Spec (26 reqs, 41 scenarios) | `sdd/pakulab-mvp/spec` | — |
+| Design (12 arch decisions) | `sdd/pakulab-mvp/design` | — |
+| Tasks (45 tasks) | `sdd/pakulab-mvp/tasks` | — |
+| Apply progress | `sdd/pakulab-mvp/apply-progress` | #193 |
 
 Para recuperar cualquier artefacto:
 ```
-mem_search(query: "<topic_key>", project: "complementary-food") → get ID
+mem_search(query: "<topic_key>", project: "pakulab") → get ID
 mem_get_observation(id: <ID>) → full content
 ```
 
@@ -288,4 +290,4 @@ mem_get_observation(id: <ID>) → full content
 | PekeBocados | MX/ES | ❌ | ❌ | ✅ | ~$100 MXN/mes |
 | Alicia.mx | MX | ❌ | ❌ | ✅ | ? |
 | My Smart Solids | Global | ❌ | ❌ | ❌ | ~$80-140 MXN/mes |
-| **CFA** | **MX** | **✅ ÚNICO** | **✅ ÚNICO** | **✅** | **$99 MXN/mes** |
+| **Pakulab** | **MX** | **✅ ÚNICO** | **✅ ÚNICO** | **✅** | **$99 MXN/mes** |

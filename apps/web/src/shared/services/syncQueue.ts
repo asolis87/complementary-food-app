@@ -5,7 +5,7 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
-import type { FoodGroup } from '@cfa/shared'
+import type { FoodGroup } from '@pakulab/shared'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ export interface QueuedPlate {
 
 // ─── DB Schema ────────────────────────────────────────────────────────────────
 
-const DB_NAME = 'cfa-sync-queue'
+const DB_NAME = 'pakulab-sync-queue'
 const DB_VERSION = 1
 
 interface SyncQueueDB {

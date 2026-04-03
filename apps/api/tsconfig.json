@@ -6,7 +6,7 @@
     "composite": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@cfa/shared": ["../../packages/shared/src/index.ts"]
+      "@pakulab/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "references": [

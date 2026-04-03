@@ -12,6 +12,7 @@ import rateLimit from '@fastify/rate-limit'
 import Fastify, { type FastifyError } from 'fastify'
 import './shared/types.js'
 import { AppError } from './shared/errors/index.js'
+import { ZodError } from 'zod'
 import prismaPlugin from './shared/plugins/prisma.js'
 import authPlugin from './shared/plugins/auth.js'
 import { healthRoutes } from './modules/health/health.routes.js'
@@ -31,23 +32,10 @@ export async function buildApp() {
     },
   })
 
-  // === Raw body support for Stripe webhook signature verification ===
-  // Must be registered BEFORE any body-parsing plugins.
-  // Stores raw Buffer on request.rawBody so the webhook route can verify signatures.
-  app.addContentTypeParser(
-    'application/json',
-    { parseAs: 'buffer' },
-    (req, body, done) => {
-      try {
-        // Attach raw buffer for routes that need it (e.g. Stripe webhook)
-        ;(req as { rawBody?: Buffer }).rawBody = body as Buffer
-        const json: unknown = JSON.parse((body as Buffer).toString())
-        done(null, json)
-      } catch (err) {
-        done(err as Error, undefined)
-      }
-    },
-  )
+  // Note: No global custom content type parser here.
+  // Fastify's built-in JSON parser handles all standard routes.
+  // The Stripe webhook uses a scoped preParsing hook (in billing.routes.ts) to capture rawBody.
+  // BetterAuth routes (auth.routes.ts) override the parser to leave the stream unconsumed.
 
   // === Security Plugins ===
   await app.register(helmet, {
@@ -94,10 +82,37 @@ export async function buildApp() {
   // === Global Error Handler ===
   app.setErrorHandler<FastifyError>((error, _request, reply) => {
     if (error instanceof AppError) {
+      const errorResponse: {
+        code: string
+        message: string
+        details?: Record<string, unknown>
+      } = {
+        code: error.code,
+        message: error.message,
+      }
+
+      // Include details for INSUFFICIENT_TIER error
+      if (error.code === 'INSUFFICIENT_TIER') {
+        const tierError = error as { required?: string; current?: string }
+        errorResponse.details = {
+          required: tierError.required ?? 'PRO',
+          current: tierError.current ?? 'FREE',
+        }
+      }
+
       reply.status(error.statusCode).send({
+        error: errorResponse,
+      })
+      return
+    }
+
+    // Zod validation errors (from schema.parse())
+    if (error instanceof ZodError) {
+      reply.status(400).send({
         error: {
-          code: error.code,
-          message: error.message,
+          code: 'VALIDATION_ERROR',
+          message: 'Datos inválidos',
+          details: error.errors,
         },
       })
       return

@@ -1,13 +1,13 @@
 <template>
   <!-- inline variant -->
   <p v-if="variant === 'inline'" class="disclaimer-inline" role="note">
-    <span aria-hidden="true">⚕️</span>
+    <span class="material-symbols-outlined inline-icon" aria-hidden="true">health_and_safety</span>
     Esta información es orientativa y no sustituye la consulta médica. Consultá siempre con tu pediatra.
   </p>
 
   <!-- banner variant -->
   <div v-else-if="variant === 'banner'" class="disclaimer-banner" role="note">
-    <span class="banner-icon" aria-hidden="true">⚕️</span>
+    <span class="material-symbols-outlined banner-icon" aria-hidden="true">health_and_safety</span>
     <div class="banner-body">
       <strong class="banner-title">Aviso médico</strong>
       <p class="banner-text">
@@ -20,11 +20,13 @@
   <Teleport v-else-if="variant === 'modal' && showModal" to="body">
     <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
       <div class="modal-card">
-        <div class="modal-icon" aria-hidden="true">⚕️</div>
+        <div class="modal-icon-wrap" aria-hidden="true">
+          <span class="material-symbols-outlined modal-icon">health_and_safety</span>
+        </div>
         <h2 id="disclaimer-title" class="modal-title">Aviso importante</h2>
         <div class="modal-body">
           <p>
-            <strong>CFA es una herramienta informativa para padres.</strong> La información sobre propiedades astringentes y laxantes de los alimentos es orientativa y está basada en fuentes médicas generales.
+            <strong>Pakulab es una herramienta informativa para padres.</strong> La información sobre propiedades astringentes y laxantes de los alimentos es orientativa y está basada en fuentes médicas generales.
           </p>
           <p>
             <strong>NO sustituye el consejo de tu pediatra o profesional de salud.</strong> Cada bebé es único y puede reaccionar de manera diferente a los alimentos.
@@ -44,7 +46,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-const STORAGE_KEY = 'cfa_disclaimer_accepted'
+const STORAGE_KEY = 'pakulab_disclaimer_accepted'
 
 const props = withDefaults(defineProps<{
   variant: 'inline' | 'banner' | 'modal'
@@ -70,29 +72,37 @@ function accept() {
 </script>
 
 <style scoped>
-/* inline */
+/* ── inline ─────────────────────────────────────── */
 .disclaimer-inline {
   margin: 0;
-  font-size: 0.75rem;
-  color: #6b7280;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--md3-space-1);
 }
 
-/* banner */
+.inline-icon {
+  font-size: 1rem;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+}
+
+/* ── banner ──────────────────────────────────────── */
 .disclaimer-banner {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--md3-space-3);
   align-items: flex-start;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 0.75rem;
-  padding: 0.875rem 1rem;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-md);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  box-shadow: var(--md3-shadow-soft);
 }
 
 .banner-icon {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
+  color: var(--md3-primary);
   flex-shrink: 0;
   margin-top: 0.1rem;
 }
@@ -104,53 +114,62 @@ function accept() {
 }
 
 .banner-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #166534;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .banner-text {
   margin: 0;
-  font-size: 0.8rem;
-  color: #166534;
-  line-height: 1.5;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
-/* modal */
+/* ── modal ───────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: var(--md3-space-3);
 }
 
 .modal-card {
-  background: white;
-  border-radius: 1.25rem;
-  padding: 2rem;
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-lg);
+  padding: var(--md3-space-6);
   max-width: 440px;
   width: 100%;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--md3-shadow-ambient);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--md3-space-3);
+}
+
+.modal-icon-wrap {
+  display: flex;
+  justify-content: center;
 }
 
 .modal-icon {
-  font-size: 2.5rem;
-  text-align: center;
+  font-size: 3rem;
+  color: var(--md3-primary);
 }
 
 .modal-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #111827;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
   text-align: center;
+  letter-spacing: var(--md3-headline-tracking);
 }
 
 .modal-body {
@@ -161,25 +180,27 @@ function accept() {
 
 .modal-body p {
   margin: 0;
-  font-size: 0.875rem;
-  color: #374151;
-  line-height: 1.6;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
 .modal-btn {
   width: 100%;
-  padding: 0.85rem;
-  background: #16a34a;
-  color: white;
+  padding: 0.9rem var(--md3-space-6);
+  background: var(--md3-gradient-cta);
+  color: var(--md3-on-primary);
   border: none;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  font-weight: 700;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-lg);
+  font-weight: var(--md3-weight-bold);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--md3-transition-fast);
 }
 
 .modal-btn:hover {
-  background: #15803d;
+  background: var(--md3-gradient-cta-hover);
 }
 </style>

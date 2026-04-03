@@ -2,7 +2,7 @@
   <div class="food-search">
     <!-- Search input -->
     <div class="search-bar">
-      <span class="search-icon" aria-hidden="true">🔍</span>
+      <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
       <input
         ref="inputRef"
         v-model="rawQuery"
@@ -78,8 +78,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import type { Food, FoodGroup, ALClassification } from '@cfa/shared'
-import { FOOD_GROUP_LABELS } from '@cfa/shared'
+import type { Food, FoodGroup, ALClassification } from '@pakulab/shared'
+import { FOOD_GROUP_LABELS } from '@pakulab/shared'
 
 const MAX_VISIBLE = 20
 const DEBOUNCE_MS = 300
@@ -157,7 +157,7 @@ function alBadgeLabel(al: ALClassification): string {
 .food-search {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--md3-space-2);
 }
 
 /* Search bar */
@@ -170,23 +170,27 @@ function alBadgeLabel(al: ALClassification): string {
 .search-icon {
   position: absolute;
   left: 0.75rem;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+  color: var(--md3-on-surface-variant);
   pointer-events: none;
+  line-height: 1;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.6rem 2.5rem 0.6rem 2.25rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 0.9rem;
+  padding: 0.6rem 2.5rem 0.6rem 2.5rem;
+  border: 2px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container-lowest);
   outline: none;
-  transition: border-color 0.15s;
-  background: white;
+  transition: border-color var(--md3-transition-fast);
 }
 
 .search-input:focus {
-  border-color: #10b981;
+  border-color: var(--md3-primary);
 }
 
 .search-input::-webkit-search-cancel-button {
@@ -196,9 +200,9 @@ function alBadgeLabel(al: ALClassification): string {
 .clear-btn {
   position: absolute;
   right: 0.6rem;
-  background: #e5e7eb;
+  background: var(--md3-surface-container);
   border: none;
-  border-radius: 9999px;
+  border-radius: var(--md3-rounded-full);
   width: 20px;
   height: 20px;
   cursor: pointer;
@@ -207,7 +211,12 @@ function alBadgeLabel(al: ALClassification): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--md3-on-surface-variant);
+  transition: background var(--md3-transition-fast);
+}
+
+.clear-btn:hover {
+  background: var(--md3-surface-container-high);
 }
 
 /* States */
@@ -217,15 +226,16 @@ function alBadgeLabel(al: ALClassification): string {
   justify-content: center;
   gap: 0.5rem;
   padding: 1.5rem 0;
-  color: #9ca3af;
-  font-size: 0.875rem;
+  font-family: var(--md3-font-body);
+  color: var(--md3-on-surface-variant);
+  font-size: var(--md3-body-md);
 }
 
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #10b981;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -247,7 +257,7 @@ function alBadgeLabel(al: ALClassification): string {
   max-height: 300px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
+  scrollbar-color: var(--md3-outline-variant) transparent;
 }
 
 .food-item {
@@ -260,17 +270,17 @@ function alBadgeLabel(al: ALClassification): string {
   gap: 0.6rem;
   width: 100%;
   padding: 0.6rem 0.75rem;
-  background: #f9fafb;
+  background: var(--md3-surface-container-low);
   border: 1px solid transparent;
-  border-radius: 0.75rem;
+  border-radius: var(--md3-rounded-md);
   cursor: pointer;
   text-align: left;
-  transition: all 0.12s;
+  transition: all var(--md3-transition-fast);
 }
 
 .food-btn:hover {
-  background: #ecfdf5;
-  border-color: #6ee7b7;
+  background: var(--md3-primary-container);
+  border-color: var(--md3-primary);
 }
 
 .food-btn:active {
@@ -286,21 +296,22 @@ function alBadgeLabel(al: ALClassification): string {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: white;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-surface-container-lowest);
 }
 
 .badge-astringent {
-  background: #ef4444;
+  background: var(--md3-error);
 }
 
 .badge-laxative {
-  background: #10b981;
+  background: var(--md3-primary);
 }
 
 .badge-neutral {
-  background: #9ca3af;
+  background: var(--md3-outline);
 }
 
 /* Food info */
@@ -313,9 +324,10 @@ function alBadgeLabel(al: ALClassification): string {
 }
 
 .food-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #111827;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -325,21 +337,22 @@ function alBadgeLabel(al: ALClassification): string {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  font-size: 0.7rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .allergen-warning {
-  color: #f59e0b;
-  font-weight: 600;
+  color: var(--md3-tertiary);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .add-icon {
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  background: #10b981;
-  color: white;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -351,8 +364,9 @@ function alBadgeLabel(al: ALClassification): string {
 
 .hint {
   margin: 0;
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
   text-align: center;
 }
 </style>

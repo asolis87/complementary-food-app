@@ -26,9 +26,6 @@ importers:
 
   apps/api:
     dependencies:
-      '@cfa/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -38,6 +35,9 @@ importers:
       '@fastify/rate-limit':
         specifier: ^10.0.0
         version: 10.3.0
+      '@pakulab/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@prisma/client':
         specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
@@ -75,7 +75,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@cfa/shared':
+      '@pakulab/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       html2canvas:
@@ -118,6 +118,9 @@ importers:
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.15)(terser@5.46.1)
 
 packages:
 

@@ -1,74 +1,150 @@
 <template>
   <div class="plate-builder-page">
-    <!-- Config Step — shown when creating a new plate -->
-    <transition name="slide-up">
-      <div v-if="step === 'config'" class="step-wrapper">
-        <PlateConfigStep @create="onConfigCreate" />
-      </div>
-    </transition>
-
-    <!-- Builder Step -->
-    <transition name="slide-up">
-      <div v-if="step === 'builder'" class="builder-wrapper">
-        <!-- Sticky header with plate name & group count -->
-        <div class="builder-header">
-          <button class="back-btn" aria-label="Volver" @click="step = 'config'">
-            ← Nuevo
-          </button>
-          <h1 class="builder-title">{{ plateStore.draftName }}</h1>
-          <span class="group-badge">{{ plateStore.draftGroupCount }} grupos</span>
+    <main class="page-main">
+      <!-- ─── Hero Header ──────────────────────────────────────────── -->
+      <header class="page-header">
+        <div class="header-text">
+          <span class="eyebrow">Planificación de Comidas</span>
+          <!-- Editable plate name — inline input styled as heading (AD-4, AC: A8, A9) -->
+          <input
+            v-model="plateStore.draftName"
+            type="text"
+            class="plate-name-input"
+            maxlength="100"
+            placeholder="Mi plato"
+            aria-label="Nombre del plato"
+            @blur="onNameBlur"
+            @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
+          />
+          <p class="page-subtitle">
+            Arrastra y suelta o toca los segmentos para armar una comida nutricionalmente
+            optimizada para tu pequeño.
+          </p>
+          <!-- Medical disclaimer (REQ-AL-02) -->
+          <div class="disclaimer-banner" role="note">
+            <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">info</span>
+            <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
+          </div>
+          <!-- Toggle on mobile: below subtitle -->
+          <div class="toggle-mobile">
+            <div class="group-toggle" role="radiogroup" aria-label="Número de grupos alimenticios">
+              <button
+                class="toggle-btn"
+                :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 4 }"
+                role="radio"
+                :aria-checked="plateStore.draftGroupCount === 4"
+                @click="plateStore.setGroupCount(4)"
+              >
+                4 Grupos
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 5 }"
+                role="radio"
+                :aria-checked="plateStore.draftGroupCount === 5"
+                @click="plateStore.setGroupCount(5)"
+              >
+                5 Grupos
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Medical disclaimer (REQ-AL-02) -->
-        <div class="disclaimer-banner" role="note">
-          <span aria-hidden="true">⚕️</span>
-          <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
+        <!-- Toggle on desktop: right side of header -->
+        <div class="toggle-desktop">
+          <div class="group-toggle" role="radiogroup" aria-label="Número de grupos alimenticios">
+            <button
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 4 }"
+              role="radio"
+              :aria-checked="plateStore.draftGroupCount === 4"
+              @click="plateStore.setGroupCount(4)"
+            >
+              4 Grupos
+            </button>
+            <button
+              class="toggle-btn"
+              :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 5 }"
+              role="radio"
+              :aria-checked="plateStore.draftGroupCount === 5"
+              @click="plateStore.setGroupCount(5)"
+            >
+              5 Grupos
+            </button>
+          </div>
         </div>
+      </header>
 
-        <!-- ① Plate Visualization (tap zones to add food) -->
-        <section class="section" aria-label="Visualización del plato">
-          <PlateVisualization
-            ref="vizRef"
-            :items="plateStore.draftItems"
-            :group-count="plateStore.draftGroupCount"
-            @remove-item="plateStore.removeFoodFromDraft"
-            @select-group="onGroupSelect"
-          />
-        </section>
+      <!-- ─── Main Content Grid ─────────────────────────────────────── -->
+      <div class="content-area">
+        <!-- Decorative blobs -->
+        <div class="blob blob-top-left" aria-hidden="true"></div>
+        <div class="blob blob-bottom-right" aria-hidden="true"></div>
 
-        <!-- ② Balance Indicator -->
-        <section class="section" aria-label="Equilibrio A/L">
-          <BalanceIndicator :balance="balance" />
-        </section>
+        <div class="content-grid">
+          <!-- Left column: Plate + Actions -->
+          <div class="col-plate">
+            <!-- ① Plate Visualization (tap zones to add food) -->
+            <section aria-label="Visualización del plato">
+              <PlateVisualization
+                ref="vizRef"
+                :items="plateStore.draftItems"
+                :group-count="plateStore.draftGroupCount"
+                @remove-item="plateStore.removeFoodFromDraft"
+                @select-group="onGroupSelect"
+              />
+            </section>
 
-        <!-- ③ Actions -->
-        <section class="section section-actions" aria-label="Acciones">
-          <PlateActions
-            :can-save="plateStore.canSave"
-            :has-items="plateStore.hasItems"
-            :saving="saving"
-            :exporting="exporting"
-            @save="handleSave"
-            @export="handleExport"
-            @clear="handleClear"
-            @share="handleShare"
-          />
-        </section>
+            <!-- ③ Actions -->
+            <section class="actions-section" aria-label="Acciones">
+              <PlateActions
+                :can-save="plateStore.canSave"
+                :has-items="plateStore.hasItems"
+                :saving="saving"
+                :exporting="exporting"
+                @save="handleSave"
+                @export="handleExport"
+                @clear="handleClear"
+                @share="handleShare"
+              />
+            </section>
+          </div>
 
-        <!-- ④ Food Search Modal (bottom sheet) -->
-        <FoodSearchModal
-          :is-open="showFoodModal"
-          :group="modalGroup"
-          :group-foods="foodsForModalGroup"
-          :current-items="itemsForModalGroup"
-          :loading="foodStore.loading"
-          @close="onModalClose"
-          @add-food="onModalAddFood"
-          @remove-food="plateStore.removeFoodFromDraft"
-          @search="onModalSearch"
-        />
+          <!-- Right column: Sidebar (Balance + PlateContents placeholder) -->
+          <div class="col-sidebar">
+            <!-- ② Balance Indicator -->
+            <section aria-label="Equilibrio A/L">
+              <BalanceIndicator :balance="balance" />
+            </section>
+
+            <!-- ③ Plate Contents (list of selected foods per group) -->
+            <section aria-label="Contenido del plato">
+              <PlateContents
+                :items="plateStore.draftItems"
+                :group-count="plateStore.draftGroupCount"
+                @select-group="onGroupSelect"
+                @remove-item="plateStore.removeFoodFromDraft"
+              />
+            </section>
+          </div>
+        </div>
       </div>
-    </transition>
+    </main>
+
+    <!-- ④ Food Search Modal (bottom sheet) -->
+    <FoodSearchModal
+      :is-open="showFoodModal"
+      :group="modalGroup"
+      :group-foods="foodsForModalGroup"
+      :current-items="itemsForModalGroup"
+      :loading="foodStore.loading"
+      :food-histories="foodHistoriesForModal"
+      :history-loading="foodHistoryStore.historyLoading"
+      @close="onModalClose"
+      @add-food="onModalAddFood"
+      @remove-food="plateStore.removeFoodFromDraft"
+      @search="onModalSearch"
+    />
 
     <!-- Export helper (off-screen capture) -->
     <PlateExport
@@ -80,7 +156,6 @@
       @error="onExportError"
     >
       <template #visualization>
-        <!-- Re-render a mini plate for export -->
         <div class="export-mini-plate">
           <PlateVisualization
             :items="plateStore.draftItems"
@@ -93,6 +168,9 @@
     <!-- Toast notification -->
     <transition name="toast">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`" role="status">
+        <span class="material-symbols-outlined toast-icon" aria-hidden="true">
+          {{ toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'error' : 'info' }}
+        </span>
         {{ toast.message }}
       </div>
     </transition>
@@ -103,14 +181,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
-import type { FoodGroup, Food } from '@cfa/shared'
+import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
+import { useProfileStore } from '@/shared/stores/profileStore.js'
+import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
 import { useBalance } from '@/shared/composables/useBalance.js'
-import PlateConfigStep from './components/PlateConfigStep.vue'
 import PlateVisualization from './components/PlateVisualization.vue'
 import BalanceIndicator from './components/BalanceIndicator.vue'
+import PlateContents from './components/PlateContents.vue'
 import FoodSearchModal from './components/FoodSearchModal.vue'
 import PlateActions from './components/PlateActions.vue'
 import PlateExport from './components/PlateExport.vue'
@@ -120,13 +200,11 @@ const route = useRoute()
 const plateStore = usePlateStore()
 const foodStore = useFoodStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
+const foodHistoryStore = useFoodHistoryStore()
 // storeToRefs gives us a real Ref<PlateItemDraft[]> — required by useBalance
 const { draftItems } = storeToRefs(plateStore)
 const { balance } = useBalance(draftItems)
-
-// ─── Step management ─────────────────────────────────────────────────────
-type Step = 'config' | 'builder'
-const step = ref<Step>('config')
 
 // ─── Food Search Modal ────────────────────────────────────────────────────
 const showFoodModal = ref(false)
@@ -137,6 +215,15 @@ function onGroupSelect(group: FoodGroup) {
   showFoodModal.value = true
   // Set group filter — triggers API call with group filter
   foodStore.setFilter('group', group)
+  // Fire-and-forget: fetch food history for this group's foods (AC: A1, A13)
+  // Does NOT block modal opening — historyLoading state handles the skeleton
+  const babyProfileId = profileStore.activeProfile?.id
+  if (babyProfileId) {
+    const foodIds = foodsForModalGroup.value.map((f) => f.id)
+    if (foodIds.length > 0) {
+      foodHistoryStore.fetchForFoods(babyProfileId, foodIds)
+    }
+  }
 }
 
 function onModalSearch(query: string) {
@@ -163,6 +250,22 @@ const itemsForModalGroup = computed(() => {
   return plateStore.draftItems.filter((item) => item.groupAssignment === modalGroup.value)
 })
 
+/**
+ * Food history map for the current modal group foods.
+ * Keyed by foodId — passed as prop to FoodSearchModal (AD-3).
+ * Returns undefined when no active profile (graceful degradation, AC: A6).
+ */
+const foodHistoriesForModal = computed((): FoodHistoryMap | undefined => {
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId) return undefined
+  const result: FoodHistoryMap = {}
+  for (const food of foodsForModalGroup.value) {
+    const h = foodHistoryStore.historyForFood(profileId, food.id)
+    if (h) result[food.id] = h
+  }
+  return Object.keys(result).length > 0 ? result : undefined
+})
+
 // ─── State flags ──────────────────────────────────────────────────────────
 const saving = ref(false)
 const exporting = ref(false)
@@ -183,6 +286,11 @@ function showToast(message: string, type: Toast['type'] = 'info', duration = 300
   }, duration)
 }
 
+// ─── Edit mode ────────────────────────────────────────────────────────────
+
+/** ID of the plate being edited, or null for create mode */
+const editingPlateId = ref<string | null>(null)
+
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(async () => {
   // Fetch food catalog if not loaded
@@ -190,40 +298,54 @@ onMounted(async () => {
     await foodStore.fetchFoods()
   }
 
-  // If route has an id param, load that plate
+  // If route has an id param, load that plate into edit mode
   const plateId = route.params.id as string | undefined
   if (plateId) {
     const plate = await plateStore.loadPlate(plateId)
     if (plate) {
+      editingPlateId.value = plateId
       plateStore.draftName = plate.name
       plateStore.setGroupCount(plate.groupCount)
       // Note: items would be populated from API in full implementation
-      step.value = 'builder'
     }
   }
 })
 
 // ─── Handlers ────────────────────────────────────────────────────────────
 
-function onConfigCreate(config: { name: string; groupCount: 4 | 5 }) {
-  plateStore.resetDraft()
-  plateStore.draftName = config.name
-  plateStore.setGroupCount(config.groupCount)
-  modalGroup.value = 'FRUIT'
-  step.value = 'builder'
-}
-
 function onModalAddFood(food: Food, group: FoodGroup) {
   plateStore.addFoodToDraft(food, group)
   onModalClose()
 }
 
+/**
+ * Revert to default name when the user clears the field on blur (AC: A8 scenario).
+ */
+function onNameBlur() {
+  if (!plateStore.draftName.trim()) {
+    plateStore.draftName = 'Mi plato'
+  }
+}
+
 async function handleSave() {
-  if (!plateStore.canSave || !plateStore.hasItems) return
+  if (!plateStore.hasItems) return
+  // Validate plate name (AC: A9)
+  if (!plateStore.draftName.trim()) {
+    showToast('El nombre no puede estar vacío', 'error')
+    return
+  }
   saving.value = true
   try {
-    await plateStore.saveDraftAsPlate()
-    showToast('Plato guardado ✓', 'success')
+    if (editingPlateId.value) {
+      // Edit mode — update existing plate (name + items are included in updatePlate)
+      await plateStore.updatePlate(editingPlateId.value)
+      showToast('Plato actualizado', 'success')
+    } else {
+      // Create mode — requires canSave (tier limit check)
+      if (!plateStore.canSave) return
+      await plateStore.saveDraftAsPlate()
+      showToast('Plato guardado', 'success')
+    }
   } catch {
     showToast('Error al guardar. Intentá de nuevo.', 'error')
   } finally {
@@ -244,9 +366,9 @@ async function handleExport() {
 function onExportDone(dataUrl: string) {
   const link = document.createElement('a')
   link.href = dataUrl
-  link.download = `${plateStore.draftName || 'plato'}-cfa.png`
+  link.download = `${plateStore.draftName || 'plato'}-pakulab.png`
   link.click()
-  showToast('Imagen descargada ✓', 'success')
+  showToast('Imagen descargada', 'success')
 }
 
 function onExportError(message: string) {
@@ -265,7 +387,7 @@ async function handleShare() {
     if (navigator.share) {
       await navigator.share({
         title: `Mi plato: ${plateStore.draftName}`,
-        text: '¡Mirá el plato que armé para mi bebé con CFA!',
+        text: '¡Mirá el plato que armé para mi bebé con Pakulab!',
         url,
       })
     } else {
@@ -279,148 +401,287 @@ async function handleShare() {
 </script>
 
 <style scoped>
+/* ─── Page shell ──────────────────────────────────────────────────────── */
 .plate-builder-page {
-  max-width: 600px;
-  margin: 0 auto;
-  position: relative;
   min-height: 60vh;
 }
 
-/* Steps */
-.step-wrapper,
-.builder-wrapper {
+.page-main {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: var(--md3-space-8) var(--md3-space-6) var(--md3-space-12);
+}
+
+/* ─── Hero Header ─────────────────────────────────────────────────────── */
+.page-header {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--md3-space-4);
+  margin-bottom: var(--md3-space-12);
 }
 
-/* Builder header */
-.builder-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f3f4f6;
+@media (min-width: 1024px) {
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--md3-space-6);
+  }
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #6b7280;
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
-  transition: background 0.15s;
-}
-
-.back-btn:hover {
-  background: #f3f4f6;
-}
-
-.builder-title {
+.header-text {
   flex: 1;
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.group-badge {
-  background: #ecfdf5;
-  color: #10b981;
-  border: 1px solid #6ee7b7;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  white-space: nowrap;
+/* Eyebrow */
+.eyebrow {
+  display: block;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--md3-primary);
+  margin-bottom: var(--md3-space-2);
+}
+
+/* H1 (kept for reference — replaced by plate-name-input) */
+.page-title {
+  margin: 0 0 var(--md3-space-3);
+  font-family: var(--md3-font-headline);
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: var(--md3-headline-tracking);
+  line-height: var(--md3-headline-line-height);
+  color: var(--md3-on-surface);
+}
+
+/* Inline editable plate name — looks like the page title heading at rest */
+.plate-name-input {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--md3-space-3);
+  padding: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--md3-font-headline);
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: var(--md3-headline-tracking);
+  line-height: var(--md3-headline-line-height);
+  color: var(--md3-on-surface);
+  outline: none;
+  cursor: text;
+  transition: border-color var(--md3-transition-fast);
+}
+
+.plate-name-input::placeholder {
+  color: var(--md3-on-surface-variant);
+  opacity: 0.6;
+}
+
+.plate-name-input:hover {
+  border-bottom-color: var(--md3-outline-variant);
+}
+
+.plate-name-input:focus {
+  border-bottom-color: var(--md3-primary);
+  cursor: text;
+}
+
+/* Subtitle */
+.page-subtitle {
+  margin: 0 0 var(--md3-space-3);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-lg);
+  color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
+  max-width: 42ch;
 }
 
 /* Disclaimer */
 .disclaimer-banner {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: center;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 0.5rem;
-  padding: 0.6rem 0.875rem;
-  font-size: 0.8rem;
-  color: #166534;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-md);
+  padding: 0.75rem var(--md3-space-3);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
+  margin-top: var(--md3-space-3);
 }
 
-/* Sections */
-.section {
-  background: white;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
+.disclaimer-icon {
+  font-size: 1.1rem;
+  color: var(--md3-primary);
+  flex-shrink: 0;
 }
 
-.section-actions {
-  background: transparent;
+/* ─── Group Toggle ────────────────────────────────────────────────────── */
+
+/* Toggle visibility: mobile below header-text, desktop alongside */
+.toggle-mobile {
+  display: block;
+  margin-top: var(--md3-space-4);
+}
+
+.toggle-desktop {
+  display: none;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  .toggle-mobile {
+    display: none;
+  }
+
+  .toggle-desktop {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.group-toggle {
+  display: inline-flex;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-full);
+  padding: 0.375rem;
+}
+
+.toggle-btn {
+  padding: 0.5rem 1.5rem;
   border: none;
-  box-shadow: none;
-  padding: 0;
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast),
+    box-shadow var(--md3-transition-fast);
+  white-space: nowrap;
 }
 
-/* Export mini plate helper */
+.toggle-btn--active {
+  background: var(--md3-surface-container-lowest);
+  color: var(--md3-primary);
+  box-shadow: var(--md3-shadow-soft);
+}
+
+/* ─── Content area with blobs ────────────────────────────────────────── */
+.content-area {
+  position: relative;
+}
+
+/* Decorative blobs */
+.blob {
+  position: absolute;
+  border-radius: 43% 57% 53% 47% / 30% 41% 59% 70%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.blob-top-left {
+  top: -3rem;
+  left: -3rem;
+  width: 12rem;
+  height: 12rem;
+  background: var(--md3-primary-container);
+  opacity: 0.3;
+}
+
+.blob-bottom-right {
+  bottom: -3rem;
+  right: -3rem;
+  width: 16rem;
+  height: 16rem;
+  background: var(--md3-secondary-container);
+  opacity: 0.3;
+}
+
+/* ─── 2-column grid ──────────────────────────────────────────────────── */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--md3-space-12);
+}
+
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 7fr 5fr;
+    align-items: start;
+  }
+}
+
+/* ─── Left column ─────────────────────────────────────────────────────── */
+.col-plate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-4);
+}
+
+/* ─── Right column / Sidebar ──────────────────────────────────────────── */
+.col-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-6);
+}
+
+/* PlateContents section wrapper — component handles its own styles */
+section[aria-label="Contenido del plato"] {
+  display: contents;
+}
+
+/* ─── Export mini plate helper ────────────────────────────────────────── */
 .export-mini-plate {
   max-width: 300px;
   margin: 0 auto;
 }
 
-/* Toast */
+/* ─── Toast ────────────────────────────────────────────────────────────── */
 .toast {
   position: fixed;
   bottom: 6rem;
   left: 50%;
   transform: translateX(-50%);
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  box-shadow: var(--md3-shadow-elevated);
   z-index: 300;
   white-space: nowrap;
 }
 
+.toast-icon {
+  font-size: 1.1rem;
+}
+
 .toast-success {
-  background: #10b981;
-  color: white;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
 }
 
 .toast-error {
-  background: #ef4444;
-  color: white;
+  background: var(--md3-error);
+  color: var(--md3-on-error);
 }
 
 .toast-info {
-  background: #374151;
-  color: white;
+  background: var(--md3-inverse-surface);
+  color: var(--md3-surface-container-lowest);
 }
 
-/* Transitions */
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.25s ease;
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-
+/* Toast transition */
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.2s ease;

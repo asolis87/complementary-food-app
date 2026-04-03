@@ -17,7 +17,7 @@
         :disabled="profileStore.loading"
         @click="showForm = true"
       >
-        <span aria-hidden="true">+</span>
+        <span class="material-symbols-outlined fab-btn__icon" aria-hidden="true">add</span>
         Agregar bebé
       </button>
     </div>
@@ -79,7 +79,7 @@
         class="empty-state"
         role="status"
       >
-        <span class="empty-icon" aria-hidden="true">👶</span>
+        <span class="material-symbols-outlined empty-icon" aria-hidden="true">child_care</span>
         <h2 class="empty-title">No hay perfiles de bebé</h2>
         <p class="empty-subtitle">Creá el perfil de tu bebé para personalizar sus platos y hacer seguimiento de su alimentación.</p>
         <button class="create-btn" @click="showForm = true">
@@ -89,7 +89,7 @@
 
       <!-- Pro upsell if at limit and not pro -->
       <div v-if="atLimit && !authStore.isPro" class="upsell-banner" role="complementary">
-        <span aria-hidden="true">⭐</span>
+        <span class="material-symbols-outlined upsell-icon" aria-hidden="true">workspace_premium</span>
         <div>
           <strong>Límite de perfiles alcanzado</strong>
           <p>Con Pro podés tener hasta 3 perfiles y mucho más.</p>
@@ -102,8 +102,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { BabyProfile } from '@cfa/shared'
-import { BABY_PROFILE_LIMITS } from '@cfa/shared'
+import type { BabyProfile } from '@pakulab/shared'
+import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import TierGate from '@/shared/components/TierGate.vue'
@@ -182,54 +182,63 @@ async function handleDelete(id: string) {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--md3-space-3);
 }
 
 .page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--md3-space-3);
 }
 
 .page-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .page-subtitle {
-  margin: 0.2rem 0 0;
-  font-size: 0.8rem;
-  color: #6b7280;
+  margin: var(--md3-space-1) 0 0;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
 }
 
 .limit-reached {
-  color: #f59e0b;
-  font-weight: 600;
+  color: var(--md3-tertiary);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .fab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--md3-space-2);
   padding: 0.65rem 1.1rem;
-  background: #10b981;
-  color: white;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 700;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-  transition: background 0.15s;
+  box-shadow: var(--md3-shadow-card);
+  transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+.fab-btn__icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
 .fab-btn:hover:not(:disabled) {
-  background: #059669;
+  background: var(--md3-primary-dim);
+  box-shadow: var(--md3-shadow-elevated);
 }
 
 .fab-btn:disabled {
@@ -242,16 +251,16 @@ async function handleDelete(id: string) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 0;
-  color: #6b7280;
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-12) 0;
+  color: var(--md3-on-surface-variant);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #10b981;
+  border: 3px solid var(--md3-surface-container-high);
+  border-top-color: var(--md3-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -262,7 +271,7 @@ async function handleDelete(id: string) {
 
 /* Form wrapper */
 .form-wrapper {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--md3-space-2);
 }
 
 /* Profiles list */
@@ -272,7 +281,7 @@ async function handleDelete(id: string) {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--md3-space-3);
 }
 
 /* Empty state */
@@ -280,61 +289,72 @@ async function handleDelete(id: string) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-12) var(--md3-space-3);
   text-align: center;
-  background: #f9fafb;
-  border-radius: 1.5rem;
-  border: 2px dashed #e5e7eb;
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-lg);
+  border: 2px dashed var(--md3-outline-variant);
 }
 
 .empty-icon {
   font-size: 3.5rem;
+  color: var(--md3-primary);
 }
 
 .empty-title {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #374151;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
 }
 
 .empty-subtitle {
   margin: 0;
-  font-size: 0.875rem;
-  color: #9ca3af;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
   max-width: 300px;
 }
 
 .create-btn {
   display: inline-flex;
   padding: 0.7rem 1.5rem;
-  background: #10b981;
-  color: white;
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
   border: none;
-  border-radius: 9999px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   cursor: pointer;
-  margin-top: 0.5rem;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-  transition: background 0.15s;
+  margin-top: var(--md3-space-2);
+  box-shadow: var(--md3-shadow-card);
+  transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
 }
 
 .create-btn:hover {
-  background: #059669;
+  background: var(--md3-primary-dim);
+  box-shadow: var(--md3-shadow-elevated);
 }
 
 /* Upsell */
 .upsell-banner {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border-radius: 1rem;
-  border: 1px solid #fcd34d;
-  font-size: 0.875rem;
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: var(--md3-tertiary-container);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+}
+
+.upsell-icon {
+  font-size: 1.5rem;
+  color: var(--md3-on-tertiary-container);
+  flex-shrink: 0;
 }
 
 .upsell-banner div {
@@ -343,36 +363,37 @@ async function handleDelete(id: string) {
 
 .upsell-banner strong {
   display: block;
-  color: #92400e;
-  font-weight: 700;
+  color: var(--md3-on-tertiary-container);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .upsell-banner p {
-  margin: 0.1rem 0 0;
-  color: #78350f;
-  font-size: 0.8rem;
+  margin: var(--md3-space-1) 0 0;
+  color: var(--md3-on-tertiary-container);
+  font-size: var(--md3-body-sm);
 }
 
 .upsell-btn {
   flex-shrink: 0;
   padding: 0.5rem 1rem;
-  background: #f59e0b;
-  color: white;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 700;
+  background: var(--md3-tertiary);
+  color: var(--md3-on-tertiary);
+  border-radius: var(--md3-rounded-sm);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
   text-decoration: none;
-  transition: background 0.15s;
+  transition: opacity var(--md3-transition-fast);
 }
 
 .upsell-btn:hover {
-  background: #d97706;
+  opacity: 0.88;
 }
 
 /* Transitions */
 .slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.2s ease;
+  transition: all var(--md3-transition-normal);
 }
 
 .slide-down-enter-from {

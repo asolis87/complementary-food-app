@@ -5,17 +5,25 @@
  * registration. Clean, declarative, one place to audit.
  *
  * Usage: { preHandler: [requireAuth, requireTier('PRO')] }
+ * Usage with INSUFFICIENT_TIER error: { preHandler: [requireAuth, requireTier('PRO', { code: 'INSUFFICIENT_TIER' })] }
  */
 
-import { tierAtLeast } from '@cfa/shared'
-import type { UserTier } from '@cfa/shared'
+import { tierAtLeast } from '@pakulab/shared'
+import type { UserTier } from '@pakulab/shared'
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { ForbiddenError, UnauthorizedError } from '../errors/index.js'
+import { ForbiddenError, InsufficientTierError, UnauthorizedError } from '../errors/index.js'
+
+export interface RequireTierOptions {
+  /** Error code to return when tier is insufficient. Default: 'FORBIDDEN' */
+  code?: 'FORBIDDEN' | 'INSUFFICIENT_TIER'
+}
 
 /**
  * Creates a preHandler that requires at least `tier` to proceed.
  */
-export function requireTier(tier: UserTier) {
+export function requireTier(tier: UserTier, options?: RequireTierOptions) {
+  const errorCode = options?.code ?? 'FORBIDDEN'
+
   return async function tierGuard(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
     if (!request.user) {
       throw new UnauthorizedError()
@@ -24,6 +32,9 @@ export function requireTier(tier: UserTier) {
     const userTier = request.user.tier
 
     if (!tierAtLeast(userTier, tier)) {
+      if (errorCode === 'INSUFFICIENT_TIER') {
+        throw new InsufficientTierError(tier, userTier)
+      }
       throw new ForbiddenError(
         `Esta función requiere plan ${tier === 'PRO' ? 'Pro' : 'gratuito con cuenta'}. ` +
           `Tu plan actual es: ${userTier}`,
