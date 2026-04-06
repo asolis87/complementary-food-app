@@ -238,6 +238,10 @@ async function handleGoogleLogin() {
 }
 
 .forgot-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem;
+  min-height: 44px;
   font-family: var(--md3-font-label);
   font-size: var(--md3-label-lg);
   font-weight: var(--md3-weight-semibold);

@@ -1233,7 +1233,9 @@ function groupKey(group: string): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--md3-rounded-full);
   transition: all var(--md3-transition-fast);
   opacity: 0.5;
@@ -1595,7 +1597,9 @@ function groupKey(group: string): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--md3-rounded-full);
   transition: all var(--md3-transition-fast);
   opacity: 0.5;

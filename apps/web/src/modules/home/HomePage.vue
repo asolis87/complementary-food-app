@@ -902,6 +902,12 @@ onMounted(() => {
   position: relative;
 }
 
+@media (max-width: 430px) {
+  .preview-visual {
+    min-width: 0;
+  }
+}
+
 .balance-viz {
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-md);
@@ -948,7 +954,7 @@ onMounted(() => {
   bottom: calc(-1 * var(--md3-space-4));
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
 }
 
 .balance-hint {

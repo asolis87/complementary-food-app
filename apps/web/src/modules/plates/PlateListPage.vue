@@ -636,7 +636,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   padding: 0.125rem var(--md3-space-2);
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: var(--md3-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -748,7 +748,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   color: var(--chip-color, var(--md3-on-surface-variant));
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: var(--md3-weight-semibold);
   white-space: nowrap;
   max-width: 120px;

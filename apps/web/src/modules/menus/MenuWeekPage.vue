@@ -1222,6 +1222,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   justify-content: center;
   width: 36px;
   height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   border: none;
   background: transparent;
   color: var(--md3-primary);
@@ -1904,6 +1906,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   justify-content: center;
   width: 28px;
   height: 28px;
+  min-width: 44px;
+  min-height: 44px;
   border: none;
   background: transparent;
   color: var(--md3-on-surface-variant);
@@ -1933,6 +1937,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   gap: var(--md3-space-2);
   flex: 1;
   padding: var(--md3-space-2) var(--md3-space-3);
+  min-width: 44px;
+  min-height: 44px;
   border: 1.5px dashed var(--md3-outline-variant);
   border-radius: var(--md3-rounded-sm);
   background: transparent;

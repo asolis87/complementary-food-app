@@ -376,6 +376,8 @@ async function handleSignOut() {
   justify-content: center;
   padding: var(--md3-space-1);
   border-radius: var(--md3-rounded-full);
+  min-width: 44px;
+  min-height: 44px;
   transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
 }
 

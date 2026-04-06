@@ -145,24 +145,26 @@
     <!-- Free vs Pro comparison -->
     <div class="comparison">
       <h2>¿Qué incluye cada plan?</h2>
-      <table class="comparison-table" role="table">
-        <thead>
-          <tr>
-            <th>Función</th>
-            <th>Gratis</th>
-            <th class="pro-col">Pro
-              <span class="material-symbols-outlined pro-star" aria-hidden="true">star</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in comparisonRows" :key="row.feature">
-            <td>{{ row.feature }}</td>
-            <td>{{ row.free }}</td>
-            <td>{{ row.pro }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="comparison-table" role="table">
+          <thead>
+            <tr>
+              <th>Función</th>
+              <th>Gratis</th>
+              <th class="pro-col">Pro
+                <span class="material-symbols-outlined pro-star" aria-hidden="true">star</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in comparisonRows" :key="row.feature">
+              <td>{{ row.feature }}</td>
+              <td>{{ row.free }}</td>
+              <td>{{ row.pro }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- FAQ -->
@@ -689,6 +691,11 @@ h2 {
   font-weight: var(--md3-weight-bold);
   color: var(--md3-on-surface);
   margin-bottom: var(--md3-space-3);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .comparison-table {

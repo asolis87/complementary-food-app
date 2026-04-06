@@ -55,6 +55,11 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
+/* ─── Base: HTML ─── */
+html {
+  overflow-x: clip;
+}
+
 /* ─── Base: Body / Surface ─── */
 body {
   background-color: var(--md3-surface);

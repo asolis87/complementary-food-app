@@ -692,4 +692,11 @@ section[aria-label="Contenido del plato"] {
   opacity: 0;
   transform: translate(-50%, 12px);
 }
+
+/* Mobile responsive — reduce horizontal padding on small screens */
+@media (max-width: 430px) {
+  .page-main {
+    padding: var(--md3-space-3) var(--md3-space-2) var(--md3-space-8);
+  }
+}
 </style>

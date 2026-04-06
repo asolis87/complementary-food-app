@@ -342,6 +342,7 @@ async function handleDelete(id: string) {
 /* Upsell */
 .upsell-banner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--md3-space-3);
   padding: var(--md3-space-3) var(--md3-space-4);

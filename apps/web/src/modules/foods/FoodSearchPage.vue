@@ -471,7 +471,8 @@ function groupChipClass(group: FoodGroup): string {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.45rem 1rem;
+  padding: 0.625rem 1rem;
+  min-height: 44px;
   background: var(--md3-surface-container);
   color: var(--md3-on-surface-variant);
   border: none;
