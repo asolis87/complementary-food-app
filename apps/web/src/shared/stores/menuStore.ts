@@ -266,6 +266,13 @@ export const useMenuStore = defineStore('menus', () => {
 
       return result
     } catch (err) {
+      // 409 = menu already exists on server (stale cache or concurrent creation)
+      // Fetch the existing menu instead of failing
+      const status = (err as { status?: number }).status
+      if (status === 409) {
+        const existing = await fetchWeekMenu(babyProfileId, weekStartISO)
+        if (existing) return existing
+      }
       error.value = err instanceof Error ? err.message : 'Error al crear el menú'
       throw err
     } finally {

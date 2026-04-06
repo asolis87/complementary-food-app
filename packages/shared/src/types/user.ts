@@ -3,7 +3,7 @@
  */
 
 /** User subscription tier */
-export type UserTier = 'ANONYMOUS' | 'FREE' | 'PRO'
+export type UserTier = 'FREE' | 'PRO'
 
 /** Baby profile */
 export interface BabyProfile {

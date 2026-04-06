@@ -15,7 +15,10 @@ export const useDiaryStore = defineStore('diary', () => {
   const entries = ref<MealLog[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const selectedDate = ref<string>(new Date().toISOString().split('T')[0])
+  const now = new Date()
+  const selectedDate = ref<string>(
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  )
 
   // ─── Getters ──────────────────────────────────────────────────────────────
 

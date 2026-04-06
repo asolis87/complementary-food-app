@@ -1,0 +1,57 @@
+# Dependencies — installed inside the container
+node_modules/
+.pnpm-store/
+
+# Build outputs — generated inside the container
+dist/
+build/
+.output/
+*.tsbuildinfo
+
+# Git
+.git/
+.gitignore
+
+# IDE & Editor
+.vscode/
+.idea/
+.cursor/
+.windsurf/
+*.swp
+*.swo
+
+# Agent & AI config
+.agents/
+.atl/
+.claude/
+
+# Environment (injected via docker-compose)
+.env
+.env.local
+.env.*.local
+
+# Documentation (not needed in image)
+*.md
+!README.md
+complementary_food.md
+PROJECT_CONTEXT.md
+
+# Testing & Coverage
+coverage/
+.vitest/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# GitHub
+.github/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Docker (avoid recursive copy)
+docker-compose*.yml

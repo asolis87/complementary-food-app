@@ -6,6 +6,9 @@
     <!-- Offline indicator — shows when offline or syncing (T-028) -->
     <OfflineIndicator :is-syncing="isSyncing" />
 
+    <!-- Trial banner — shows when user is trialing -->
+    <TrialBanner />
+
     <!-- Header -->
     <header class="app-header">
       <div class="header-content">
@@ -41,7 +44,7 @@
             <!-- Tier badge — clickable -->
             <!-- FREE badge → link to /pricing -->
             <RouterLink
-              v-if="!authStore.isPro && !authStore.isAnonymous"
+              v-if="!authStore.isPro"
               to="/pricing"
               class="tier-badge badge-free"
               title="Plan Gratuito — mejorá a Pro para más funciones"
@@ -67,12 +70,6 @@
               <span class="material-symbols-outlined">warning</span>
             </span>
 
-            <!-- Anonymous badge — not clickable -->
-            <span
-              v-if="authStore.isAnonymous"
-              class="tier-badge badge-anon"
-              title="Sesión sin cuenta — creá una cuenta para guardar tu progreso"
-            >Invitado</span>
             <RouterLink to="/profile" class="btn btn-ghost user-btn">
               <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
               <span class="user-name">{{ authStore.displayName }}</span>
@@ -152,11 +149,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useBillingStore } from '@/shared/stores/billingStore.js'
 import OfflineIndicator from '@/shared/components/OfflineIndicator.vue'
+import TrialBanner from '@/shared/components/TrialBanner.vue'
 import { getPendingCount, getPendingPlates, removeFromQueue } from '@/shared/services/syncQueue.js'
 import { apiClient } from '@/shared/api/client.js'
+const router = useRouter()
 const authStore = useAuthStore()
 const billingStore = useBillingStore()
 const showDisclaimer = ref(false)
@@ -209,8 +209,9 @@ onMounted(async () => {
     if (count > 0) await flushSyncQueue()
   }
 
-  // Billing subscription check
-  if (authStore.isPro && !billingStore.subscription) {
+  // Billing subscription check — fetch for all authenticated users
+  // (needed for trial banner, pro tier display, etc.)
+  if (authStore.isAuthenticated && !billingStore.subscription) {
     await billingStore.fetchSubscription()
   }
 })
@@ -252,6 +253,7 @@ const userInitial = computed(() => {
 
 async function handleSignOut() {
   await authStore.signOut()
+  await router.push({ name: 'login' })
 }
 </script>
 
@@ -582,11 +584,6 @@ async function handleSignOut() {
 .badge-free {
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
-}
-
-.badge-anon {
-  background: var(--md3-surface-container-high);
-  color: var(--md3-on-surface-variant);
 }
 
 .badge-past-due {

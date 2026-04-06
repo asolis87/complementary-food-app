@@ -39,18 +39,19 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 # Copy workspace manifests for production install
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+
+# Copy prisma schema BEFORE install — @prisma/client postinstall needs it
+COPY prisma/ ./prisma/
 
 # Production deps only
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built output and prisma
+# Copy built output
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY prisma/ ./prisma/
 
 # Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \

@@ -514,7 +514,8 @@ const last7Days = computed(() => {
   for (let i = 0; i < DAYS_BACK; i++) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const iso = d.toISOString().split('T')[0]
+    // Build ISO string from LOCAL date parts to avoid UTC timezone shift
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
     let label: string
     let icon: string
@@ -534,11 +535,19 @@ const last7Days = computed(() => {
   return days
 })
 
+/** Build YYYY-MM-DD from local date parts (avoids UTC timezone shift) */
+function toLocalISO(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 const activeDateLabel = computed(() => {
   const targetIso = diaryStore.selectedDate
   const d = new Date(targetIso + 'T00:00:00')
-  const today = new Date().toISOString().split('T')[0]
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const now = new Date()
+  const today = toLocalISO(now)
+  const yd = new Date(now)
+  yd.setDate(yd.getDate() - 1)
+  const yesterday = toLocalISO(yd)
 
   const formatted = d.toLocaleDateString('es-MX', {
     weekday: 'long',

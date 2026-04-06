@@ -1,6 +1,7 @@
 /**
  * Tier composable — reactive tier checks for UI gating.
  * Design: AD11 — frontend counterpart to backend requireTier hook.
+ * Updated: ANONYMOUS tier removed, only FREE and PRO remain.
  */
 
 import type { UserTier } from '@pakulab/shared'
@@ -12,7 +13,6 @@ export function useTier() {
   const authStore = useAuthStore()
 
   const tier = computed((): UserTier => authStore.tier)
-  const isAnonymous = computed(() => tier.value === 'ANONYMOUS')
   const isFree = computed(() => tier.value === 'FREE')
   const isPro = computed(() => tier.value === 'PRO')
 
@@ -34,7 +34,6 @@ export function useTier() {
 
   return {
     tier,
-    isAnonymous,
     isFree,
     isPro,
     canAccess,

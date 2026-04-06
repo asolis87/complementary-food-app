@@ -34,32 +34,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   /**
-   * POST /api/auth/anonymous
-   * Creates an anonymous session using BetterAuth's anonymous plugin.
-   * This endpoint wraps auth.api.signInAnonymous() to provide a REST interface.
-   * Note: BetterAuth exposes this as /sign-in/anonymous internally.
-   */
-  fastify.post('/anonymous', async (request, reply) => {
-    const result = await auth.api.signInAnonymous({
-      headers: request.headers,
-      asResponse: true,
-    })
-    // Forward cookies from BetterAuth response to Fastify reply
-    const setCookieHeader = result.headers.get('set-cookie')
-    if (setCookieHeader) {
-      reply.header('set-cookie', setCookieHeader)
-    }
-    reply.send(await result.json())
-  })
-
-  /**
    * GET /api/auth/session-info
    * Returns the currently authenticated user and their tier.
    * Used by the frontend authStore on app mount to restore session.
+   * Unauthenticated users receive tier: 'FREE' (not 'ANONYMOUS' - that flow was removed).
    */
   fastify.get('/session-info', async (request, reply) => {
     if (!request.user) {
-      reply.send({ user: null, tier: 'ANONYMOUS' })
+      reply.send({ user: null, tier: 'FREE' })
       return
     }
 
@@ -67,9 +49,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       user: {
         id: request.user.id,
         email: request.user.email,
-        name: undefined as string | undefined, // populated below
+        name: undefined as string | undefined,
         tier: request.user.tier,
-        isAnonymous: request.user.isAnonymous,
         createdAt: new Date().toISOString(),
       },
       tier: request.user.tier,

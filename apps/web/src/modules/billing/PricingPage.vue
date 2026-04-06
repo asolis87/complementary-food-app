@@ -79,7 +79,7 @@
 
         <p class="trial-note">
           <span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span>
-          Prueba gratis 7 días
+          Prueba gratis 21 días
         </p>
 
         <button
@@ -94,9 +94,9 @@
       <!-- Anual -->
       <div class="plan plan-anual">
         <h2>Pro Anual</h2>
-        <p class="price">$799 <span>MXN / año</span></p>
-        <p class="price-monthly-equiv">Equivale a $66 / mes</p>
-        <div class="savings-pill">Ahorrás 33%</div>
+        <p class="price">$999 <span>MXN / año</span></p>
+        <p class="price-monthly-equiv">Equivale a $83 / mes</p>
+        <div class="savings-pill">Ahorrá 17%</div>
 
         <ul class="features">
           <li v-for="feature in proFeatures" :key="feature">
@@ -107,7 +107,7 @@
 
         <p class="trial-note">
           <span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span>
-          Prueba gratis 7 días
+          Prueba gratis 21 días
         </p>
 
         <button
@@ -234,7 +234,7 @@ const faqItems = [
   },
   {
     q: '¿Cómo funciona la prueba gratis?',
-    a: 'Tenés 7 días gratis al suscribirte. No se cobra nada hasta que termina el período de prueba. Podés cancelar antes sin costo.',
+    a: 'Tenés 21 días gratis al suscribirte. No se cobra nada hasta que termina el período de prueba. Podés cancelar antes sin costo.',
   },
 ]
 

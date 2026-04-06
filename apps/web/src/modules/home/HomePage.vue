@@ -13,7 +13,7 @@
 
         <p class="hero-subtitle">
           Armá platos balanceados para tu bebé con el indicador de balance
-          astringente/laxante. Gratis, sin registro, funciona sin internet.
+          astringente/laxante. Creá tu cuenta gratis y empezá a organizar las comidas de tu bebé.
         </p>
 
         <div class="hero-ctas">
@@ -252,16 +252,15 @@
         <span class="cta-deco-icon material-symbols-outlined" aria-hidden="true">flatware</span>
         <h2 class="cta-title">¿Lista para comenzar el viaje?</h2>
         <p class="cta-subtitle">
-          No necesitás crear una cuenta. Empezá a armar platos ahora mismo, gratis.
+          Creá tu cuenta gratis y empezá a guardar tus platos y el historial de tu bebé.
         </p>
-        <RouterLink to="/plate/new" class="btn-primary btn-large" aria-label="Ir al armador de platos">
-          <span class="material-symbols-outlined" aria-hidden="true">restaurant</span>
-          Armar mi primer plato
+        <RouterLink to="/auth/signup" class="btn-primary btn-large" aria-label="Crear cuenta gratis">
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Crear cuenta gratis
         </RouterLink>
         <p class="cta-note">
-          ¿Querés guardar tus platos?
-          <RouterLink to="/auth/signup">Creá una cuenta gratis</RouterLink>
-          o <RouterLink to="/pricing">conocé el Plan Pro</RouterLink>.
+          ¿Querés conocer más sobre los planes?
+          <RouterLink to="/pricing">Mirá todas las opciones disponibles</RouterLink>.
         </p>
       </div>
     </section>

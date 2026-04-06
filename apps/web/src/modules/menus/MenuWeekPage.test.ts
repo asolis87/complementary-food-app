@@ -2,10 +2,10 @@
  * MenuWeekPage tests — Phase 2: UI Food Visualization
  *
  * Tests for:
- * - Desktop dots rendering for different food counts
- * - Overflow badge showing when >3 foods
- * - Tooltip content displaying full food list on hover
- * - Empty-slot fallback (no dots when no plate)
+ * - Desktop food name list rendering (replaced dots)
+ * - Overflow "+N más" indicator when >3 foods
+ * - Score tooltip on plate chips
+ * - Empty-slot CTA with "Agregar plato" text
  * - Mobile chip scrolling behavior
  */
 
@@ -86,8 +86,8 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
     vi.clearAllMocks()
   })
 
-  describe('REQ-001: Desktop A/L Dots', () => {
-    it('renders no dots when slot has no plate', async () => {
+  describe('REQ-1: Inline Food Name List', () => {
+    it('renders no food list when slot has no plate', async () => {
       const store = mockMenuStore({})
       vi.mocked(useMenuStore).mockReturnValue(store as any)
       vi.mocked(usePlateStore).mockReturnValue({
@@ -104,12 +104,12 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       const wrapper = mount(MenuWeekPage)
       await flushPromises()
 
-      const foodDots = wrapper.findAll('.food-dots-container')
-      expect(foodDots.length).toBe(0)
+      const foodList = wrapper.findAll('.food-list')
+      expect(foodList.length).toBe(0)
     })
 
-    it('renders 1 dot for plate with 1 food', async () => {
-      const plate = createMockPlate(1)
+    it('renders food names inline for plate with foods', async () => {
+      const plate = createMockPlate(3)
       const store = mockMenuStore({ 'lun:desayuno': plate })
       vi.mocked(useMenuStore).mockReturnValue(store as any)
       vi.mocked(usePlateStore).mockReturnValue({
@@ -126,36 +126,88 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       const wrapper = mount(MenuWeekPage)
       await flushPromises()
 
-      const dots = wrapper.findAll('.food-dot')
+      const foodItems = wrapper.findAll('.food-list__item')
+      expect(foodItems.length).toBeGreaterThanOrEqual(1)
+
+      const foodNames = wrapper.findAll('.food-list__name')
+      expect(foodNames.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('renders max 3 food names with overflow indicator for >3 foods', async () => {
+      const plate = createMockPlate(5)
+      const store = mockMenuStore({ 'lun:desayuno': plate })
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: ref([]),
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: ref([]),
+        activeProfile: ref({ id: 'profile-1' }),
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const foodItems = wrapper.findAll('.food-list__item')
+      expect(foodItems.length).toBeLessThanOrEqual(3)
+
+      const overflow = wrapper.find('.food-list__overflow')
+      expect(overflow.exists()).toBe(true)
+      expect(overflow.text()).toContain('+2')
+      expect(overflow.text()).toContain('más')
+    })
+
+    it('shows no overflow when 3 or fewer foods', async () => {
+      const plate = createMockPlate(3)
+      const store = mockMenuStore({ 'lun:desayuno': plate })
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: ref([]),
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: ref([]),
+        activeProfile: ref({ id: 'profile-1' }),
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const overflow = wrapper.find('.food-list__overflow')
+      expect(overflow.exists()).toBe(false)
+    })
+
+    it('renders A/L colored dots next to food names', async () => {
+      const plate = createMockPlate(3)
+      const store = mockMenuStore({ 'lun:desayuno': plate })
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: ref([]),
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: ref([]),
+        activeProfile: ref({ id: 'profile-1' }),
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const dots = wrapper.findAll('.food-list__dot')
       expect(dots.length).toBeGreaterThanOrEqual(1)
     })
-
-    it('renders max 3 dots even with more foods', async () => {
-      const plate = createMockPlate(5)
-      const store = mockMenuStore({ 'lun:desayuno': plate })
-      vi.mocked(useMenuStore).mockReturnValue(store as any)
-      vi.mocked(usePlateStore).mockReturnValue({
-        savedPlates: ref([]),
-        loading: ref(false),
-        fetchSavedPlates: vi.fn(),
-      } as any)
-      vi.mocked(useProfileStore).mockReturnValue({
-        profiles: ref([]),
-        activeProfile: ref({ id: 'profile-1' }),
-        fetchProfiles: vi.fn(),
-      } as any)
-
-      const wrapper = mount(MenuWeekPage)
-      await flushPromises()
-
-      const dots = wrapper.findAll('.food-dot')
-      expect(dots.length).toBeLessThanOrEqual(3)
-    })
   })
 
-  describe('REQ-002: Overflow Badge', () => {
-    it('shows no overflow badge when 3 or fewer foods', async () => {
-      const plate = createMockPlate(3)
+  describe('REQ-3: Balance Score Tooltip', () => {
+    it('shows tooltip on score icon for balanced plate', async () => {
+      const plate = createMockPlate(3, { balanceScore: 0.5 })
       const store = mockMenuStore({ 'lun:desayuno': plate })
       vi.mocked(useMenuStore).mockReturnValue(store as any)
       vi.mocked(usePlateStore).mockReturnValue({
@@ -172,12 +224,13 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       const wrapper = mount(MenuWeekPage)
       await flushPromises()
 
-      const overflowBadge = wrapper.find('.food-overflow-badge')
-      expect(overflowBadge.exists()).toBe(false)
+      const scoreIcon = wrapper.find('.plate-chip__score')
+      expect(scoreIcon.exists()).toBe(true)
+      expect(scoreIcon.attributes('title')).toBe('Plato equilibrado')
     })
 
-    it('shows overflow badge when more than 3 foods', async () => {
-      const plate = createMockPlate(5)
+    it('shows tooltip on score icon for astringent plate', async () => {
+      const plate = createMockPlate(3, { balanceScore: -0.5 })
       const store = mockMenuStore({ 'lun:desayuno': plate })
       vi.mocked(useMenuStore).mockReturnValue(store as any)
       vi.mocked(usePlateStore).mockReturnValue({
@@ -194,58 +247,8 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       const wrapper = mount(MenuWeekPage)
       await flushPromises()
 
-      const overflowBadge = wrapper.find('.food-overflow-badge')
-      expect(overflowBadge.exists()).toBe(true)
-      expect(overflowBadge.text()).toBe('+2')
-    })
-  })
-
-  describe('REQ-003: Tooltip on Hover', () => {
-    it('does not show tooltip for empty slots', async () => {
-      const store = mockMenuStore({})
-      vi.mocked(useMenuStore).mockReturnValue(store as any)
-      vi.mocked(usePlateStore).mockReturnValue({
-        savedPlates: ref([]),
-        loading: ref(false),
-        fetchSavedPlates: vi.fn(),
-      } as any)
-      vi.mocked(useProfileStore).mockReturnValue({
-        profiles: ref([]),
-        activeProfile: ref({ id: 'profile-1' }),
-        fetchProfiles: vi.fn(),
-      } as any)
-
-      const wrapper = mount(MenuWeekPage)
-      await flushPromises()
-
-      const tooltip = wrapper.find('.food-tooltip')
-      expect(tooltip.exists()).toBe(false)
-    })
-
-    it('shows tooltip with full food list on hover', async () => {
-      const plate = createMockPlate(3)
-      const store = mockMenuStore({ 'lun:desayuno': plate })
-      vi.mocked(useMenuStore).mockReturnValue(store as any)
-      vi.mocked(usePlateStore).mockReturnValue({
-        savedPlates: ref([]),
-        loading: ref(false),
-        fetchSavedPlates: vi.fn(),
-      } as any)
-      vi.mocked(useProfileStore).mockReturnValue({
-        profiles: ref([]),
-        activeProfile: ref({ id: 'profile-1' }),
-        fetchProfiles: vi.fn(),
-      } as any)
-
-      const wrapper = mount(MenuWeekPage)
-      await flushPromises()
-
-      const plateChip = wrapper.find('.plate-chip')
-      await plateChip.trigger('mouseenter')
-      await flushPromises()
-
-      const tooltipItems = document.querySelectorAll('.food-tooltip__item')
-      expect(tooltipItems.length).toBe(3)
+      const scoreIcon = wrapper.find('.plate-chip__score')
+      expect(scoreIcon.attributes('title')).toBe('Plato astringente')
     })
   })
 

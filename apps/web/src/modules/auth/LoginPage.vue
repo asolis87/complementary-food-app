@@ -73,17 +73,6 @@
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
         </button>
-
-        <AppButton
-          variant="ghost"
-          :full-width="true"
-          icon="visibility"
-          :loading="isAnonymousLoading"
-          :disabled="authStore.loading"
-          @click="handleAnonymous"
-        >
-          Probar sin cuenta
-        </AppButton>
       </div>
 
       <p class="signup-link">
@@ -110,7 +99,6 @@ const route = useRoute()
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
-const isAnonymousLoading = ref(false)
 const errors = reactive({ email: '', password: '' })
 
 onMounted(() => {
@@ -157,22 +145,6 @@ async function handleSubmit() {
 async function handleGoogleLogin() {
   // Google sign-in — to be implemented when OAuth provider is configured
   // authStore.signInWithGoogle()
-}
-
-async function handleAnonymous() {
-  isAnonymousLoading.value = true
-  try {
-    await authStore.signInAnonymous()
-    await router.push('/')
-  } catch (err) {
-    // Error displayed via authStore.error
-    console.error('[LoginPage] Anonymous login failed:', err)
-    console.error('[LoginPage] authStore.error:', authStore.error)
-    // Re-throw para que el usuario vea el error en el banner
-    throw err
-  } finally {
-    isAnonymousLoading.value = false
-  }
 }
 </script>
 

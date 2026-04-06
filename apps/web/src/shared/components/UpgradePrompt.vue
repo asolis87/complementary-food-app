@@ -30,19 +30,14 @@ const props = defineProps<{
 
 const authStore = useAuthStore()
 
-const isAnonymous = computed(() => authStore.isAnonymous)
 const isRequiringPro = computed(() => props.requiredTier === 'PRO')
 
 const icon = computed(() => {
-  if (isAnonymous.value) return 'lock_open'
   if (isRequiringPro.value) return 'star'
   return 'lock'
 })
 
 const title = computed(() => {
-  if (isAnonymous.value) {
-    return `Creá una cuenta para ${props.featureName}`
-  }
   if (isRequiringPro.value) {
     return `${props.featureName} es una función Pro`
   }
@@ -50,9 +45,6 @@ const title = computed(() => {
 })
 
 const description = computed(() => {
-  if (isAnonymous.value) {
-    return 'Registrate gratis en segundos y guardá todo tu progreso. Sin tarjeta de crédito.'
-  }
   if (isRequiringPro.value) {
     return 'Mejorá a Pro para desbloquear esta función y muchas más. Desde $99 MXN/mes.'
   }
@@ -60,7 +52,6 @@ const description = computed(() => {
 })
 
 const ctaLabel = computed(() => {
-  if (isAnonymous.value) return 'Registrate gratis'
   if (isRequiringPro.value) return 'Actualizar a Pro'
   return 'Crear cuenta'
 })
@@ -71,7 +62,6 @@ const ctaIcon = computed(() => {
 })
 
 const ctaRoute = computed(() => {
-  if (isAnonymous.value) return '/auth/signup'
   if (isRequiringPro.value) return '/pricing'
   return '/auth/signup'
 })

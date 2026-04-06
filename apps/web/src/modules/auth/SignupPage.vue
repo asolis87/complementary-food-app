@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import AuthLayout from '@/shared/components/AuthLayout.vue'
 import AppButton from '@/shared/components/AppButton.vue'
@@ -119,6 +119,7 @@ import AppInput from '@/shared/components/AppInput.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 // ─── Form state ───────────────────────────────────────────────────────────
 const name = ref('')
@@ -182,7 +183,9 @@ async function handleSubmit() {
   if (!validate()) return
   try {
     await authStore.signUp(email.value, password.value, name.value.trim())
-    await router.push('/')
+    // Redirect to plan selection onboarding, preserving the redirect param
+    const redirect = route.query.redirect as string | undefined
+    await router.push(redirect ? `/onboarding/plan?redirect=${encodeURIComponent(redirect)}` : '/onboarding/plan')
   } catch {
     // Error is displayed via authStore.error
   }

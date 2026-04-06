@@ -42,3 +42,6 @@ coverage/
 # PWA
 sw.js
 workbox-*.js
+
+# Playwright MCP snapshots
+.playwright-mcp/

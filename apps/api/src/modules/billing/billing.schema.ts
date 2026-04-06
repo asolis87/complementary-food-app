@@ -10,3 +10,10 @@ export const createCheckoutSchema = z.object({
 })
 
 export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>
+
+/** POST /api/billing/start-trial */
+export const startTrialSchema = z.object({
+  plan: z.enum(['TRIAL', 'PRO_MONTHLY', 'PRO_YEARLY']),
+})
+
+export type StartTrialInput = z.infer<typeof startTrialSchema>

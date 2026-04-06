@@ -88,6 +88,14 @@ export const router = createRouter({
       meta: { requiresAuth: false },
     },
 
+    // === Onboarding (authenticated) ===
+    {
+      path: '/onboarding/plan',
+      name: 'onboarding-plan',
+      component: () => import('@/modules/billing/PlanSelectionPage.vue'),
+      meta: { requiresAuth: true },
+    },
+
     // === Billing outcome pages (public — Stripe redirects here) ===
     {
       path: '/billing/success',
@@ -142,6 +150,21 @@ router.beforeEach(async (to) => {
   // Auth-required pages
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // Onboarding/plan — redirect if user already has subscription
+  if (to.name === 'onboarding-plan' && authStore.isAuthenticated) {
+    const { useBillingStore } = await import('@/shared/stores/billingStore.js')
+    const billingStore = useBillingStore()
+    // Ensure subscription is loaded
+    if (!billingStore.subscription) {
+      await billingStore.fetchSubscription()
+    }
+    if (billingStore.subscription) {
+      // Already has subscription, redirect home
+      const redirect = to.query.redirect as string | undefined
+      return redirect ? { path: redirect } : { name: 'home' }
+    }
   }
 
   // Tier-gated pages — redirect to pricing if tier is insufficient

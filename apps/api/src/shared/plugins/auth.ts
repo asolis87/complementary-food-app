@@ -1,11 +1,11 @@
 /**
  * Fastify plugin: extracts BetterAuth session from every request
- * and decorates `request.user` with id, email, tier and isAnonymous.
+ * and decorates `request.user` with id, email, and tier.
  *
  * Registers as a global onRequest hook so every downstream handler
  * can safely read `request.user` without extra plumbing.
  *
- * Design: AD5 — Anonymous → Free → Pro flow.
+ * Design: AD5 — Free → Pro flow (anonymous removed).
  */
 
 import type { FastifyPluginAsync } from 'fastify'
@@ -20,7 +20,6 @@ declare module 'fastify' {
       id: string
       email?: string
       tier: UserTier
-      isAnonymous: boolean
     }
   }
 }
@@ -64,8 +63,6 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         id: session.user.id,
         email: session.user.email ?? undefined,
         tier,
-        // BetterAuth anonymous plugin adds isAnonymous to the user object
-        isAnonymous: (session.user as { isAnonymous?: boolean }).isAnonymous ?? false,
       }
     } catch {
       // Never block the request on auth errors — let requireAuth handle it

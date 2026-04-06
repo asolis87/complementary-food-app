@@ -6,21 +6,18 @@ import type { UserTier } from '../types/user.js'
 
 /** Maximum saved plates per tier */
 export const PLATE_LIMITS: Record<UserTier, number> = {
-  ANONYMOUS: 0, // cannot save (session-only)
   FREE: 5,
   PRO: Infinity,
 }
 
 /** Maximum baby profiles per tier */
 export const BABY_PROFILE_LIMITS: Record<UserTier, number> = {
-  ANONYMOUS: 0,
   FREE: 1,
   PRO: 3,
 }
 
 /** Bitácora history window in days (Infinity = no limit) */
 export const DIARY_WINDOW_DAYS: Record<UserTier, number> = {
-  ANONYMOUS: 0,
   FREE: 7,
   PRO: Infinity,
 }
@@ -49,9 +46,9 @@ export const PRICING = {
     stripePriceKey: 'price_monthly',
   },
   yearly: {
-    amountMxn: 799_00, // $799 MXN
+    amountMxn: 999_00, // $999 MXN
     stripePriceKey: 'price_yearly',
-    savingsPercent: 33, // "Ahorra 33%"
+    savingsPercent: 17, // "Ahorra 17%"
   },
 }
 
@@ -59,12 +56,11 @@ export const PRICING = {
 export const TRIAL_TRIGGER = {
   minPlates: 3,
   minDiaryDays: 3,
-  trialDays: 7,
+  trialDays: 21,
 }
 
 /** Tier ordering for comparisons */
 const TIER_ORDER: Record<UserTier, number> = {
-  ANONYMOUS: 0,
   FREE: 1,
   PRO: 2,
 }

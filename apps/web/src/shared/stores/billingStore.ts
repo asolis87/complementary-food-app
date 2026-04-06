@@ -46,6 +46,10 @@ interface PortalResponse {
   }
 }
 
+interface StartTrialResponse {
+  data: Subscription
+}
+
 // ─── Store ──────────────────────────────────────────────────────────────────
 
 export const useBillingStore = defineStore('billing', () => {
@@ -116,6 +120,28 @@ export const useBillingStore = defineStore('billing', () => {
     }
   }
 
+  /**
+   * Start a trial subscription (no Stripe).
+   * Used for plan selection during onboarding.
+   * @param plan — 'TRIAL' | 'PRO_MONTHLY' | 'PRO_YEARLY'
+   */
+  async function startTrial(plan: 'TRIAL' | 'PRO_MONTHLY' | 'PRO_YEARLY'): Promise<Subscription> {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.post<StartTrialResponse>('/billing/start-trial', { plan })
+      subscription.value = response.data
+      return response.data
+    } catch (err) {
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo iniciar la prueba. Intentá de nuevo.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   /** Clear error state */
   function clearError(): void {
     error.value = null
@@ -130,6 +156,7 @@ export const useBillingStore = defineStore('billing', () => {
     fetchSubscription,
     createCheckout,
     openPortal,
+    startTrial,
     clearError,
   }
 })

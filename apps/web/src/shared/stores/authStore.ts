@@ -1,14 +1,12 @@
 /**
  * Auth Pinia store — manages user session and tier.
- * Design: AD5 — anonymous → free → Pro flow.
+ * Design: AD5 — FREE → PRO flow (anonymous removed).
  *
  * Actions:
  *   checkSession()       — restore session on app mount
  *   signIn(email, pwd)   — email/password sign-in
  *   signUp(email, pwd, name) — register new account
  *   signOut()            — sign out
- *   signInAnonymous()    — create anonymous session (zero-friction)
- *   upgradeAnonymous(email, pwd, name) — convert anonymous → registered
  */
 
 import type { AuthUser, UserTier } from '@pakulab/shared'
@@ -17,28 +15,27 @@ import { computed, ref } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'
 
 interface SessionResponse {
-  user: (AuthUser & { isAnonymous?: boolean }) | null
+  user: AuthUser | null
   tier: UserTier
 }
 
 interface AuthResponse {
-  user: AuthUser & { isAnonymous?: boolean }
+  user: AuthUser
   token?: string
 }
 
 export const useAuthStore = defineStore('auth', () => {
   // ─── State ────────────────────────────────────────────────────────────────
-  const user = ref<(AuthUser & { isAnonymous?: boolean }) | null>(null)
+  const user = ref<AuthUser | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   // ─── Getters ──────────────────────────────────────────────────────────────
   const isAuthenticated = computed(() => user.value !== null)
-  const tier = computed((): UserTier => user.value?.tier ?? 'ANONYMOUS')
-  const isAnonymous = computed(() => user.value?.isAnonymous === true)
+  const tier = computed((): UserTier => user.value?.tier ?? 'FREE')
   const isPro = computed(() => tier.value === 'PRO')
   const isFree = computed(() => tier.value === 'FREE')
-  const displayName = computed(() => user.value?.name ?? user.value?.email ?? 'Invitado')
+  const displayName = computed(() => user.value?.name ?? user.value?.email ?? 'Usuario')
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 
@@ -123,50 +120,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Create an anonymous session (zero-friction, no account needed).
-   * BetterAuth anonymous plugin creates a real session with isAnonymous=true.
-   */
-  async function signInAnonymous(): Promise<void> {
-    loading.value = true
-    error.value = null
-    try {
-      await apiClient.post('/auth/anonymous', {})
-      await checkSession()
-    } catch (err) {
-      error.value = err instanceof ApiError
-        ? err.message
-        : 'No se pudo crear la sesión anónima.'
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
-  /**
-   * Convert an anonymous session to a full registered account.
-   * BetterAuth merges the anonymous data automatically.
-   */
-  async function upgradeAnonymous(email: string, password: string, name: string): Promise<void> {
-    loading.value = true
-    error.value = null
-    try {
-      await apiClient.post('/auth/sign-up/email', {
-        email,
-        password,
-        name,
-      })
-      await checkSession()
-    } catch (err) {
-      error.value = err instanceof ApiError
-        ? err.message
-        : 'No se pudo crear la cuenta.'
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
   /** Clear any auth error (call before showing form) */
   function clearError(): void {
     error.value = null
@@ -180,7 +133,6 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters
     isAuthenticated,
     tier,
-    isAnonymous,
     isPro,
     isFree,
     displayName,
@@ -189,8 +141,6 @@ export const useAuthStore = defineStore('auth', () => {
     signIn,
     signUp,
     signOut,
-    signInAnonymous,
-    upgradeAnonymous,
     clearError,
     // Aliases for backward compat with existing callers
     fetchSession: checkSession,

@@ -1,0 +1,34 @@
+# ── Dev Dockerfile: tsx watch with hot reload ──────────────────────────────────
+FROM node:20-alpine
+
+# OpenSSL is required by Prisma on Alpine
+RUN apk add --no-cache openssl
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace manifests
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
+
+# Copy prisma schema BEFORE install — @prisma/client postinstall needs it
+COPY prisma/ ./prisma/
+
+# Install all deps (dev included — needed for tsx)
+RUN pnpm install --frozen-lockfile
+
+# Copy shared package source and build it
+COPY packages/shared/ ./packages/shared/
+COPY tsconfig.json ./
+RUN pnpm --filter @pakulab/shared build
+
+# Copy API source (will be overridden by volume mounts for src/)
+COPY apps/api/ ./apps/api/
+
+EXPOSE 3000
+
+# Run tsx watch — hot reload on file changes
+CMD ["pnpm", "--filter", "api", "dev"]

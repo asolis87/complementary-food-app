@@ -7,6 +7,8 @@
  *   POST /api/billing/create-portal  — create Stripe Portal session (requires auth, PRO)
  *   POST /api/billing/webhook        — Stripe webhook (NO auth, raw body)
  *   GET  /api/billing/subscription   — get current subscription status (requires auth)
+ *   POST /api/billing/start-trial    — start local trial subscription (requires auth)
+ *     Spec: Plan Selection Onboarding — creates TRIALING subscription with 21-day trial
  *
  * RAW BODY FOR STRIPE WEBHOOK:
  *   We use a scoped `preParsing` hook that fires only for this plugin's routes.
@@ -20,13 +22,14 @@ import type { FastifyPluginAsync } from 'fastify'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { requireTier } from '../../shared/hooks/requireTier.js'
 import { AppError, NotFoundError } from '../../shared/errors/index.js'
-import { createCheckoutSchema } from './billing.schema.js'
+import { createCheckoutSchema, startTrialSchema } from './billing.schema.js'
 import {
   createCheckoutSession,
   createPortalSession,
   constructWebhookEvent,
   handleWebhookEvent,
   getUserSubscription,
+  createTrialSubscription,
 } from './billing.service.js'
 
 export const billingRoutes: FastifyPluginAsync = async (fastify) => {
@@ -130,4 +133,26 @@ export const billingRoutes: FastifyPluginAsync = async (fastify) => {
     const sub = await getUserSubscription(fastify.prisma, request.user!.id)
     reply.send({ data: sub ?? null })
   })
+
+  /**
+   * POST /api/billing/start-trial
+   * Creates a local trial subscription (no Stripe).
+   * Used for plan selection during onboarding.
+   * Requires authentication.
+   */
+  fastify.post(
+    '/start-trial',
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const input = startTrialSchema.parse(request.body)
+      const user = request.user!
+
+      const subscription = await createTrialSubscription(fastify.prisma, {
+        userId: user.id,
+        plan: input.plan,
+      })
+
+      reply.code(201).send({ data: subscription })
+    },
+  )
 }

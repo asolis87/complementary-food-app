@@ -2,6 +2,29 @@
   <TierGate required-tier="PRO" feature-name="Menú Semanal">
     <div class="menu-page">
 
+      <!-- ─── Empty state: no baby profile ─── -->
+      <div v-if="!hasProfile && !profilesLoading" class="no-profile-state">
+        <span class="material-symbols-outlined no-profile-state__icon" aria-hidden="true">child_care</span>
+        <h2 class="no-profile-state__title">Primero creá un perfil de bebé</h2>
+        <p class="no-profile-state__text">
+          Para planificar el menú semanal necesitás tener un perfil de bebé.
+          Creá uno desde tu perfil y volvé acá.
+        </p>
+        <RouterLink to="/profile" class="no-profile-state__btn">
+          <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+          Ir a mi perfil
+        </RouterLink>
+      </div>
+
+      <!-- ─── Loading profiles ─── -->
+      <div v-else-if="profilesLoading" class="menu-loading">
+        <span class="menu-loading__spinner" aria-hidden="true" />
+        <p>Cargando perfiles...</p>
+      </div>
+
+      <!-- ─── Main content (requires profile) ─── -->
+      <template v-else>
+
       <!-- ─── Header ─── -->
       <header class="menu-header">
         <div class="menu-header__titles">
@@ -76,12 +99,28 @@
                   @mouseenter="showTooltip(day.key, meal.key)"
                   @mouseleave="hideTooltip"
                 >
-                  <span class="plate-chip__score" :class="scoreClass(getAssignedPlate(day.key, meal.key)!)">
+                  <span
+                    class="plate-chip__score"
+                    :class="scoreClass(getAssignedPlate(day.key, meal.key)!)"
+                    :title="scoreTooltip(getAssignedPlate(day.key, meal.key)!)"
+                  >
                     <span class="material-symbols-outlined plate-chip__score-icon" aria-hidden="true">
                       {{ scoreIcon(getAssignedPlate(day.key, meal.key)!) }}
                     </span>
                   </span>
                   <span class="plate-chip__name">{{ getAssignedPlate(day.key, meal.key)!.name }}</span>
+                  <button
+                    class="plate-chip__serve"
+                    :class="{ 'plate-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                    :title="menuStore.getServedAt(day.key, meal.key) ? 'Servido ✓' : 'Registrar comida'"
+                    :disabled="menuStore.isServeLoading(day.key, meal.key)"
+                    @click.stop="handleServeClick(day.key, meal.key)"
+                  >
+                    <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="plate-chip__serve-spinner" />
+                    <span v-else class="material-symbols-outlined" aria-hidden="true">
+                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                    </span>
+                  </button>
                   <button
                     class="plate-chip__remove"
                     :aria-label="`Quitar ${getAssignedPlate(day.key, meal.key)!.name}`"
@@ -90,39 +129,23 @@
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                   </button>
                 </div>
-                <!-- Food dots and overflow badge -->
-                <div class="food-dots-container">
-                  <span
-                    v-for="(item, index) in getVisibleFoodDots(day.key, meal.key)"
-                    :key="item.foodId"
-                    class="food-dot"
-                    :class="`food-dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                    :aria-label="item.food?.name"
-                  />
-                  <span
-                    v-if="getFoodOverflowCount(day.key, meal.key) > 0"
-                    class="food-overflow-badge"
+                <!-- Food list -->
+                <ul class="food-list" v-if="getVisibleFoods(day.key, meal.key).length > 0">
+                  <li
+                    v-for="food in getVisibleFoods(day.key, meal.key)"
+                    :key="food.foodId"
+                    class="food-list__item"
                   >
-                    +{{ getFoodOverflowCount(day.key, meal.key) }}
-                  </span>
-                </div>
-
-                <!-- Serve button -->
-                <button
-                  class="serve-btn"
-                  :class="getServeButtonClass(day.key, meal.key)"
-                  :disabled="isServeDisabled(day.key, meal.key)"
-                  :title="getServeTooltip(day.key, meal.key)"
-                  @click="handleServeClick(day.key, meal.key)"
-                >
-                  <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="serve-btn__spinner" />
-                  <template v-else>
-                    <span class="material-symbols-outlined serve-btn__icon" aria-hidden="true">
-                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
-                    </span>
-                    {{ getServeButtonLabel(day.key, meal.key) }}
-                  </template>
-                </button>
+                    <span
+                      class="food-list__dot"
+                      :class="`food-list__dot--${food.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                    />
+                    <span class="food-list__name">{{ food.food?.name ?? 'Alimento' }}</span>
+                  </li>
+                  <li v-if="getFoodOverflowCount(day.key, meal.key) > 0" class="food-list__overflow">
+                    +{{ getFoodOverflowCount(day.key, meal.key) }} más
+                  </li>
+                </ul>
               </template>
 
               <!-- Empty slot -->
@@ -135,7 +158,10 @@
                   @click="openPicker(day.key, meal.key)"
                 >
                   <span v-if="menuStore.isSlotLoading(day.key, meal.key)" class="slot-spinner" aria-hidden="true" />
-                  <span v-else class="material-symbols-outlined" aria-hidden="true">add</span>
+                  <template v-else>
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                    <span class="add-slot-btn__label">Agregar plato</span>
+                  </template>
                 </button>
               </template>
             </div>
@@ -452,6 +478,8 @@
         @error="onExportError"
       />
 
+      </template><!-- v-else: main content -->
+
     </div>
   </TierGate>
 </template>
@@ -475,7 +503,7 @@ const AL_LABELS: Record<string, string> = {
   NEUTRAL: 'Neutro',
 }
 
-const MAX_VISIBLE_DOTS = 3
+const MAX_VISIBLE_FOODS = 3
 const MAX_FOOD_NAME_LENGTH = 15
 
 interface TooltipState {
@@ -543,6 +571,11 @@ const plateStore = usePlateStore()
 const menuStore = useMenuStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
+
+// ─── Profile guard ────────────────────────────────────────────────────────
+
+const hasProfile = computed(() => !!profileStore.activeProfile)
+const profilesLoading = computed(() => profileStore.loading ?? false)
 
 // ─── Week state ───────────────────────────────────────────────────────────
 
@@ -804,12 +837,10 @@ function getServeTooltip(dayKey: DayKey, mealKey: MealKey): string {
 // ─── Food visualization helpers ───────────────────────────────────────────
 
 /**
- * Get visible food dots for desktop (max 3).
- * REQ-001: Show max 2-3 A/L colored dots per slot.
+ * Get visible foods for desktop food list (max 3). * REQ-1: Show up to 3 food names with A/L indicator dots.
  */
-function getVisibleFoodDots(dayKey: DayKey, mealKey: MealKey): PlateItemSummary[] {
-  const foods = menuStore.getSlotFoods(dayKey, mealKey)
-  return foods.slice(0, MAX_VISIBLE_DOTS)
+function getVisibleFoods(dayKey: DayKey, mealKey: MealKey): PlateItemSummary[] {
+  return menuStore.getSlotFoods(dayKey, mealKey).slice(0, MAX_VISIBLE_FOODS)
 }
 
 /**
@@ -817,7 +848,7 @@ function getVisibleFoodDots(dayKey: DayKey, mealKey: MealKey): PlateItemSummary[
  */
 function getFoodOverflowCount(dayKey: DayKey, mealKey: MealKey): number {
   const foods = menuStore.getSlotFoods(dayKey, mealKey)
-  return Math.max(0, foods.length - MAX_VISIBLE_DOTS)
+  return Math.max(0, foods.length - MAX_VISIBLE_FOODS)
 }
 
 /**
@@ -953,6 +984,16 @@ function scoreIcon(plate: Plate): string {
   return 'remove_circle'
 }
 
+/**
+ * Get tooltip text for the balance score icon.
+ * REQ-3: Explain the visual score indicator.
+ */
+function scoreTooltip(plate: Plate): string {
+  if (plate.balanceScore >0.2) return 'Plato equilibrado'
+  if (plate.balanceScore < -0.2) return 'Plato astringente'
+  return 'Plato neutro'
+}
+
 // ─── Export handlers ───────────────────────────────────────────────────────
 
 async function handleExport(): Promise<void> {
@@ -1035,6 +1076,91 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 </script>
 
 <style scoped>
+/* ─── No profile empty state ─── */
+.no-profile-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--md3-space-12) var(--md3-space-4);
+  gap: var(--md3-space-3);
+}
+
+.no-profile-state__icon {
+  font-size: 3.5rem !important;
+  color: var(--md3-primary);
+  opacity: 0.7;
+}
+
+.no-profile-state__title {
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  margin: 0;
+}
+
+.no-profile-state__text {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-lg);
+  color: var(--md3-on-surface-variant);
+  max-width: 400px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.no-profile-state__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-top: var(--md3-space-2);
+  padding: 0.75rem var(--md3-space-5);
+  background: var(--md3-gradient-cta);
+  color: var(--md3-on-primary);
+  border: none;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
+}
+
+.no-profile-state__btn:hover {
+  background: var(--md3-gradient-cta-hover);
+  box-shadow: var(--md3-shadow-elevated);
+}
+
+.no-profile-state__btn .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+/* ─── Loading state ─── */
+.menu-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--md3-space-12) var(--md3-space-4);
+  gap: var(--md3-space-3);
+  color: var(--md3-on-surface-variant);
+}
+
+.menu-loading__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Page layout ─── */
 .menu-page {
   display: flex;
@@ -1292,8 +1418,10 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--md3-space-1);
   width: 100%;
-  height: 36px;
+  min-height: 44px;
+  padding: var(--md3-space-2);
   border: 1.5px dashed var(--md3-outline-variant);
   border-radius: var(--md3-rounded-sm);
   background: transparent;
@@ -1310,6 +1438,12 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .add-slot-btn .material-symbols-outlined {
   font-size: 1.125rem;
+}
+
+.add-slot-btn__label {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-medium);
 }
 
 /* ─── Plate chip (desktop) ─── */
@@ -1339,9 +1473,54 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   font-size: var(--md3-body-sm);
   font-weight: var(--md3-weight-medium);
   color: var(--md3-on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  line-height: var(--md3-label-line-height);
+}
+
+.plate-chip__serve {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 8px;
+  margin: -8px;
+  border: none;
+  background: transparent;
+  color: var(--md3-primary);
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.plate-chip__serve:hover {
+  background: var(--md3-surface-container-high);
+}
+
+.plate-chip__serve--served {
+  color: var(--md3-primary);
+}
+
+.plate-chip__serve--served .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.plate-chip__serve .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.plate-chip__serve-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .plate-chip__remove {
@@ -1373,42 +1552,58 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   pointer-events: none;
 }
 
-/* ─── Food dots container (desktop) ─── */
-.food-dots-container {
+/* ─── Food list (desktop) ─── */
+.food-list {
+  list-style: none;
+  margin: var(--md3-space-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.food-list__item {
   display: flex;
   align-items: center;
   gap: var(--md3-space-1);
-  margin-top: var(--md3-space-1);
-  min-height: 12px;
 }
 
-.food-dot {
-  width: 8px;
-  height: 8px;
+.food-list__dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.food-dot--astringent {
+.food-list__dot--astringent {
   background: #ef4444;
 }
 
-.food-dot--laxative {
+.food-list__dot--laxative {
   background: #22c55e;
 }
 
-.food-dot--neutral {
+.food-list__dot--neutral {
   background: #9ca3af;
 }
 
-.food-overflow-badge {
-  font-family: var(--md3-font-label);
-  font-size: 10px;
-  font-weight: var(--md3-weight-semibold);
+.food-list__name {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-label-sm);
   color: var(--md3-on-surface-variant);
-  background: var(--md3-surface-container-high);
-  padding: 1px 4px;
-  border-radius: var(--md3-rounded-full);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.food-list__overflow {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-outline);
+  font-style: italic;
+  padding-left: calc(6px + var(--md3-space-1));
 }
 
 /* ─── Food tooltip ─── */

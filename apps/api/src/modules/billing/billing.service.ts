@@ -12,7 +12,7 @@
 import Stripe from 'stripe'
 import type { PrismaClient } from '@prisma/client'
 import { TRIAL_TRIGGER } from '@pakulab/shared'
-import { AppError } from '../../shared/errors/index.js'
+import { AppError, ConflictError, NotFoundError } from '../../shared/errors/index.js'
 
 // ─── Stripe client ─────────────────────────────────────────────────────────
 
@@ -181,6 +181,74 @@ export async function getUserSubscription(prisma: PrismaClient, userId: string) 
       createdAt: true,
     },
   })
+}
+
+// ─── Trial subscription ──────────────────────────────────────────────────────
+
+export type TrialPlan = 'TRIAL' | 'PRO_MONTHLY' | 'PRO_YEARLY'
+
+export interface CreateTrialSubscriptionInput {
+  userId: string
+  plan: TrialPlan
+}
+
+/**
+ * Creates a local trial subscription (no Stripe involved).
+ * Used for plan selection during onboarding.
+ *
+ * @throws ConflictError if user already has ACTIVE or TRIALING subscription
+ */
+export async function createTrialSubscription(
+  prisma: PrismaClient,
+  input: CreateTrialSubscriptionInput,
+) {
+  const { userId, plan } = input
+
+  // Check for existing ACTIVE or TRIALING subscription
+  const existing = await prisma.subscription.findUnique({
+    where: { userId },
+    select: { status: true },
+  })
+
+  if (existing && (existing.status === 'ACTIVE' || existing.status === 'TRIALING')) {
+    throw new ConflictError('Ya tenés una suscripción activa')
+  }
+
+  // Calculate interval from plan
+  const interval = plan === 'PRO_YEARLY' ? 'YEARLY' : 'MONTHLY'
+
+  // Calculate trial end (21 days from now)
+  const trialEnd = new Date(Date.now() + TRIAL_TRIGGER.trialDays * 24 * 60 * 60 * 1000)
+  const currentPeriodEnd = trialEnd // For trial, currentPeriodEnd equals trialEnd
+
+  // Create or update subscription
+  const subscription = await prisma.subscription.upsert({
+    where: { userId },
+    create: {
+      userId,
+      status: 'TRIALING',
+      interval,
+      trialEnd,
+      currentPeriodEnd,
+      stripeCustomerId: null,
+      stripeSubId: null,
+      stripePriceId: null,
+      cancelAtPeriodEnd: false,
+    },
+    update: {
+      status: 'TRIALING',
+      interval,
+      trialEnd,
+      currentPeriodEnd,
+      stripeCustomerId: null,
+      stripeSubId: null,
+      stripePriceId: null,
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
+    },
+  })
+
+  return subscription
 }
 
 // ─── Webhook handler ───────────────────────────────────────────────────────
