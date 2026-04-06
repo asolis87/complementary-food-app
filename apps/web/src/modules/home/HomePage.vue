@@ -289,12 +289,20 @@ onMounted(() => {
           }
         })
       },
-      { threshold: 0.15 },
+      { threshold: 0.05 },
     )
 
     document.querySelectorAll('.reveal, .reveal-child').forEach((el) => {
       observer.observe(el)
     })
+
+    // Safety net: force-reveal any sections still hidden after 2s
+    // (critical for mobile where tall sections may never reach 15% visibility)
+    setTimeout(() => {
+      document.querySelectorAll('.reveal:not(.revealed), .reveal-child:not(.revealed)').forEach((el) => {
+        el.classList.add('revealed')
+      })
+    }, 2000)
   })
 })
 </script>

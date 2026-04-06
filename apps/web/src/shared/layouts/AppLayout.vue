@@ -74,7 +74,7 @@
               <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
               <span class="user-name">{{ authStore.displayName }}</span>
             </RouterLink>
-            <button class="btn btn-ghost" @click="handleSignOut">Salir</button>
+            <button class="btn btn-ghost signout-btn" @click="handleSignOut">Salir</button>
           </template>
         </div>
       </div>
@@ -95,13 +95,21 @@
         <span class="material-symbols-outlined bottom-nav-icon">nutrition</span>
         <span class="bottom-nav-label">Alimentos</span>
       </RouterLink>
+      <RouterLink to="/menus" class="bottom-nav-item" active-class="active" v-if="authStore.isPro">
+        <span class="material-symbols-outlined bottom-nav-icon">calendar_month</span>
+        <span class="bottom-nav-label">Menú</span>
+      </RouterLink>
       <RouterLink to="/diary" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated">
         <span class="material-symbols-outlined bottom-nav-icon">auto_stories</span>
         <span class="bottom-nav-label">Bitácora</span>
       </RouterLink>
-      <RouterLink to="/pricing" class="bottom-nav-item" active-class="active" v-if="!authStore.isPro">
+      <RouterLink to="/pricing" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated && !authStore.isPro">
         <span class="material-symbols-outlined bottom-nav-icon">star</span>
         <span class="bottom-nav-label">Pro</span>
+      </RouterLink>
+      <RouterLink to="/profile" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated">
+        <span class="material-symbols-outlined bottom-nav-icon">person</span>
+        <span class="bottom-nav-label">Perfil</span>
       </RouterLink>
     </nav>
 
@@ -618,6 +626,24 @@ a.tier-badge:hover {
   align-items: center;
   gap: var(--md3-space-2);
   max-width: 140px;
+}
+
+/* ─── Mobile header fixes (hide email + signout on small screens) ─── */
+@media (max-width: 767px) {
+  .user-name {
+    display: none;
+  }
+  .user-btn {
+    max-width: none;
+    padding: var(--md3-space-1);
+  }
+  /* Hide sign out button on mobile — user accesses it from profile page */
+  .signout-btn {
+    display: none;
+  }
+  .header-content {
+    gap: var(--md3-space-1);
+  }
 }
 
 .user-avatar {

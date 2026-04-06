@@ -250,18 +250,21 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
    ═══════════════════════════════════════════════════════════════ */
 
 .plate-list-page {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
   padding: var(--md3-space-4);
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-4);
 }
 
+@media (max-width: 430px) {
+  .plate-list-page {
+    padding: var(--md3-space-2);
+  }
+}
+
 /* ─── Utilities ─── */
 .desktop-only {
-  display: none;
+  display: none !important;
 }
 
 .mobile-only {
@@ -549,6 +552,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   text-decoration: none;
   transition: transform var(--md3-transition-fast);
   position: relative;
+  overflow: hidden;
 }
 
 .plate-card:hover {

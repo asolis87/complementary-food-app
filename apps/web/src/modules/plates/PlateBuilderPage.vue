@@ -404,6 +404,7 @@ async function handleShare() {
 /* ─── Page shell ──────────────────────────────────────────────────────── */
 .plate-builder-page {
   min-height: 60vh;
+  overflow: hidden;
 }
 
 .page-main {
