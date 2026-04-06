@@ -9,7 +9,7 @@
  *   signOut()            — sign out
  */
 
-import type { AuthUser, UserTier } from '@pakulab/shared'
+import type { AuthUser, SubscriptionStatus, UserTier } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'
@@ -36,6 +36,49 @@ export const useAuthStore = defineStore('auth', () => {
   const isPro = computed(() => tier.value === 'PRO')
   const isFree = computed(() => tier.value === 'FREE')
   const displayName = computed(() => user.value?.name ?? user.value?.email ?? 'Usuario')
+
+  // Trial-related computeds
+  const subscriptionStatus = computed((): SubscriptionStatus | null =>
+    user.value?.subscriptionStatus ?? null
+  )
+  
+  const trialEnd = computed((): Date | null => {
+    if (!user.value?.trialEnd) return null
+    const date = new Date(user.value.trialEnd)
+    return isNaN(date.getTime()) ? null : date
+  })
+  
+  const isTrialing = computed(() => 
+    subscriptionStatus.value === 'TRIALING'
+  )
+  
+  const isTrialExpired = computed(() => {
+    if (subscriptionStatus.value === 'EXPIRED') return true
+    if (subscriptionStatus.value === 'TRIALING') {
+      const end = trialEnd.value
+      if (!end) return true // trialing without end date = expired
+      return end.getTime() < Date.now()
+    }
+    return false
+  })
+  
+  const isLockedOut = computed(() => 
+    isTrialExpired.value && !isPro.value
+  )
+  
+  const trialDaysLeft = computed((): number => {
+    if (!isTrialing.value) return 0
+    const end = trialEnd.value
+    if (!end) return 0
+    
+    const now = Date.now()
+    const endTime = end.getTime()
+    
+    if (endTime <= now) return 0
+    
+    const msPerDay = 24 * 60 * 60 * 1000
+    return Math.ceil((endTime - now) / msPerDay)
+  })
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 
@@ -82,6 +125,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Register a new account.
+   * AD3: Auto-provision 21-day trial after signup.
    */
   async function signUp(email: string, password: string, name: string): Promise<void> {
     loading.value = true
@@ -94,6 +138,20 @@ export const useAuthStore = defineStore('auth', () => {
       })
       // After sign-up, fetch session to populate user
       await checkSession()
+
+      // AD3: Auto-start trial subscription for new users
+      // Import billingStore lazily to avoid circular dependency
+      const { useBillingStore } = await import('@/shared/stores/billingStore.js')
+      const billingStore = useBillingStore()
+      try {
+        await billingStore.startTrial('TRIAL')
+        // Re-fetch session to get updated subscription status
+        await checkSession()
+      } catch {
+        // Trial creation failed - user still has account, but no trial
+        // They can retry from PlanSelectionPage or PricingPage
+        console.error('Failed to auto-start trial after signup')
+      }
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
@@ -130,12 +188,19 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     error,
-    // Getters
+    // Getters — legacy tier-based
     isAuthenticated,
     tier,
     isPro,
     isFree,
     displayName,
+    // Getters — trial-aware
+    subscriptionStatus,
+    trialEnd,
+    isTrialing,
+    isTrialExpired,
+    isLockedOut,
+    trialDaysLeft,
     // Actions
     checkSession,
     signIn,

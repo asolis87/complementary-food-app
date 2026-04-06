@@ -20,11 +20,14 @@ class ApiClient {
       throw new OfflineError()
     }
 
+    const headers: Record<string, string> = {}
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json'
+    }
+
     const response = await fetch(`${this.baseUrl}${path}`, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       credentials: 'include', // Send cookies (BetterAuth session)
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })

@@ -46,30 +46,30 @@ export const router = createRouter({
       meta: { requiresAuth: false, guestOnly: true },
     },
 
-    // === Free+ routes ===
+    // === Authenticated routes (FREE tier removed — all users are PRO during trial) ===
     {
       path: '/plates',
       name: 'plates',
       component: () => import('@/modules/plates/PlateListPage.vue'),
-      meta: { requiresAuth: true, requiredTier: 'FREE' },
+      meta: { requiresAuth: true },
     },
     {
       path: '/plates/:id',
       name: 'plate-detail',
       component: () => import('@/modules/plates/PlateDetailPage.vue'),
-      meta: { requiresAuth: true, requiredTier: 'FREE' },
+      meta: { requiresAuth: true },
     },
     {
       path: '/profile',
       name: 'profile',
       component: () => import('@/modules/profiles/ProfilePage.vue'),
-      meta: { requiresAuth: true, requiredTier: 'FREE' },
+      meta: { requiresAuth: true },
     },
     {
       path: '/diary',
       name: 'diary',
       component: () => import('@/modules/diary/DiaryPage.vue'),
-      meta: { requiresAuth: true, requiredTier: 'FREE' },
+      meta: { requiresAuth: true },
     },
 
     // === Pro routes ===
@@ -86,6 +86,14 @@ export const router = createRouter({
       name: 'pricing',
       component: () => import('@/modules/billing/PricingPage.vue'),
       meta: { requiresAuth: false },
+    },
+
+    // === Paywall (authenticated, locked out users) ===
+    {
+      path: '/paywall',
+      name: 'paywall',
+      component: () => import('@/modules/billing/PaywallPage.vue'),
+      meta: { requiresAuth: true },
     },
 
     // === Onboarding (authenticated) ===
@@ -139,35 +147,40 @@ export const router = createRouter({
 })
 
 // === Navigation Guards ===
+let sessionChecked = false
+
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
-  // Guest-only pages (login, signup) — redirect to home if already logged in
+  // 0. Restore session from cookie on first navigation (app load / refresh)
+  if (!sessionChecked) {
+    sessionChecked = true
+    await authStore.checkSession()
+  }
+
+  // 1. Guest-only pages (login, signup) — redirect to home if already logged in
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return { name: 'home' }
   }
 
-  // Auth-required pages
+  // 2. Auth-required pages — redirect to login if not authenticated
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  // Onboarding/plan — redirect if user already has subscription
-  if (to.name === 'onboarding-plan' && authStore.isAuthenticated) {
-    const { useBillingStore } = await import('@/shared/stores/billingStore.js')
-    const billingStore = useBillingStore()
-    // Ensure subscription is loaded
-    if (!billingStore.subscription) {
-      await billingStore.fetchSubscription()
-    }
-    if (billingStore.subscription) {
-      // Already has subscription, redirect home
-      const redirect = to.query.redirect as string | undefined
-      return redirect ? { path: redirect } : { name: 'home' }
+  // 3. Trial lockout — redirect to paywall if expired trial and no active subscription
+  // Allowed routes when locked out: paywall, pricing, auth, home, onboarding, legal
+  if (authStore.isAuthenticated && authStore.isLockedOut) {
+    const allowedRoutes = ['paywall', 'pricing', 'login', 'signup', 'home', 'privacy', 'terms']
+    const isOnboarding = to.path.startsWith('/onboarding')
+    
+    if (!allowedRoutes.includes(to.name as string) && !isOnboarding) {
+      return { name: 'paywall' }
     }
   }
 
-  // Tier-gated pages — redirect to pricing if tier is insufficient
+  // 4. Tier-gated pages — redirect to pricing if tier is insufficient
+  // (Note: During trial, users are PRO, so PRO routes are accessible)
   if (to.meta.requiredTier && authStore.user) {
     const { tierAtLeast } = await import('@pakulab/shared')
     if (!tierAtLeast(authStore.user.tier, to.meta.requiredTier as 'FREE' | 'PRO')) {

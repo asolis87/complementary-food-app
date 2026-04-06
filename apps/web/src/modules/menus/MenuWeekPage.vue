@@ -1168,6 +1168,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   gap: var(--md3-space-6);
   max-width: 1200px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 /* ─── Header ─── */
@@ -1697,6 +1698,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   flex-direction: column;
   gap: var(--md3-space-2);
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .food-chips-scroll {
@@ -1766,6 +1769,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-3);
+  min-width: 0;
 }
 
 .day-tabs {
@@ -1834,6 +1838,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-3);
+  min-width: 0;
 }
 
 .day-panel[hidden] {
@@ -1849,6 +1854,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   border-radius: var(--md3-rounded-md);
   box-shadow: var(--md3-shadow-soft);
   min-height: 64px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .meal-row__meta {
@@ -1883,6 +1890,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   align-items: center;
   gap: var(--md3-space-2);
   flex: 1;
+  min-width: 0;
   padding: var(--md3-space-2) var(--md3-space-3);
   background: var(--md3-surface-container);
   border-radius: var(--md3-rounded-sm);
@@ -1894,10 +1902,14 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .plate-row-chip__name {
   flex: 1;
+  min-width: 0;
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   font-weight: var(--md3-weight-medium);
   color: var(--md3-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .plate-row-chip__remove {
@@ -1908,6 +1920,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   height: 28px;
   min-width: 44px;
   min-height: 44px;
+  flex-shrink: 0;
   border: none;
   background: transparent;
   color: var(--md3-on-surface-variant);
@@ -2336,18 +2349,28 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   transition: opacity var(--md3-transition-normal);
 }
 
-.dialog-fade-enter-from,
-.dialog-fade-leave-to {
-  opacity: 0;
-}
-
 .dialog-fade-enter-active .dialog,
 .dialog-fade-leave-active .dialog {
   transition: transform var(--md3-transition-normal);
 }
 
+.dialog-fade-enter-from,
+.dialog-fade-leave-to {
+  opacity: 0;
+}
+
+.dialog-fade-enter-to,
+.dialog-fade-leave-from {
+  opacity: 1;
+}
+
 .dialog-fade-enter-from .dialog {
   transform: translateY(20px);
+}
+
+.dialog-fade-enter-to .dialog,
+.dialog-fade-leave-from .dialog {
+  transform: translateY(0);
 }
 
 .dialog-fade-leave-to .dialog {

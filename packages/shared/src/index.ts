@@ -32,7 +32,7 @@ export type {
   ServeMealResponse,
 } from './types/menu.js'
 
-export type { UserTier, BabyProfile, AuthUser, Reaction } from './types/user.js'
+export type { UserTier, SubscriptionStatus, BabyProfile, AuthUser, Reaction } from './types/user.js'
 export { REACTION_LABELS } from './types/user.js'
 
 export type { BalanceLabel, BalanceResult } from './types/balance.js'
@@ -42,12 +42,13 @@ export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS } from './consta
 export type { AllergenInfo } from './constants/allergens.js'
 
 export {
+  TRIAL_DURATION_DAYS,
+  TRIAL_PLAN,
   PLATE_LIMITS,
   BABY_PROFILE_LIMITS,
   DIARY_WINDOW_DAYS,
   FEATURE_TIERS,
   PRICING,
-  TRIAL_TRIGGER,
   tierAtLeast,
 } from './constants/tiers.js'
 

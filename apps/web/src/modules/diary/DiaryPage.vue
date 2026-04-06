@@ -486,16 +486,18 @@ const groupedEntries = computed(() => {
 
   for (const entry of forDate) {
     if (entry.plateId) {
-      const group = plateMap.get(entry.plateId) ?? []
+      // Group by plateId + mealType so the same plate in different meals stays separate
+      const key = `${entry.plateId}|${entry.mealType}`
+      const group = plateMap.get(key) ?? []
       group.push(entry)
-      plateMap.set(entry.plateId, group)
+      plateMap.set(key, group)
     } else {
       standalone.push(entry)
     }
   }
 
-  const plateGroups: PlateGroup[] = [...plateMap.entries()].map(([plateId, entries]) => ({
-    plateId,
+  const plateGroups: PlateGroup[] = [...plateMap.entries()].map(([_key, entries]) => ({
+    plateId: entries[0].plateId!,
     mealType: entries[0].mealType,
     time: entries[0].time ?? undefined,
     balanceLabel: entries[0].plateBalanceLabel ?? null,
@@ -643,9 +645,9 @@ const MEAL_TYPE_ICONS: Record<MealType, string> = {
   [MealType.BREAKFAST]: 'wb_sunny',
   [MealType.LUNCH]:     'lunch_dining',
   [MealType.DINNER]:    'bedtime',
-  [MealType.SNACK]:     'apple',
-  [MealType.SNACK_1]:   'apple',
-  [MealType.SNACK_2]:   'apple',
+  [MealType.SNACK]:     'nutrition',
+  [MealType.SNACK_1]:   'nutrition',
+  [MealType.SNACK_2]:   'nutrition',
 }
 
 const REACTION_LABELS_ES: Record<ReactionType, string> = {
@@ -782,6 +784,7 @@ function groupKey(group: string): string {
   flex-direction: column;
   gap: var(--md3-space-8);
   position: relative;
+  overflow-x: hidden;
 }
 
 /* ─── Page Header ──────────────────────────────────────────────────── */
@@ -1009,8 +1012,8 @@ function groupKey(group: string): string {
 }
 
 .group-dot {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: var(--md3-rounded-full);
   background: var(--md3-surface-container-high);
   transition: transform var(--md3-transition-fast);
@@ -1085,6 +1088,7 @@ function groupKey(group: string): string {
   display: flex;
   gap: var(--md3-space-3);
   position: relative;
+  min-width: 0;
 }
 
 .meal-card--allergen .meal-card-body {
@@ -1116,10 +1120,10 @@ function groupKey(group: string): string {
 .connector-dot--snack     { background: var(--md3-group-fruit); }
 
 .connector-line {
-  width: 2px;
+  width: 3px;
   flex: 1;
   min-height: 1.5rem;
-  background: var(--md3-surface-container);
+  background: var(--md3-outline-variant);
   margin-top: 0.25rem;
   margin-bottom: 0;
 }
@@ -1127,6 +1131,7 @@ function groupKey(group: string): string {
 /* Card body */
 .meal-card-body {
   flex: 1;
+  min-width: 0;
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-lg);
   padding: var(--md3-space-4);
@@ -1151,6 +1156,8 @@ function groupKey(group: string): string {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Meal type badge */
@@ -1239,6 +1246,7 @@ function groupKey(group: string): string {
   border-radius: var(--md3-rounded-full);
   transition: all var(--md3-transition-fast);
   opacity: 0.5;
+  flex-shrink: 0;
 }
 
 .meal-card-body:hover .delete-btn {
@@ -1260,6 +1268,8 @@ function groupKey(group: string): string {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .food-chip {
@@ -1272,8 +1282,12 @@ function groupKey(group: string): string {
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
   font-size: var(--md3-label-md);
-  font-weight: var(--md3-weight-medium);
+  font-weight: 500;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .food-chip--allergen {
@@ -1454,7 +1468,7 @@ function groupKey(group: string): string {
 /* ─── FAB ──────────────────────────────────────────────────────────── */
 .fab {
   position: fixed;
-  bottom: calc(var(--md3-space-8) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   right: var(--md3-space-6);
   width: 56px;
   height: 56px;
@@ -1470,7 +1484,7 @@ function groupKey(group: string): string {
   transition:
     box-shadow var(--md3-transition-fast),
     transform var(--md3-transition-fast);
-  z-index: 100;
+  z-index: 110;
 }
 
 .fab:hover {
@@ -1526,18 +1540,23 @@ function groupKey(group: string): string {
 .plate-food-chips {
   flex-direction: column;
   gap: var(--md3-space-2);
+  max-width: 100%;
 }
 
 .plate-food-item {
   display: flex;
   align-items: center;
-  gap: var(--md3-space-2);
-  flex-wrap: wrap;
+  gap: var(--md3-space-1);
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .plate-food-item .food-chip {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
+  overflow: hidden;
 }
 
 /* ─── Status badges ─────────────────────────────────────────────── */
@@ -1547,18 +1566,20 @@ function groupKey(group: string): string {
   padding: 0.15rem 0.45rem;
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
+  font-size: 0.7rem;
   font-weight: var(--md3-weight-medium);
   background: var(--md3-surface-container);
   color: var(--md3-on-surface-variant);
   white-space: nowrap;
   line-height: 1.4;
+  border: 1px solid var(--md3-outline-variant);
 }
 
 .status-badge--unreviewed {
-  background: var(--md3-surface-container-high);
+  background: var(--md3-surface-container);
   color: var(--md3-on-surface-variant);
   font-style: italic;
+  border: 1px solid var(--md3-outline-variant);
 }
 
 .status-badge--liked    { background: var(--md3-primary-container); color: var(--md3-on-primary-container); }
@@ -1627,6 +1648,18 @@ function groupKey(group: string): string {
     gap: var(--md3-space-6);
   }
 
+  .timeline-connector {
+    display: none;
+  }
+
+  .connector-line {
+    display: none;
+  }
+
+  .meal-card {
+    gap: 0;
+  }
+
   .page-title {
     font-size: var(--md3-headline-sm);
   }
@@ -1652,8 +1685,21 @@ function groupKey(group: string): string {
     padding: var(--md3-space-3);
   }
 
+  .edit-btn,
+  .delete-btn {
+    opacity: 0.7;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+  }
+
+  .edit-btn .material-symbols-outlined,
+  .delete-btn .material-symbols-outlined {
+    font-size: 0.875rem;
+  }
+
   .fab {
-    bottom: calc(var(--md3-space-6) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     right: var(--md3-space-3);
     width: 52px;
     height: 52px;

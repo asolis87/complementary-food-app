@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TRIAL_TRIGGER } from '@pakulab/shared'
+import { TRIAL_DURATION_DAYS } from '@pakulab/shared'
 import { ConflictError } from '../../shared/errors/index.js'
 
 // =============================================================================
@@ -84,8 +84,8 @@ describe('createTrialSubscription', () => {
 
     // trialEnd should be approximately 21 days from now
     // Allow 2 seconds tolerance for test execution time
-    const expectedMin = beforeTest + TRIAL_TRIGGER.trialDays * 24 * 60 * 60 * 1000 - 2000
-    const expectedMax = beforeTest + TRIAL_TRIGGER.trialDays * 24 * 60 * 60 * 1000 + 2000
+    const expectedMin = beforeTest + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000 - 2000
+    const expectedMax = beforeTest + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000 + 2000
 
     expect(result.trialEnd!.getTime()).toBeGreaterThanOrEqual(expectedMin)
     expect(result.trialEnd!.getTime()).toBeLessThanOrEqual(expectedMax)

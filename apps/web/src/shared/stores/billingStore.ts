@@ -1,10 +1,10 @@
 /**
  * Billing Pinia store — manages subscription state and Stripe interactions.
- * Spec: REQ-PAY-01, REQ-PAY-02
+ * Spec: REQ-PAY-01, REQ-PAY-02, Trial-First Model
  */
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -57,6 +57,18 @@ export const useBillingStore = defineStore('billing', () => {
   const subscription = ref<Subscription | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  // ─── Getters ───────────────────────────────────────────────────────────────
+  
+  /** True if user has an active trial subscription */
+  const isTrialing = computed(() => 
+    subscription.value?.status === 'TRIALING'
+  )
+  
+  /** True if user's trial has expired */
+  const isExpired = computed(() => 
+    subscription.value?.status === 'EXPIRED'
+  )
 
   // ─── Actions ───────────────────────────────────────────────────────────────
 
@@ -142,6 +154,28 @@ export const useBillingStore = defineStore('billing', () => {
     }
   }
 
+  /**
+   * Delete the user's account and all associated data.
+   * Calls DELETE /api/profiles/me which wipes everything via Prisma transaction.
+   * After success, clear local store state. Caller handles redirect.
+   */
+  async function deleteAccount(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.delete('/profiles/me')
+      // Clear billing state
+      subscription.value = null
+    } catch (err) {
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo eliminar la cuenta. Intentá de nuevo.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   /** Clear error state */
   function clearError(): void {
     error.value = null
@@ -152,11 +186,15 @@ export const useBillingStore = defineStore('billing', () => {
     subscription,
     loading,
     error,
+    // Getters
+    isTrialing,
+    isExpired,
     // Actions
     fetchSubscription,
     createCheckout,
     openPortal,
     startTrial,
+    deleteAccount,
     clearError,
   }
 })

@@ -112,7 +112,7 @@ const foodItems = computed(() =>
 const mealTypes: { value: MealType; label: string; icon: string }[] = [
   { value: MealType.BREAKFAST, label: 'Desayuno', icon: 'wb_sunny' },
   { value: MealType.LUNCH,     label: 'Comida',   icon: 'lunch_dining' },
-  { value: MealType.SNACK,     label: 'Colación', icon: 'apple' },
+  { value: MealType.SNACK,     label: 'Colación', icon: 'nutrition' },
   { value: MealType.DINNER,    label: 'Cena',     icon: 'bedtime' },
 ]
 

@@ -25,14 +25,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/shared/layouts/AppLayout.vue'
 import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 import ToastNotification from '@/shared/components/ToastNotification.vue'
-import { useAuthStore } from '@/shared/stores/authStore.js'
 
-const authStore = useAuthStore()
 const route = useRoute()
 
 /**
@@ -41,10 +39,8 @@ const route = useRoute()
  */
 const isAuthRoute = computed(() => route.path.startsWith('/auth'))
 
-// Restore session on app mount (reads the BetterAuth cookie)
-onMounted(async () => {
-  await authStore.checkSession()
-})
+// Session restoration is handled by the router beforeEach guard
+// (runs before any navigation, including initial app load)
 </script>
 
 <style>

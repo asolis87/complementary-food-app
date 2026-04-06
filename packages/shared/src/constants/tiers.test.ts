@@ -1,58 +1,31 @@
 /**
  * Unit tests for tier constants and tierAtLeast function.
  *
- * These tests assert the NEW contract after removing ANONYMOUS:
- * - UserTier is only 'FREE' | 'PRO' (no ANONYMOUS)
+ * These tests assert the NEW contract for trial-first model:
+ * - UserTier is only 'FREE' | 'PRO' (FREE is lockout, not a plan)
  * - tierAtLeast uses FREE as the base tier
- * - TRIAL_TRIGGER.trialDays is 21
+ * - TRIAL_DURATION_DAYS is 21
+ * - FREE tier limits are 0 (locked out)
+ * - PRO tier has full access
  * - Yearly price is 999_00 MXN cents ($999)
  * - Yearly savings is 17%
  *
- * TDD: These tests should FAIL initially because the code still has
- * ANONYMOUS and uses old values. They pass after T2 is implemented.
- *
- * Spec: remove-anonymous-add-trial-billing
+ * Spec: trial-first-model
  */
 
 import { describe, it, expect } from 'vitest'
-import { PLATE_LIMITS, BABY_PROFILE_LIMITS, DIARY_WINDOW_DAYS, PRICING, TRIAL_TRIGGER, tierAtLeast } from './tiers.js'
+import {
+  TRIAL_DURATION_DAYS,
+  TRIAL_PLAN,
+  PLATE_LIMITS,
+  BABY_PROFILE_LIMITS,
+  DIARY_WINDOW_DAYS,
+  PRICING,
+  tierAtLeast,
+} from './tiers.js'
 
 // ──────────────────────────────────────────────────────────────────────────────
-// UserTier contract — no ANONYMOUS
-// ──────────────────────────────────────────────────────────────────────────────
-
-describe('PLATE_LIMITS', () => {
-  it('contains only FREE and PRO keys (no ANONYMOUS)', () => {
-    const keys = Object.keys(PLATE_LIMITS) as string[]
-    expect(keys).toHaveLength(2)
-    expect(keys).toContain('FREE')
-    expect(keys).toContain('PRO')
-    expect(keys).not.toContain('ANONYMOUS')
-  })
-})
-
-describe('BABY_PROFILE_LIMITS', () => {
-  it('contains only FREE and PRO keys (no ANONYMOUS)', () => {
-    const keys = Object.keys(BABY_PROFILE_LIMITS) as string[]
-    expect(keys).toHaveLength(2)
-    expect(keys).toContain('FREE')
-    expect(keys).toContain('PRO')
-    expect(keys).not.toContain('ANONYMOUS')
-  })
-})
-
-describe('DIARY_WINDOW_DAYS', () => {
-  it('contains only FREE and PRO keys (no ANONYMOUS)', () => {
-    const keys = Object.keys(DIARY_WINDOW_DAYS) as string[]
-    expect(keys).toHaveLength(2)
-    expect(keys).toContain('FREE')
-    expect(keys).toContain('PRO')
-    expect(keys).not.toContain('ANONYMOUS')
-  })
-})
-
-// ──────────────────────────────────────────────────────────────────────────────
-// tierAtLeast — two-tier ordering
+// UserTier contract — no ANONYMOUS, FREE is lockout state
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('tierAtLeast', () => {
@@ -77,9 +50,49 @@ describe('tierAtLeast', () => {
 // Trial configuration
 // ──────────────────────────────────────────────────────────────────────────────
 
-describe('TRIAL_TRIGGER', () => {
-  it('has trialDays set to 21', () => {
-    expect(TRIAL_TRIGGER.trialDays).toBe(21)
+describe('TRIAL_DURATION_DAYS', () => {
+  it('is set to 21 days', () => {
+    expect(TRIAL_DURATION_DAYS).toBe(21)
+  })
+})
+
+describe('TRIAL_PLAN', () => {
+  it('is set to TRIAL', () => {
+    expect(TRIAL_PLAN).toBe('TRIAL')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// FREE tier limits (lockout state)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('PLATE_LIMITS', () => {
+  it('has FREE set to 0 (locked out)', () => {
+    expect(PLATE_LIMITS.FREE).toBe(0)
+  })
+
+  it('has PRO set to Infinity', () => {
+    expect(PLATE_LIMITS.PRO).toBe(Infinity)
+  })
+})
+
+describe('BABY_PROFILE_LIMITS', () => {
+  it('has FREE set to 0 (locked out)', () => {
+    expect(BABY_PROFILE_LIMITS.FREE).toBe(0)
+  })
+
+  it('has PRO set to 3', () => {
+    expect(BABY_PROFILE_LIMITS.PRO).toBe(3)
+  })
+})
+
+describe('DIARY_WINDOW_DAYS', () => {
+  it('has FREE set to 0 (locked out)', () => {
+    expect(DIARY_WINDOW_DAYS.FREE).toBe(0)
+  })
+
+  it('has PRO set to Infinity', () => {
+    expect(DIARY_WINDOW_DAYS.PRO).toBe(Infinity)
   })
 })
 

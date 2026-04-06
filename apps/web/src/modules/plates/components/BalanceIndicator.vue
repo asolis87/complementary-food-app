@@ -99,6 +99,8 @@ const proTip = computed(() => {
   border-radius: var(--md3-rounded-lg);
   padding: var(--md3-space-6);
   font-family: var(--md3-font-body);
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ── Title ──────────────────────────────────────────────────────────────────── */
@@ -175,10 +177,14 @@ const proTip = computed(() => {
   display: flex;
   justify-content: space-between;
   margin-top: 1.5rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .scale-label {
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .scale-label--left {
@@ -196,6 +202,9 @@ const proTip = computed(() => {
   text-transform: uppercase;
   letter-spacing: var(--md3-label-tracking);
   font-family: var(--md3-font-label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scale-label-name--secondary {
@@ -227,6 +236,8 @@ const proTip = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .protip-icon-wrap {
@@ -250,6 +261,8 @@ const proTip = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .protip-heading {
@@ -266,5 +279,18 @@ const proTip = computed(() => {
   color: var(--md3-on-surface-variant);
   font-family: var(--md3-font-body);
   line-height: var(--md3-body-line-height);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .balance-indicator {
+    padding: var(--md3-space-4);
+  }
+
+  .scale-label-example {
+    font-size: var(--md3-label-sm);
+  }
 }
 </style>

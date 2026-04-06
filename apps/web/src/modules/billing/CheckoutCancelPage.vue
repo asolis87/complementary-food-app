@@ -10,7 +10,7 @@
         Podés suscribirte cuando quieras. Tus datos y platos están seguros.
       </p>
       <p class="cancel-submsg">
-        Seguís teniendo acceso al plan gratuito con todas sus funciones.
+        Seguís teniendo acceso a tu período de prueba con todas las funciones Pro.
       </p>
 
       <div class="actions">

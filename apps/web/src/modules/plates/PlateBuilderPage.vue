@@ -180,7 +180,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
@@ -197,6 +197,7 @@ import PlateExport from './components/PlateExport.vue'
 
 // ─── Stores & composables ─────────────────────────────────────────────────
 const route = useRoute()
+const router = useRouter()
 const plateStore = usePlateStore()
 const foodStore = useFoodStore()
 const authStore = useAuthStore()
@@ -340,11 +341,13 @@ async function handleSave() {
       // Edit mode — update existing plate (name + items are included in updatePlate)
       await plateStore.updatePlate(editingPlateId.value)
       showToast('Plato actualizado', 'success')
+      router.push('/plates')
     } else {
       // Create mode — requires canSave (tier limit check)
       if (!plateStore.canSave) return
       await plateStore.saveDraftAsPlate()
       showToast('Plato guardado', 'success')
+      router.push('/plates')
     }
   } catch {
     showToast('Error al guardar. Intentá de nuevo.', 'error')
@@ -404,7 +407,7 @@ async function handleShare() {
 /* ─── Page shell ──────────────────────────────────────────────────────── */
 .plate-builder-page {
   min-height: 60vh;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .page-main {

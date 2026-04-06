@@ -183,6 +183,8 @@ function onSlotClick(group: FoodGroup): void {
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-3);
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ─── Header ─────────────────────────────────────────────────────────────── */
@@ -215,6 +217,8 @@ function onSlotClick(group: FoodGroup): void {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ─── Group slot ─────────────────────────────────────────────────────────── */
@@ -230,6 +234,8 @@ function onSlotClick(group: FoodGroup): void {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
 
   /* Empty state: dashed border */
   background: var(--md3-surface-container-low);
@@ -274,6 +280,8 @@ function onSlotClick(group: FoodGroup): void {
   flex-direction: column;
   gap: 0.375rem;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .food-chip {
@@ -281,6 +289,8 @@ function onSlotClick(group: FoodGroup): void {
   align-items: center;
   gap: 0.375rem;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .food-name {

@@ -249,11 +249,9 @@ const saveHint = computed(() => {
 /* ─── Mobile FAB ─── */
 .plate-fab {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  /* Account for iPhone notch/home bar */
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: 40;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  right: 1.5rem;
+  z-index: 110;
   display: flex;
 }
 

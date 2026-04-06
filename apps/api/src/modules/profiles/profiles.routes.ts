@@ -16,6 +16,7 @@ import { NotFoundError, TierLimitError } from '../../shared/errors/index.js'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { requireTier } from '../../shared/hooks/requireTier.js'
 import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
+import { deleteUserAccount } from '../billing/billing.service.js'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -155,4 +156,18 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       reply.status(204).send()
     },
   )
+
+  // ── DELETE /api/profiles/me ──────────────────────────────────────────────
+  /**
+   * AD6: Complete account deletion with all associated data.
+   * Used when a user chooses to delete their account from the paywall.
+   * Returns 204 No Content on success.
+   */
+  fastify.delete('/me', { preHandler: [requireAuth] }, async (request, reply) => {
+    const userId = request.user!.id
+
+    await deleteUserAccount(fastify.prisma, userId)
+
+    reply.status(204).send()
+  })
 }

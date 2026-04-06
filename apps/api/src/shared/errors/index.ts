@@ -65,3 +65,19 @@ export class ConflictError extends AppError {
     super(message, 409, 'CONFLICT')
   }
 }
+
+/**
+ * AD4/AD5: Trial expired error for lockout flow.
+ * Used when a user's trial has expired and they try to access PRO features.
+ * HTTP 402 Payment Required — user needs to subscribe.
+ */
+export class TrialExpiredError extends AppError {
+  constructor(message = 'Tu período de prueba ha expirado. Suscribete para continuar.') {
+    super(message, 402, 'TRIAL_EXPIRED')
+  }
+}
+
+/**
+ * Alias for clarity when the error is about requiring subscription.
+ */
+export class SubscriptionRequiredError extends TrialExpiredError {}

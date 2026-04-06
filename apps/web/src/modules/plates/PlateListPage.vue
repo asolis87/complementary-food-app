@@ -137,6 +137,16 @@
       </li>
     </ul>
 
+    <!-- Mobile FAB: Create new plate -->
+    <RouterLink
+      v-if="!atLimit"
+      to="/plate/new"
+      class="plate-list-fab mobile-only"
+      aria-label="Crear nuevo plato"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">add</span>
+    </RouterLink>
+
     <!-- Mobile Upsell Banner (outside grid) -->
     <div v-if="atLimit && !authStore.isPro" class="upsell-banner mobile-only" role="complementary">
       <div class="upsell-banner-content">
@@ -926,5 +936,33 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   .upsell-banner {
     display: none;
   }
+}
+
+/* ─── Mobile FAB ─── */
+.plate-list-fab {
+  position: fixed;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  right: 1.5rem;
+  z-index: 110;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--md3-gradient-cta, var(--md3-primary));
+  color: var(--md3-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px -4px rgba(0, 105, 75, 0.3);
+  text-decoration: none;
+  transition: transform var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
+}
+
+.plate-list-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 32px -4px rgba(0, 105, 75, 0.4);
+}
+
+.plate-list-fab .material-symbols-outlined {
+  font-size: 1.5rem;
 }
 </style>

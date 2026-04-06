@@ -47,26 +47,9 @@
 
     <!-- Pricing cards -->
     <div v-if="!isSubscribed || isPastDue" class="plans">
-      <!-- Gratis -->
-      <div class="plan plan-free">
-        <h2>Gratis</h2>
-        <p class="price">$0 <span>MXN / mes</span></p>
-
-        <ul class="features">
-          <li v-for="feature in freeFeatures" :key="feature">
-            <span class="material-symbols-outlined feature-icon" aria-hidden="true">check</span>
-            {{ feature }}
-          </li>
-        </ul>
-
-        <div class="btn-upgrade btn-upgrade-free btn-upgrade--disabled" aria-disabled="true">
-          Plan actual
-        </div>
-      </div>
-
       <!-- Mensual -->
-      <div class="plan plan-mensual">
-        <div class="badge">Recomendado</div>
+      <div class="plan plan-mensual" :class="{ 'current-plan': isCurrentPlan('MONTHLY') }">
+        <div v-if="isCurrentPlan('MONTHLY')" class="badge-current">Tu plan actual</div>
         <h2>Pro Mensual</h2>
         <p class="price">$99 <span>MXN / mes</span></p>
 
@@ -77,26 +60,28 @@
           </li>
         </ul>
 
-        <p class="trial-note">
-          <span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span>
-          Prueba gratis 21 días
-        </p>
-
         <button
+          v-if="!isCurrentPlan('MONTHLY')"
           class="btn-upgrade btn-upgrade-pro"
           @click="handleCheckout(PRICE_MONTHLY)"
           :disabled="billingStore.loading"
         >
           {{ billingStore.loading ? 'Redirigiendo...' : 'Suscribirse mensual' }}
         </button>
+        <div v-else class="btn-upgrade btn-upgrade-current">
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          Plan activo
+        </div>
       </div>
 
       <!-- Anual -->
-      <div class="plan plan-anual">
+      <div class="plan plan-anual" :class="{ 'current-plan': isCurrentPlan('YEARLY') }">
+        <div v-if="!isCurrentPlan('YEARLY')" class="badge">Recomendado</div>
+        <div v-else class="badge-current">Tu plan actual</div>
         <h2>Pro Anual</h2>
         <p class="price">$999 <span>MXN / año</span></p>
         <p class="price-monthly-equiv">Equivale a $83 / mes</p>
-        <div class="savings-pill">Ahorrá 17%</div>
+        <div v-if="!isCurrentPlan('YEARLY')" class="savings-pill">Ahorrá 17%</div>
 
         <ul class="features">
           <li v-for="feature in proFeatures" :key="feature">
@@ -105,18 +90,18 @@
           </li>
         </ul>
 
-        <p class="trial-note">
-          <span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span>
-          Prueba gratis 21 días
-        </p>
-
         <button
+          v-if="!isCurrentPlan('YEARLY')"
           class="btn-upgrade btn-upgrade-anual"
           @click="handleCheckout(PRICE_ANNUAL)"
           :disabled="billingStore.loading"
         >
           {{ billingStore.loading ? 'Redirigiendo...' : 'Suscribirse anual' }}
         </button>
+        <div v-else class="btn-upgrade btn-upgrade-current">
+          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+          Plan activo
+        </div>
       </div>
     </div>
 
@@ -142,31 +127,6 @@
       {{ billingStore.error }}
     </p>
 
-    <!-- Free vs Pro comparison -->
-    <div class="comparison">
-      <h2>¿Qué incluye cada plan?</h2>
-      <div class="table-scroll">
-        <table class="comparison-table" role="table">
-          <thead>
-            <tr>
-              <th>Función</th>
-              <th>Gratis</th>
-              <th class="pro-col">Pro
-                <span class="material-symbols-outlined pro-star" aria-hidden="true">star</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in comparisonRows" :key="row.feature">
-              <td>{{ row.feature }}</td>
-              <td>{{ row.free }}</td>
-              <td>{{ row.pro }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- FAQ -->
     <div class="faq">
       <h2>Preguntas frecuentes</h2>
@@ -188,14 +148,6 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 const PRICE_MONTHLY = import.meta.env['VITE_STRIPE_PRICE_MONTHLY'] as string | undefined ?? ''
 const PRICE_ANNUAL = import.meta.env['VITE_STRIPE_PRICE_ANNUAL'] as string | undefined ?? ''
 
-const freeFeatures = [
-  'Constructor de platos',
-  'Catálogo de alimentos',
-  'Balance A/L en tiempo real',
-  'Hasta 5 platos guardados',
-  '1 perfil de bebé',
-]
-
 const proFeatures = [
   'Platos ilimitados',
   'Hasta 3 perfiles de bebé',
@@ -205,20 +157,6 @@ const proFeatures = [
   'Rastreador de alérgenos',
   'Export PNG/PDF sin marca de agua',
   'Soporte prioritario',
-]
-
-const comparisonRows = [
-  { feature: 'Constructor de platos', free: '✓', pro: '✓' },
-  { feature: 'Catálogo de alimentos', free: '✓', pro: '✓' },
-  { feature: 'Balance A/L en tiempo real', free: '✓', pro: '✓' },
-  { feature: 'Platos guardados', free: 'Hasta 5', pro: 'Ilimitados' },
-  { feature: 'Perfiles de bebé', free: '1', pro: 'Hasta 3' },
-  { feature: 'Bitácora', free: 'Últimos 7 días', pro: 'Sin límite' },
-  { feature: 'Reacciones en bitácora', free: '—', pro: '✓' },
-  { feature: 'Fotos en bitácora', free: '—', pro: '✓' },
-  { feature: 'Menú semanal', free: '—', pro: '✓' },
-  { feature: 'Rastreador de alérgenos', free: '—', pro: '✓' },
-  { feature: 'Export sin marca de agua', free: '—', pro: '✓' },
 ]
 
 const faqItems = [
@@ -236,7 +174,7 @@ const faqItems = [
   },
   {
     q: '¿Cómo funciona la prueba gratis?',
-    a: 'Tenés 21 días gratis al suscribirte. No se cobra nada hasta que termina el período de prueba. Podés cancelar antes sin costo.',
+    a: 'Al crear tu cuenta recibís automáticamente 21 días de prueba Pro con todas las funciones. Después, elegís un plan para seguir accediendo. No se requiere tarjeta de crédito durante la prueba.',
   },
 ]
 
@@ -282,6 +220,13 @@ const trialEndDate = computed(() => {
     year: 'numeric',
   })
 })
+
+// Check if a plan interval is the user's current plan
+function isCurrentPlan(interval: 'MONTHLY' | 'YEARLY'): boolean {
+  if (!subscription.value) return false
+  if (subscription.value.status === 'TRIALING') return false
+  return subscription.value.status === 'ACTIVE' && subscription.value.interval === interval
+}
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
@@ -467,7 +412,7 @@ h1 {
 
 @media (min-width: 640px) {
   .plans {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     align-items: start;
   }
 }
@@ -482,14 +427,34 @@ h1 {
 }
 
 .plan-mensual {
+  background: var(--md3-surface-container-low);
+  border-color: var(--md3-outline-variant);
+}
+
+.plan-anual {
   background: var(--md3-surface-container-lowest);
   border-color: var(--md3-primary);
   box-shadow: var(--md3-shadow-elevated);
 }
 
-.plan-anual {
-  background: var(--md3-surface-container-low);
-  border-color: var(--md3-outline-variant);
+.current-plan {
+  border-color: var(--md3-primary);
+  border-width: 2px;
+}
+
+.badge-current {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+  padding: 0.25rem var(--md3-space-3);
+  border-radius: var(--md3-rounded-full);
+  font-size: var(--md3-label-md);
+  white-space: nowrap;
+  font-weight: var(--md3-weight-semibold);
+  letter-spacing: var(--md3-label-tracking);
 }
 
 .badge {
@@ -571,20 +536,6 @@ h2 {
   flex-shrink: 0;
 }
 
-.trial-note {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--md3-space-1);
-  font-size: var(--md3-body-md);
-  color: var(--md3-primary);
-  font-weight: var(--md3-weight-medium);
-  margin-bottom: var(--md3-space-3);
-}
-
-.trial-note .material-symbols-outlined {
-  font-size: 1rem;
-}
-
 .btn-upgrade {
   display: block;
   width: 100%;
@@ -599,17 +550,6 @@ h2 {
   transition:
     background var(--md3-transition-fast),
     box-shadow var(--md3-transition-fast);
-}
-
-.btn-upgrade-free {
-  background: var(--md3-surface-container);
-  color: var(--md3-on-surface-variant);
-  border: 1.5px solid var(--md3-outline-variant);
-}
-
-.btn-upgrade--disabled {
-  cursor: default;
-  pointer-events: none;
 }
 
 .btn-upgrade-pro {
@@ -633,6 +573,16 @@ h2 {
   background: var(--md3-surface-container-high);
   color: var(--md3-primary);
   border-color: var(--md3-primary);
+}
+
+.btn-upgrade-current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md3-space-2);
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .btn-upgrade:disabled {
@@ -678,72 +628,6 @@ h2 {
 .error-msg .material-symbols-outlined {
   font-size: 1.125rem;
   flex-shrink: 0;
-}
-
-/* ─── Comparison table ─── */
-.comparison {
-  margin-top: var(--md3-space-8);
-}
-
-.comparison h2 {
-  font-family: var(--md3-font-headline);
-  font-size: var(--md3-headline-sm);
-  font-weight: var(--md3-weight-bold);
-  color: var(--md3-on-surface);
-  margin-bottom: var(--md3-space-3);
-}
-
-.table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.comparison-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--md3-body-md);
-  border-radius: var(--md3-rounded-md);
-  overflow: hidden;
-}
-
-.comparison-table th,
-.comparison-table td {
-  text-align: left;
-  padding: var(--md3-space-2) var(--md3-space-3);
-  border-bottom: 1px solid var(--md3-outline-variant);
-}
-
-.comparison-table th {
-  font-weight: var(--md3-weight-semibold);
-  color: var(--md3-on-surface);
-  background: var(--md3-surface-container);
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
-  letter-spacing: var(--md3-label-tracking);
-}
-
-.comparison-table td:nth-child(2),
-.comparison-table td:nth-child(3) {
-  text-align: center;
-  color: var(--md3-on-surface-variant);
-}
-
-.pro-col {
-  color: var(--md3-primary) !important;
-  text-align: center !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--md3-space-1);
-}
-
-.pro-star {
-  font-size: 1rem !important;
-  color: var(--md3-primary);
-}
-
-.comparison-table tr:hover td {
-  background: var(--md3-surface-container-low);
 }
 
 /* ─── FAQ ─── */

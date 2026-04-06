@@ -334,6 +334,15 @@ onMounted(() => {
   border-radius: var(--md3-rounded-lg);
   overflow: hidden;
   margin-top: var(--md3-space-4);
+  background-color: var(--md3-surface-container-lowest);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    background-size: contain;
+    background-position: center bottom;
+    align-items: flex-start;
+  }
 }
 
 .hero__overlay {
@@ -825,6 +834,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: var(--md3-space-8);
   align-items: center;
+  overflow: hidden;
 }
 
 .preview-content {
@@ -910,9 +920,27 @@ onMounted(() => {
   position: relative;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 768px) {
+  .preview-card {
+    flex-direction: column;
+    padding: var(--md3-space-6);
+    gap: var(--md3-space-6);
+  }
+
+  .preview-content {
+    min-width: 0;
+    width: 100%;
+    order: 1;
+  }
+
   .preview-visual {
     min-width: 0;
+    width: 100%;
+    order: 2;
+  }
+
+  .preview-title {
+    font-size: var(--md3-headline-md);
   }
 }
 

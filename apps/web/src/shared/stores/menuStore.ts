@@ -461,6 +461,7 @@ export const useMenuStore = defineStore('menus', () => {
 
   /**
    * Helper: Update the servedAt timestamp in cached menu data locally.
+   * Uses JSON round-trip to deep clone and avoid mutating reactive objects.
    */
   function updateLocalServedAt(
     menuId: string,
@@ -468,8 +469,11 @@ export const useMenuStore = defineStore('menus', () => {
     mealKey: MealKey,
     servedAt: string
   ): void {
-    const menu = Array.from(weekMenus.value.values()).find(m => m?.id === menuId)
-    if (!menu) return
+    const menuRef = Array.from(weekMenus.value.values()).find(m => m?.id === menuId)
+    if (!menuRef) return
+
+    // Deep clone to avoid mutating reactive object directly
+    const menu: WeeklyMenuResponse = JSON.parse(JSON.stringify(menuRef))
 
     const dayOfWeek = DAY_KEY_TO_INDEX[dayKey]
     const mealType = MEAL_KEY_TO_TYPE[mealKey]
@@ -492,12 +496,13 @@ export const useMenuStore = defineStore('menus', () => {
       })
     }
 
-    // Trigger reactivity
-    weekMenus.value.set(menu.weekStart, { ...menu })
+    // Set the cloned & mutated object to trigger reactivity
+    weekMenus.value.set(menu.weekStart, menu)
   }
 
   /**
    * Helper: Update a slot in the cached menu data locally (for optimistic updates).
+   * Uses JSON round-trip to deep clone and avoid mutating reactive objects.
    */
   function updateLocalSlot(
     menuId: string,
@@ -505,8 +510,11 @@ export const useMenuStore = defineStore('menus', () => {
     mealKey: MealKey,
     plate: Plate | null
   ): void {
-    const menu = Array.from(weekMenus.value.values()).find(m => m?.id === menuId)
-    if (!menu) return
+    const menuRef = Array.from(weekMenus.value.values()).find(m => m?.id === menuId)
+    if (!menuRef) return
+
+    // Deep clone to avoid mutating reactive object directly
+    const menu: WeeklyMenuResponse = JSON.parse(JSON.stringify(menuRef))
 
     const dayOfWeek = DAY_KEY_TO_INDEX[dayKey]
     const mealType = MEAL_KEY_TO_TYPE[mealKey]
@@ -552,9 +560,8 @@ export const useMenuStore = defineStore('menus', () => {
       }
     }
 
-    // Trigger reactivity by creating a new object reference
-    const weekStart = menu.weekStart
-    weekMenus.value.set(weekStart, { ...menu })
+    // Set the cloned & mutated object to trigger reactivity
+    weekMenus.value.set(menu.weekStart, menu)
   }
 
   return {

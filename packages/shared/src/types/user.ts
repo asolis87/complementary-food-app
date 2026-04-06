@@ -5,6 +5,9 @@
 /** User subscription tier */
 export type UserTier = 'FREE' | 'PRO'
 
+/** Subscription status (from Prisma enum) */
+export type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'EXPIRED'
+
 /** Baby profile */
 export interface BabyProfile {
   id: string
@@ -24,6 +27,8 @@ export interface AuthUser {
   email?: string
   name?: string
   tier: UserTier
+  subscriptionStatus?: SubscriptionStatus | null
+  trialEnd?: string | null // ISO date string
   createdAt: string
 }
 

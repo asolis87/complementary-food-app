@@ -41,24 +41,30 @@
             <RouterLink to="/auth/signup" class="btn btn-primary">Registrarse</RouterLink>
           </template>
           <template v-else>
-            <!-- Tier badge — clickable -->
-            <!-- FREE badge → link to /pricing -->
-            <RouterLink
-              v-if="!authStore.isPro"
-              to="/pricing"
-              class="tier-badge badge-free"
-              title="Plan Gratuito — mejorá a Pro para más funciones"
-              aria-label="Plan Gratuito. Tocá para ver planes"
-            >Gratis</RouterLink>
-
-            <!-- PRO badge — shows tooltip/info, no nav needed -->
-            <span
-              v-else-if="authStore.isPro"
-              class="tier-badge badge-pro"
-              :class="{ 'badge-past-due': billingStore.subscription?.status === 'PAST_DUE' }"
-              :title="proTierTitle"
-              aria-label="Plan Pro activo"
-            >{{ proTierLabel }}</span>
+<!-- Tier badge — clickable -->
+             <!-- Trial-first: show trial countdown, expired, or Pro badge -->
+             <RouterLink
+               v-if="authStore.isTrialExpired"
+               to="/paywall"
+               class="tier-badge badge-expired"
+               title="Período de prueba finalizado — suscribite para continuar"
+               aria-label="Período de prueba finalizado. Tocá para suscribirte"
+             >Expirado</RouterLink>
+             <RouterLink
+               v-else-if="authStore.isTrialing"
+               to="/pricing"
+               class="tier-badge badge-trial"
+               :title="trialBadgeTitle"
+               aria-label="Período de prueba. Tocá para ver planes"
+             >{{ trialBadgeLabel }}</RouterLink>
+             <!-- PRO badge — shows tooltip/info, no nav needed -->
+             <span
+               v-else-if="authStore.isPro"
+               class="tier-badge badge-pro"
+               :class="{ 'badge-past-due': billingStore.subscription?.status === 'PAST_DUE' }"
+               :title="proTierTitle"
+               aria-label="Plan Pro activo"
+             >{{ proTierLabel }}</span>
 
             <!-- PAST_DUE warning dot on Pro badge -->
             <span
@@ -87,7 +93,7 @@
 
     <!-- Bottom navigation (mobile) -->
     <nav class="bottom-nav" aria-label="Navegación principal">
-      <RouterLink to="/plate/new" class="bottom-nav-item" active-class="active">
+      <RouterLink to="/plates" class="bottom-nav-item" active-class="active">
         <span class="material-symbols-outlined bottom-nav-icon">restaurant</span>
         <span class="bottom-nav-label">Plato</span>
       </RouterLink>
@@ -103,7 +109,7 @@
         <span class="material-symbols-outlined bottom-nav-icon">auto_stories</span>
         <span class="bottom-nav-label">Bitácora</span>
       </RouterLink>
-      <RouterLink to="/pricing" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated && !authStore.isPro">
+      <RouterLink to="/pricing" class="bottom-nav-item" active-class="active" v-if="authStore.isAuthenticated && !authStore.isPro && !authStore.isTrialExpired">
         <span class="material-symbols-outlined bottom-nav-icon">star</span>
         <span class="bottom-nav-label">Pro</span>
       </RouterLink>
@@ -224,10 +230,32 @@ onMounted(async () => {
   }
 })
 
+// Trial badge label and tooltip
+const trialBadgeLabel = computed(() => {
+  const days = authStore.trialDaysLeft
+  return days > 0 ? `Prueba · ${days}d` : 'Prueba'
+})
+
+const trialBadgeTitle = computed(() => {
+  if (authStore.isTrialing && authStore.trialEnd) {
+    const date = authStore.trialEnd.toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'long',
+    })
+    const days = authStore.trialDaysLeft
+    return `Período de prueba — ${days} días restantes (hasta el ${date})`
+  }
+  return 'Período de prueba activo'
+})
+
 // Pro tier badge label and tooltip
 const proTierLabel = computed(() => {
   if (billingStore.subscription?.status === 'PAST_DUE') return 'Pro !'
-  if (billingStore.subscription?.status === 'TRIALING') return 'Pro (prueba)'
+  // Trial-first: show trial countdown when trialing
+  if (authStore.isTrialing) {
+    const days = authStore.trialDaysLeft
+    return days > 0 ? `Prueba · ${days}d` : 'Pro'
+  }
   return 'Pro'
 })
 
@@ -235,6 +263,15 @@ const proTierTitle = computed(() => {
   const sub = billingStore.subscription
   if (!sub) return 'Plan Pro activo'
   if (sub.status === 'PAST_DUE') return 'Pago fallido — actualizá tu método de pago'
+  // Trial-first: show trial end date when trialing
+  if (authStore.isTrialing && authStore.trialEnd) {
+    const date = authStore.trialEnd.toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'long',
+    })
+    const days = authStore.trialDaysLeft
+    return `Período de prueba — ${days} días restantes (hasta el ${date})`
+  }
   if (sub.status === 'TRIALING' && sub.trialEnd) {
     const date = new Date(sub.trialEnd).toLocaleDateString('es-MX', {
       day: 'numeric',
@@ -594,6 +631,16 @@ async function handleSignOut() {
 .badge-free {
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
+}
+
+.badge-trial {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.badge-expired {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
 }
 
 .badge-past-due {

@@ -1,26 +1,27 @@
 <template>
   <div class="profile-page">
-    <!-- Page header -->
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Perfiles de bebé</h1>
-        <p class="page-subtitle" :class="{ 'limit-reached': atLimit }">
-          {{ profileStore.profiles.length }} / {{ profileLimit }} bebés
-          <span v-if="atLimit"> — límite alcanzado</span>
-        </p>
-      </div>
+    <!-- Section 1: Baby Profile -->
+    <section class="baby-profile-section">
+      <!-- Page header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Perfil de bebé</h1>
+          <p class="page-subtitle">
+            {{ profileStore.profiles.length > 0 ? profileStore.profiles[0].name : 'Sin perfil' }}
+          </p>
+        </div>
 
-      <!-- Add button — gated by tier and limit -->
-      <button
-        v-if="!atLimit"
-        class="fab-btn"
-        :disabled="profileStore.loading"
-        @click="showForm = true"
-      >
-        <span class="material-symbols-outlined fab-btn__icon" aria-hidden="true">add</span>
-        Agregar bebé
-      </button>
-    </div>
+        <!-- Add button — only when no profile exists (MVP: single profile) -->
+        <button
+          v-if="profileStore.profiles.length === 0"
+          class="fab-btn"
+          :disabled="profileStore.loading"
+          @click="showForm = true"
+        >
+          <span class="material-symbols-outlined fab-btn__icon" aria-hidden="true">add</span>
+          Agregar bebé
+        </button>
+      </div>
 
     <!-- Loading -->
     <div v-if="profileStore.loading && profileStore.profiles.length === 0" class="state-center">
@@ -87,29 +88,81 @@
         </button>
       </div>
 
-      <!-- Pro upsell if at limit and not pro -->
-      <div v-if="atLimit && !authStore.isPro" class="upsell-banner" role="complementary">
-        <span class="material-symbols-outlined upsell-icon" aria-hidden="true">workspace_premium</span>
+      <!-- Multi-profile coming soon (MVP: single profile only) -->
+      <div v-if="profileStore.profiles.length > 0" class="coming-soon-banner" role="status">
+        <span class="material-symbols-outlined coming-soon-icon" aria-hidden="true">construction</span>
         <div>
-          <strong>Límite de perfiles alcanzado</strong>
-          <p>Con Pro podés tener hasta 3 perfiles y mucho más.</p>
+          <strong>Multi-perfiles en construcción</strong>
+          <p>Pronto vas a poder agregar más de un bebé. Por ahora, el plato y la bitácora funcionan con un solo perfil.</p>
         </div>
-        <RouterLink to="/pricing" class="upsell-btn">Ver Pro</RouterLink>
       </div>
     </TierGate>
+    </section>
+
+    <!-- Section 2: Mi Cuenta (Account Management) -->
+    <section v-if="authStore.isAuthenticated" class="account-section" aria-labelledby="account-title">
+      <div class="section-header">
+        <span class="material-symbols-outlined section-icon" aria-hidden="true">person</span>
+        <h2 id="account-title" class="section-title">Mi Cuenta</h2>
+      </div>
+
+      <!-- Account info card -->
+      <div class="account-card">
+        <div class="account-info">
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ authStore.user?.email ?? '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Nombre</span>
+            <span class="info-value">{{ authStore.displayName }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Plan</span>
+            <span class="tier-badge" :class="tierBadgeClass">
+              {{ tierBadgeLabel }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription management -->
+      <div class="subscription-row">
+        <div class="subscription-info">
+          <span class="subscription-label">Tu plan actual</span>
+          <span class="subscription-plan">{{ subscriptionLabel }}</span>
+        </div>
+        <RouterLink v-if="authStore.isTrialing" to="/pricing" class="btn btn-outline">
+          Ver planes
+        </RouterLink>
+        <RouterLink v-else-if="authStore.isTrialExpired" to="/paywall" class="btn btn-primary">
+          Suscribirme
+        </RouterLink>
+        <RouterLink v-else to="/pricing" class="btn btn-outline">
+          Gestionar suscripción
+        </RouterLink>
+      </div>
+
+      <!-- Sign out button -->
+      <button class="signout-btn" @click="handleSignOut" :disabled="signingOut">
+        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        {{ signingOut ? 'Cerrando sesión...' : 'Cerrar sesión' }}
+      </button>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { BabyProfile } from '@pakulab/shared'
-import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import TierGate from '@/shared/components/TierGate.vue'
 import BabyProfileForm from './components/BabyProfileForm.vue'
 import BabyProfileCard from './components/BabyProfileCard.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 
@@ -118,12 +171,38 @@ const showForm = ref(false)
 const editingProfile = ref<BabyProfile | null>(null)
 const createFormRef = ref<InstanceType<typeof BabyProfileForm> | null>(null)
 const editFormRef = ref<InstanceType<typeof BabyProfileForm> | null>(null)
+const signingOut = ref(false)
 
-// ─── Computed ─────────────────────────────────────────────────────────────
-const profileLimit = computed(() => BABY_PROFILE_LIMITS[authStore.tier])
-const atLimit = computed(
-  () => profileStore.profiles.length >= profileLimit.value,
-)
+// ─── Computed: Trial-first model UI ───────────────────────────────────────
+const tierBadgeClass = computed(() => {
+  if (authStore.isTrialing) return 'badge-trial'
+  if (authStore.isPro) return 'badge-pro'
+  if (authStore.isTrialExpired) return 'badge-expired'
+  return 'badge-free'
+})
+
+const tierBadgeLabel = computed(() => {
+  if (authStore.isTrialing) {
+    const days = authStore.trialDaysLeft
+    return days > 0 ? `Prueba · ${days}d` : 'Prueba'
+  }
+  if (authStore.isPro) return 'Pro'
+  if (authStore.isTrialExpired) return 'Expirado'
+  return 'Sin plan'
+})
+
+const subscriptionLabel = computed(() => {
+  if (authStore.isTrialing) {
+    const days = authStore.trialDaysLeft
+    if (days > 0) {
+      return `Prueba gratuita (${days} ${days === 1 ? 'día' : 'días'} restante${days === 1 ? '' : 's'})`
+    }
+    return 'Prueba gratuita'
+  }
+  if (authStore.isPro) return 'Pro (suscripción activa)'
+  if (authStore.isTrialExpired) return 'Período de prueba finalizado'
+  return 'Sin plan activo'
+})
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(async () => {
@@ -172,6 +251,17 @@ async function handleDelete(id: string) {
     await profileStore.deleteProfile(id)
   } catch {
     // silent — profile not found, already deleted
+  }
+}
+
+// ─── Account Handlers ─────────────────────────────────────────────────────
+async function handleSignOut() {
+  signingOut.value = true
+  try {
+    await authStore.signOut()
+    await router.push({ name: 'login' })
+  } finally {
+    signingOut.value = false
   }
 }
 </script>
@@ -339,56 +429,40 @@ async function handleDelete(id: string) {
   box-shadow: var(--md3-shadow-elevated);
 }
 
-/* Upsell */
-.upsell-banner {
+/* Coming soon banner (MVP: single profile) */
+.coming-soon-banner {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--md3-space-3);
   padding: var(--md3-space-3) var(--md3-space-4);
-  background: var(--md3-tertiary-container);
+  background: var(--md3-surface-container);
   border-radius: var(--md3-rounded-md);
+  border: 1px solid var(--md3-outline-variant);
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
 }
 
-.upsell-icon {
+.coming-soon-icon {
   font-size: 1.5rem;
-  color: var(--md3-on-tertiary-container);
+  color: var(--md3-on-surface-variant);
   flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
-.upsell-banner div {
+.coming-soon-banner div {
   flex: 1;
 }
 
-.upsell-banner strong {
+.coming-soon-banner strong {
   display: block;
-  color: var(--md3-on-tertiary-container);
+  color: var(--md3-on-surface);
   font-weight: var(--md3-weight-semibold);
 }
 
-.upsell-banner p {
+.coming-soon-banner p {
   margin: var(--md3-space-1) 0 0;
-  color: var(--md3-on-tertiary-container);
+  color: var(--md3-on-surface-variant);
   font-size: var(--md3-body-sm);
-}
-
-.upsell-btn {
-  flex-shrink: 0;
-  padding: 0.5rem 1rem;
-  background: var(--md3-tertiary);
-  color: var(--md3-on-tertiary);
-  border-radius: var(--md3-rounded-sm);
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
-  font-weight: var(--md3-weight-semibold);
-  text-decoration: none;
-  transition: opacity var(--md3-transition-fast);
-}
-
-.upsell-btn:hover {
-  opacity: 0.88;
 }
 
 /* Transitions */
@@ -405,5 +479,203 @@ async function handleDelete(id: string) {
 .slide-down-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* ─── Account Section ─── */
+.baby-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-3);
+}
+
+.account-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-3);
+  padding-top: var(--md3-space-6);
+  border-top: 1px solid var(--md3-outline-variant);
+  margin-top: var(--md3-space-4);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+}
+
+.section-icon {
+  font-size: 1.5rem;
+  color: var(--md3-primary);
+}
+
+.section-title {
+  margin: 0;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-headline-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+}
+
+.account-card {
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-lg);
+  box-shadow: var(--md3-shadow-card);
+  padding: var(--md3-space-4);
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-3);
+}
+
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-1);
+}
+
+.info-label {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: var(--md3-label-tracking);
+}
+
+.info-value {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface);
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-bold);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--md3-rounded-full);
+  width: fit-content;
+}
+
+.badge-pro {
+  background: var(--md3-tertiary-container);
+  color: var(--md3-on-tertiary-container);
+}
+
+.badge-free {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.badge-trial {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.badge-expired {
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+}
+
+.subscription-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-md);
+}
+
+.subscription-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-1);
+}
+
+.subscription-label {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
+}
+
+.subscription-plan {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md3-space-1);
+  padding: var(--md3-space-2) var(--md3-space-4);
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--md3-gradient-cta);
+  color: var(--md3-on-primary);
+  box-shadow: var(--md3-shadow-card);
+}
+
+.btn-primary:hover {
+  background: var(--md3-gradient-cta-hover);
+  opacity: 0.95;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--md3-primary);
+  border: 1px solid var(--md3-outline);
+}
+
+.btn-outline:hover {
+  background: var(--md3-surface-container-low);
+}
+
+.signout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md3-space-2);
+  width: 100%;
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+  border: none;
+  border-radius: var(--md3-rounded-lg);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  cursor: pointer;
+  transition: opacity var(--md3-transition-fast);
+}
+
+.signout-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.signout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.signout-btn .material-symbols-outlined {
+  font-size: 1.25rem;
 }
 </style>

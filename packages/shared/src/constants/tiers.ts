@@ -1,24 +1,29 @@
 /**
- * Tier limits and feature access matrix for the Pakulab freemium model.
+ * Tier limits and feature access matrix for the trial-first model.
+ * Every new user gets a 21-day PRO trial. FREE tier is for lockout (expired/no subscription).
  */
 
 import type { UserTier } from '../types/user.js'
 
-/** Maximum saved plates per tier */
+/** Trial configuration */
+export const TRIAL_DURATION_DAYS = 21
+export const TRIAL_PLAN = 'TRIAL' as const
+
+/** Maximum saved plates per tier (FREE = 0, locked out) */
 export const PLATE_LIMITS: Record<UserTier, number> = {
-  FREE: 5,
+  FREE: 0,
   PRO: Infinity,
 }
 
-/** Maximum baby profiles per tier */
+/** Maximum baby profiles per tier (FREE = 0, locked out) */
 export const BABY_PROFILE_LIMITS: Record<UserTier, number> = {
-  FREE: 1,
+  FREE: 0,
   PRO: 3,
 }
 
-/** Bitácora history window in days (Infinity = no limit) */
+/** Bitácora history window in days (FREE = 0, locked out; Infinity = no limit) */
 export const DIARY_WINDOW_DAYS: Record<UserTier, number> = {
-  FREE: 7,
+  FREE: 0,
   PRO: Infinity,
 }
 
@@ -50,13 +55,6 @@ export const PRICING = {
     stripePriceKey: 'price_yearly',
     savingsPercent: 17, // "Ahorra 17%"
   },
-}
-
-/** Trial trigger thresholds (days of diary OR plates created) */
-export const TRIAL_TRIGGER = {
-  minPlates: 3,
-  minDiaryDays: 3,
-  trialDays: 21,
 }
 
 /** Tier ordering for comparisons */

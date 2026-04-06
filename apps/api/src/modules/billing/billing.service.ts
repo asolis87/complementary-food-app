@@ -11,7 +11,7 @@
 
 import Stripe from 'stripe'
 import type { PrismaClient } from '@prisma/client'
-import { TRIAL_TRIGGER } from '@pakulab/shared'
+import { TRIAL_DURATION_DAYS } from '@pakulab/shared'
 import { AppError, ConflictError, NotFoundError } from '../../shared/errors/index.js'
 
 // ─── Stripe client ─────────────────────────────────────────────────────────
@@ -35,30 +35,6 @@ function getStripe(): Stripe {
     _stripe = createStripeClient()
   }
   return _stripe
-}
-
-// ─── Trial eligibility ─────────────────────────────────────────────────────
-
-/**
- * User is eligible for a 7-day trial if they have ≥3 saved plates OR ≥3 diary days.
- * Spec: REQ-PAY-01 — trial trigger threshold.
- */
-export async function isEligibleForTrial(prisma: PrismaClient, userId: string): Promise<boolean> {
-  const [plateCount, diaryDays] = await Promise.all([
-    prisma.plate.count({ where: { userId, deletedAt: null } }),
-    prisma.foodLog.findMany({
-      where: { userId },
-      select: { date: true },
-      distinct: ['date'],
-    }),
-  ])
-
-  const uniqueDiaryDays = diaryDays.length
-
-  return (
-    plateCount >= TRIAL_TRIGGER.minPlates ||
-    uniqueDiaryDays >= TRIAL_TRIGGER.minDiaryDays
-  )
 }
 
 // ─── Checkout ──────────────────────────────────────────────────────────────
@@ -95,8 +71,6 @@ export async function createCheckoutSession(
     select: { stripeCustomerId: true },
   })
 
-  const eligible = await isEligibleForTrial(prisma, input.userId)
-
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: 'subscription',
     line_items: [
@@ -114,7 +88,6 @@ export async function createCheckoutSession(
       metadata: {
         userId: input.userId,
       },
-      ...(eligible && { trial_period_days: TRIAL_TRIGGER.trialDays }),
     },
     currency: 'mxn',
     allow_promotion_codes: true,
@@ -194,7 +167,7 @@ export interface CreateTrialSubscriptionInput {
 
 /**
  * Creates a local trial subscription (no Stripe involved).
- * Used for plan selection during onboarding.
+ * Used for auto-trial on signup — trial-first model.
  *
  * @throws ConflictError if user already has ACTIVE or TRIALING subscription
  */
@@ -218,7 +191,7 @@ export async function createTrialSubscription(
   const interval = plan === 'PRO_YEARLY' ? 'YEARLY' : 'MONTHLY'
 
   // Calculate trial end (21 days from now)
-  const trialEnd = new Date(Date.now() + TRIAL_TRIGGER.trialDays * 24 * 60 * 60 * 1000)
+  const trialEnd = new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000)
   const currentPeriodEnd = trialEnd // For trial, currentPeriodEnd equals trialEnd
 
   // Create or update subscription
@@ -487,4 +460,91 @@ function mapStripeStatus(stripeStatus: Stripe.Subscription['status']): DbSubscri
 function resolveInterval(subscription: Stripe.Subscription): 'MONTHLY' | 'YEARLY' {
   const interval = subscription.items.data[0]?.price.recurring?.interval
   return interval === 'year' ? 'YEARLY' : 'MONTHLY'
+}
+
+// ─── Account Deletion ───────────────────────────────────────────────────────
+
+/**
+ * Completely deletes a user account and all associated data.
+ * Uses Prisma transaction for atomicity.
+ * Handles plates with SetNull onDelete by deleting them explicitly.
+ *
+ * AD6: Complete data wipe for GDPR compliance.
+ */
+export async function deleteUserAccount(prisma: PrismaClient, userId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    // Get all baby profile IDs for this user (needed for cascading deletes)
+    const babyProfiles = await tx.babyProfile.findMany({
+      where: { userId },
+      select: { id: true },
+    })
+    const babyProfileIds = babyProfiles.map((bp) => bp.id)
+
+    // Delete PlateItems first (cascade from Plate)
+    await tx.plateItem.deleteMany({
+      where: {
+        plate: { userId },
+      },
+    })
+
+    // Delete Plates (SetNull on user relation, so must delete explicitly)
+    await tx.plate.deleteMany({
+      where: { userId },
+    })
+
+    // Delete FoodLogs (cascade from BabyProfile)
+    if (babyProfileIds.length > 0) {
+      await tx.foodLog.deleteMany({
+        where: { babyProfileId: { in: babyProfileIds } },
+      })
+    }
+
+    // Delete MenuMeals (cascade from WeeklyMenu → MenuDay)
+    await tx.menuMeal.deleteMany({
+      where: {
+        menuDay: {
+          menu: { userId },
+        },
+      },
+    })
+
+    // Delete MenuDays (cascade from WeeklyMenu)
+    await tx.menuDay.deleteMany({
+      where: {
+        menu: { userId },
+      },
+    })
+
+    // Delete WeeklyMenus (cascade from BabyProfile)
+    if (babyProfileIds.length > 0) {
+      await tx.weeklyMenu.deleteMany({
+        where: { babyProfileId: { in: babyProfileIds } },
+      })
+    }
+
+    // Delete BabyProfiles (cascade from User)
+    await tx.babyProfile.deleteMany({
+      where: { userId },
+    })
+
+    // Delete Subscription (cascade from User)
+    await tx.subscription.deleteMany({
+      where: { userId },
+    })
+
+    // Delete Sessions (cascade from User)
+    await tx.session.deleteMany({
+      where: { userId },
+    })
+
+    // Delete Accounts (cascade from User)
+    await tx.account.deleteMany({
+      where: { userId },
+    })
+
+    // Finally, delete the User
+    await tx.user.delete({
+      where: { id: userId },
+    })
+  })
 }
