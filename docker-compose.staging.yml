@@ -5,7 +5,9 @@
 #   POSTGRES_PASSWORD, BETTER_AUTH_SECRET, STRIPE_SECRET_KEY, etc.
 #   See .env.staging.example for the full list.
 #
-# Usage: Dokploy Compose → paste this file → set env vars → deploy
+# Network topology:
+#   dokploy-network (external) — Traefik ↔ web ↔ api (routable)
+#   internal        (private)  — api ↔ db, db-init ↔ db (not exposed)
 # ───────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -56,11 +58,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     networks:
+      - dokploy-network
       - internal
-    labels:
-      - "traefik.enable=true"
-      # Health check endpoint (used by Dokploy/Traefik)
-      - "traefik.http.services.pakulab-api.loadbalancer.server.port=3000"
 
   # ── Vue PWA (Nginx) ────────────────────────────────────────────────────────
   web:
@@ -71,11 +70,11 @@ services:
     depends_on:
       - api
     networks:
-      - internal
+      - dokploy-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pakulab-web.rule=Host(`staging.pakulab.cloud`)"
-      - "traefik.http.routers.pakulab-web.tls=true"
+      - "traefik.http.routers.pakulab-web.entrypoints=websecure"
       - "traefik.http.routers.pakulab-web.tls.certresolver=letsencrypt"
       - "traefik.http.services.pakulab-web.loadbalancer.server.port=80"
 
@@ -105,6 +104,8 @@ services:
       - internal
 
 networks:
+  dokploy-network:
+    external: true
   internal:
     driver: bridge
 
