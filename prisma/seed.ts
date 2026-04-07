@@ -2,9 +2,12 @@
  * Prisma seed script — loads Mexican baby food catalog.
  * Run with: pnpm db:seed (from project root)
  *
- * T-008 + T-009: Food data curation — 102 foods spanning all 5 groups.
+ * Updated to match Dra. Paulina Trueba Villaseñor (Pediatra Certificada,
+ * LASPGHAN, CIENUTRITION) guide — A/L classifications, group assignments,
+ * and new foods per the official Protocolo Beikost guide.
  *
- * DISCLAIMER: A/L classifications are based on published evidence:
+ * DISCLAIMER: A/L classifications are based on:
+ * - Dra. Paulina Trueba Villaseñor — Protocolo Beikost (primary source)
  * - AAP BRAT diet guidelines
  * - ESPGHAN complementary feeding recommendations (2017)
  * - INCMNSZ (Instituto Nacional de Ciencias Médicas y Nutrición Salvador Zubirán)
@@ -31,7 +34,7 @@ interface FoodSeed {
 }
 
 // ============================================================
-// FRUTAS (26 foods)
+// FRUTAS (32 foods)
 // ============================================================
 const fruits: FoodSeed[] = [
   {
@@ -43,17 +46,6 @@ const fruits: FoodSeed[] = [
     ageMonths: 6,
     description:
       'Ofrecer maduro (manchas marrones), en trozos blandos o puré. El plátano MUY maduro pierde su efecto astringente — el almidón se convierte en azúcar. Ideal primer alimento.',
-    needsValidation: false,
-  },
-  {
-    name: 'Plátano macho cocido',
-    group: 'FRUIT',
-    alClassification: 'ASTRINGENT',
-    alScore: -0.8,
-    isAllergen: false,
-    ageMonths: 8,
-    description:
-      'Más astringente que el plátano Tabasco por su alto contenido de almidón resistente y taninos. Cocer bien hasta ablandar. Útil para diarrea leve.',
     needsValidation: false,
   },
   {
@@ -81,13 +73,13 @@ const fruits: FoodSeed[] = [
   {
     name: 'Pera cocida',
     group: 'FRUIT',
-    alClassification: 'LAXATIVE',
-    alScore: 0.8,
+    alClassification: 'ASTRINGENT',
+    alScore: -0.4,
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Rica en fibra soluble y sorbitol — efecto laxante notable y bien documentado. Excelente para estreñimiento. Cocer hasta suave para bebés menores de 9 meses.',
-    needsValidation: false,
+      'Dra. Trueba clasifica la pera como astringente. La cocción gelifica la pectina, reduciendo el efecto laxante del sorbitol. Cocer hasta suave para bebés menores de 9 meses.',
+    needsValidation: true,
   },
   {
     name: 'Papaya',
@@ -320,10 +312,87 @@ const fruits: FoodSeed[] = [
       'Fruta mexicana estacional. Verde es MUY astringente (taninos); madura es más equilibrada. Retirar hueso. Ofrecer solo madura y en puré. Efecto variable según madurez.',
     needsValidation: true,
   },
+  {
+    name: 'Ciruela amarilla',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.6,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Variedad de ciruela dulce y jugosa. Rica en sorbitol con efecto laxante. Retirar hueso. Ofrecer madura y en puré para bebés menores de 9 meses.',
+    needsValidation: true,
+  },
+  {
+    name: 'Ciruela roja',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.7,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Ciruela de piel roja, rica en sorbitol y antocianinas. Efecto laxante notable. Retirar hueso. Ofrecer madura. Cocer para bebés menores de 8 meses.',
+    needsValidation: true,
+  },
+  {
+    name: 'Granadilla',
+    group: 'FRUIT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Fruta tropical de la familia de la maracuyá, pero más dulce y menos ácida. Colar las semillas para bebés pequeños. Rica en vitamina C y fibra.',
+    needsValidation: true,
+  },
+  {
+    name: 'Guanábana',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.4,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Fruta tropical cremosa rica en vitamina C y fibra. Efecto laxante suave. Retirar todas las semillas (son grandes y duras). Ofrecer la pulpa en puré.',
+    needsValidation: true,
+  },
+  {
+    name: 'Lulo',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Fruta tropical ácida (naranjilla). Rica en vitamina C. Colar semillas. Puede causar irritación perioral por acidez. Introducir gradualmente.',
+    needsValidation: true,
+  },
+  {
+    name: 'Maracuyá',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.4,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Fruta tropical ácida rica en vitamina C y fibra. Colar las semillas para bebés. Puede causar irritación perioral. Efecto laxante suave por fibra y acidez.',
+    needsValidation: true,
+  },
+  {
+    name: 'Moras',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Ricas en antioxidantes, vitamina C y fibra. Efecto laxante suave. Machacar o triturar para bebés — las semillas son pequeñas y seguras. Pueden teñir la ropa.',
+    needsValidation: true,
+  },
 ];
 
 // ============================================================
-// VERDURAS (23 foods)
+// VERDURAS (33 foods)
 // ============================================================
 const vegetables: FoodSeed[] = [
   {
@@ -340,23 +409,23 @@ const vegetables: FoodSeed[] = [
   {
     name: 'Calabacita cocida',
     group: 'VEGETABLE',
-    alClassification: 'NEUTRAL',
-    alScore: 0.0,
+    alClassification: 'LAXATIVE',
+    alScore: 0.2,
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Muy digestiva y de sabor suave. Alto contenido de agua. Efecto neutro en tránsito. Ideal para mezclar con otros alimentos. Excelente primera verdura.',
+      'Dra. Trueba clasifica calabaza como laxante. Muy digestiva y de sabor suave. Alto contenido de agua. Efecto laxante suave. Ideal para mezclar con otros alimentos.',
     needsValidation: false,
   },
   {
     name: 'Chayote cocido',
     group: 'VEGETABLE',
-    alClassification: 'NEUTRAL',
-    alScore: 0.0,
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Vegetal mexicano muy digestivo. Alto contenido de agua y sabor suave. Efecto neutro en tránsito. Cocer hasta muy blando. Fácil de hacer puré.',
+      'Dra. Trueba clasifica chayote como laxante. Vegetal mexicano muy digestivo. Alto contenido de agua y sabor suave. Cocer hasta muy blando. Fácil de hacer puré.',
     needsValidation: false,
   },
   {
@@ -382,25 +451,14 @@ const vegetables: FoodSeed[] = [
     needsValidation: false,
   },
   {
-    name: 'Papa cocida (sin cáscara)',
+    name: 'Camote cocido',
     group: 'VEGETABLE',
     alClassification: 'ASTRINGENT',
     alScore: -0.3,
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Almidón resistente con efecto astringente. Muy energético y de fácil digestión. Excelente primer alimento. Pelar antes de cocer. Sin sal ni mantequilla para bebés.',
-    needsValidation: false,
-  },
-  {
-    name: 'Camote cocido',
-    group: 'VEGETABLE',
-    alClassification: 'NEUTRAL',
-    alScore: -0.1,
-    isAllergen: false,
-    ageMonths: 6,
-    description:
-      'Muy nutritivo. Rico en betacaroteno, vitamina A y fibra. Textura suave y sabor dulce que los bebés aceptan bien. Cocer hasta muy blando. Sin cáscara.',
+      'Dra. Trueba clasifica camote como astringente. Rico en betacaroteno, vitamina A y fibra. Textura suave y sabor dulce que los bebés aceptan bien. Cocer hasta muy blando. Sin cáscara.',
     needsValidation: false,
   },
   {
@@ -411,19 +469,19 @@ const vegetables: FoodSeed[] = [
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Grasa saludable monoinsaturada. Efecto laxante suave por fibra y sorbitol. Excelente fuente de energía densa para el crecimiento cerebral. Ofrecer maduro, en trozos o puré.',
+      'Grasa saludable monoinsaturada. Efecto laxante suave por fibra y sorbitol. Excelente fuente de energía densa para el crecimiento cerebral. Ofrecer maduro, en trozos o puré. En guía 6-9 meses bajo Verduras.',
     needsValidation: false,
   },
   {
     name: 'Ejote cocido',
     group: 'VEGETABLE',
-    alClassification: 'LAXATIVE',
-    alScore: 0.4,
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
     isAllergen: false,
     ageMonths: 7,
     description:
-      'Leguminosa fresca. Efecto laxante por fibra. Cocer bien hasta muy suave — puede ser difícil de masticar. Retirar las puntas. Buena fuente de vitaminas del complejo B.',
-    needsValidation: false,
+      'Dra. Trueba clasifica ejote como astringente. Cocer bien hasta muy suave — puede ser difícil de masticar. Retirar las puntas. Buena fuente de vitaminas del complejo B.',
+    needsValidation: true,
   },
   {
     name: 'Betabel cocido',
@@ -461,12 +519,12 @@ const vegetables: FoodSeed[] = [
   {
     name: 'Calabaza de Castilla cocida',
     group: 'VEGETABLE',
-    alClassification: 'NEUTRAL',
-    alScore: 0.1,
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
     isAllergen: false,
     ageMonths: 6,
     description:
-      'Variedad mexicana de calabaza. Rica en betacaroteno y vitamina A. Textura muy suave al cocer. Sabor dulce que los bebés suelen aceptar bien. Excelente primer alimento.',
+      'Dra. Trueba clasifica calabaza como laxante. Variedad mexicana de calabaza. Rica en betacaroteno y vitamina A. Textura muy suave al cocer. Sabor dulce que los bebés suelen aceptar bien.',
     needsValidation: false,
   },
   {
@@ -489,17 +547,6 @@ const vegetables: FoodSeed[] = [
     ageMonths: 8,
     description:
       'Alto contenido de agua. Muy refrescante. Retirar piel y semillas antes de los 12 meses. Sin sal ni chile. Ofrecer en tiras para BLW o rallado.',
-    needsValidation: false,
-  },
-  {
-    name: 'Elote (granos cocidos)',
-    group: 'VEGETABLE',
-    alClassification: 'NEUTRAL',
-    alScore: 0.0,
-    isAllergen: false,
-    ageMonths: 9,
-    description:
-      'Retirar granos del olote y triturar o moler. Los granos enteros son riesgo de asfixia y no se digieren bien antes de los 2 años. Popular en México. Sin sal ni condimentos.',
     needsValidation: false,
   },
   {
@@ -579,10 +626,143 @@ const vegetables: FoodSeed[] = [
       'AVISO: puede cambiar el olor de la orina (efecto por ácido aspártico — completamente normal). Efecto laxante suave. Rico en folato. Cocer hasta muy blando.',
     needsValidation: false,
   },
+  {
+    name: 'Chícharo cocido',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.5,
+    isAllergen: false,
+    ageMonths: 7,
+    description:
+      'Leguminosa fresca pequeña. Machacar o colar para bebés menores de 9 meses — riesgo de asfixia si se ofrecen enteros. Rica en proteína vegetal, vitamina K y C.',
+    needsValidation: false,
+  },
+  {
+    name: 'Apio cocido',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: true,
+    allergenType: 'celery',
+    ageMonths: 6,
+    description:
+      'Verdura rica en fibra y agua. Efecto laxante suave. Alérgeno reconocido en la UE. Cocer bien hasta muy blando — crudo es riesgo de asfixia por fibras duras. Retirar hilos.',
+    needsValidation: true,
+  },
+  {
+    name: 'Berenjena cocida',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Solanácea de sabor suave. Cocer bien (asar o hervir). Retirar piel para bebés menores de 10 meses. Rica en fibra y antioxidantes. Textura suave al cocinar.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cebolla blanca cocida',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Cocer bien hasta transparente. Sabor fuerte que suaviza con la cocción. Puede causar gases. Usar en pequeñas cantidades mezclada con otros purés para dar sabor.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cebolla morada cocida',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Rica en antocianinas y quercetina. Cocer bien. Sabor más suave que la cebolla blanca al cocinar. Puede causar gases. Usar en pequeñas cantidades en purés.',
+    needsValidation: true,
+  },
+  {
+    name: 'Champiñones cocidos',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Hongos comestibles ricos en vitamina D, selenio y proteína vegetal. Cocer bien. Picar finamente para bebés. SOLO usar champiñones comerciales — NUNCA silvestres.',
+    needsValidation: true,
+  },
+  {
+    name: 'Coles de Bruselas cocidas',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.5,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Crucífera rica en fibra, vitamina C y K. Efecto laxante por fibra insoluble. Puede causar gases — introducir gradualmente. Cocer bien y ofrecer en mitades o puré.',
+    needsValidation: true,
+  },
+  {
+    name: 'Rábano rallado',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Sabor picante que suaviza al cocer. Rallar finamente o cocer para bebés. Rico en vitamina C. Introducir en pequeñas cantidades por su sabor fuerte.',
+    needsValidation: true,
+  },
+  {
+    name: 'Repollo cocido',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Crucífera rica en fibra y vitamina C. Efecto laxante suave. Puede causar gases — introducir gradualmente. Cocer bien. Picar finamente para bebés.',
+    needsValidation: true,
+  },
+  {
+    name: 'Rúgula',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.2,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Hoja verde de sabor amargo y picante. Rica en hierro, calcio y vitamina K. Picar finamente y mezclar con otros purés. El sabor amargo es importante para el desarrollo del paladar.',
+    needsValidation: true,
+  },
+  {
+    name: 'Zucchini amarillo cocido',
+    group: 'VEGETABLE',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Variedad amarilla de calabacita. Muy digestiva y de sabor suave. Alto contenido de agua. Cocer hasta muy blando. Similar nutricionalmente a la calabacita verde.',
+    needsValidation: true,
+  },
+  {
+    name: 'Lechuga cocida',
+    group: 'VEGETABLE',
+    alClassification: 'LAXATIVE',
+    alScore: 0.2,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Hoja verde suave. Efecto laxante muy suave. Lavar muy bien. Picar finamente e incorporar a purés. Rica en folato y agua.',
+    needsValidation: true,
+  },
 ];
 
 // ============================================================
-// PROTEÍNAS (24 foods)
+// PROTEÍNAS (37 foods — incl. Cacahuate y Almendras desde Grasas; excl. Chícharo a Verduras)
 // ============================================================
 const proteins: FoodSeed[] = [
   {
@@ -768,17 +948,6 @@ const proteins: FoodSeed[] = [
     needsValidation: true,
   },
   {
-    name: 'Chícharo cocido',
-    group: 'PROTEIN',
-    alClassification: 'LAXATIVE',
-    alScore: 0.5,
-    isAllergen: false,
-    ageMonths: 7,
-    description:
-      'Leguminosa fresca pequeña. Machacar o colar para bebés menores de 9 meses — riesgo de asfixia si se ofrecen enteros. Rica en proteína vegetal, vitamina K y C.',
-    needsValidation: false,
-  },
-  {
     name: 'Frijol blanco (alubias) cocido',
     group: 'PROTEIN',
     alClassification: 'LAXATIVE',
@@ -859,10 +1028,175 @@ const proteins: FoodSeed[] = [
       'Hongo del maíz — delicadeza culinaria mexicana. Buena fuente de proteína vegetal y aminoácidos esenciales. Introducir después de los 12 meses. Cocer bien. Sabor fuerte — combinar con otros purés.',
     needsValidation: true,
   },
+  {
+    name: 'Crema de cacahuate (sin sal, sin azúcar)',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: true,
+    allergenType: 'peanut',
+    ageMonths: 6,
+    description:
+      'INTRODUCIR TEMPRANO — evidencia LEAP (Learning Early About Peanut Allergy) demuestra que reduce riesgo de alergia. Diluir bien en puré. NUNCA en trozos (asfixia). Alérgeno — cacahuate (Top 9).',
+    needsValidation: false,
+  },
+  {
+    name: 'Crema de almendras (sin sal)',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 8,
+    description:
+      'Alérgeno — frutos secos (Top 9). Introducir diluida en puré. Rica en vitamina E y calcio. NUNCA en trozos. Introducir con observación 48-72 horas.',
+    needsValidation: false,
+  },
+  {
+    name: 'Arveja seca cocida',
+    group: 'PROTEIN',
+    alClassification: 'LAXATIVE',
+    alScore: 0.5,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Leguminosa seca rica en proteína vegetal y fibra. Efecto laxante por fibra. Remojar antes de cocinar. Cocer hasta deshacer. Puede causar gases — introducir gradualmente.',
+    needsValidation: true,
+  },
+  {
+    name: 'Camarón cocido',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.1,
+    isAllergen: true,
+    allergenType: 'shellfish',
+    ageMonths: 6,
+    description:
+      'Marisco — alérgeno potencial Top 9. Cocer bien. Rico en proteína, zinc y omega-3. Picar finamente. Introducir con observación 48-72 horas. Verificar ausencia de vena intestinal.',
+    needsValidation: true,
+  },
+  {
+    name: 'Marañón/Nuez de la India (crema)',
+    group: 'PROTEIN',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 6,
+    description:
+      'Fruto seco — alérgeno potencial Top 9. Ofrecer como crema diluida en puré, NUNCA en trozos. Rica en zinc, magnesio y grasas saludables. Introducir con observación.',
+    needsValidation: true,
+  },
+  {
+    name: 'Nuez pecana (molida)',
+    group: 'PROTEIN',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 6,
+    description:
+      'Fruto seco mexicano — alérgeno potencial Top 9. MOLER finamente o como crema, NUNCA en trozos. Rica en grasas monoinsaturadas y vitamina E. Popular en cocina mexicana.',
+    needsValidation: true,
+  },
+  {
+    name: 'Pistachos (molidos)',
+    group: 'PROTEIN',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 6,
+    description:
+      'Fruto seco — alérgeno potencial Top 9. MOLER finamente, NUNCA en trozos. Ricos en proteína, fibra y vitamina B6. Verificar sin sal. Introducir con observación.',
+    needsValidation: true,
+  },
+  {
+    name: 'Soya/Tofu',
+    group: 'PROTEIN',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: true,
+    allergenType: 'soy',
+    ageMonths: 6,
+    description:
+      'Leguminosa — alérgeno potencial Top 9. El tofu firme es ideal para BLW en cubitos. Rica en proteína completa, calcio e isoflavonas. Introducir con observación 48-72 horas.',
+    needsValidation: true,
+  },
+  {
+    name: 'Gallina cocida deshebrada',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Similar al pollo pero con sabor más intenso. Cocer bien y deshebrar finamente. Rica en proteína y hierro. Efecto astringente leve por proteína animal.',
+    needsValidation: true,
+  },
+  {
+    name: 'Huevo de codorniz cocido',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: true,
+    allergenType: 'egg',
+    ageMonths: 6,
+    description:
+      'Más pequeño que el de gallina — práctico para porciones de bebé. Similar valor nutricional. Alérgeno — huevo. Cocer bien. Puede tener reacción cruzada con huevo de gallina.',
+    needsValidation: true,
+  },
+  {
+    name: 'Hígado de res cocido',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Superalimento en hierro hemo y vitamina A. Ofrecer MÁXIMO 1-2 veces por semana (exceso de vitamina A es tóxico). Bien cocido. Textura granulada — mezclar con puré.',
+    needsValidation: true,
+  },
+  {
+    name: 'Trucha cocida',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.1,
+    isAllergen: true,
+    allergenType: 'fish',
+    ageMonths: 6,
+    description:
+      'Pescado de agua dulce rico en omega-3. Alérgeno — pescado. Verificar ausencia de espinas. Cocer completamente. Textura suave ideal para bebés.',
+    needsValidation: true,
+  },
+  {
+    name: 'Langostino cocido',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.1,
+    isAllergen: true,
+    allergenType: 'shellfish',
+    ageMonths: 10,
+    description:
+      'Marisco — alérgeno potencial Top 9. Cocer bien. Rico en proteína y zinc. Picar finamente. Introducir con observación. Aparece en la guía a partir de los 10 meses.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cangrejo cocido',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.1,
+    isAllergen: true,
+    allergenType: 'shellfish',
+    ageMonths: 10,
+    description:
+      'Marisco — alérgeno potencial Top 9. Cocer bien. Verificar ausencia de caparazón. Rico en zinc y vitamina B12. Introducir con observación. Aparece en guía a partir de 10 meses.',
+    needsValidation: true,
+  },
 ];
 
 // ============================================================
-// CEREALES Y TUBÉRCULOS (17 foods)
+// CEREALES Y TUBÉRCULOS (32 foods — incl. Papa, Elote, Plátano macho desde otros grupos)
 // ============================================================
 const cerealsTubers: FoodSeed[] = [
   {
@@ -1006,12 +1340,12 @@ const cerealsTubers: FoodSeed[] = [
   {
     name: 'Quinoa cocida',
     group: 'CEREAL_TUBER',
-    alClassification: 'NEUTRAL',
-    alScore: 0.1,
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
     isAllergen: false,
     ageMonths: 7,
     description:
-      'Pseudocereal sin gluten con proteína completa. Remojar mínimo 8 horas y enjuagar muy bien para eliminar saponinas (amargas). Cocer hasta que se abran los granos.',
+      'Pseudocereal sin gluten con proteína completa. Dra. Trueba clasifica quinoa como laxante. Remojar mínimo 8 horas y enjuagar muy bien para eliminar saponinas (amargas). Cocer hasta que se abran los granos.',
     needsValidation: false,
   },
   {
@@ -1037,6 +1371,17 @@ const cerealsTubers: FoodSeed[] = [
     needsValidation: false,
   },
   {
+    name: 'Plátano macho cocido',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.8,
+    isAllergen: false,
+    ageMonths: 8,
+    description:
+      'Más astringente que el plátano Tabasco por su alto contenido de almidón resistente y taninos. Cocer bien hasta ablandar. Útil para diarrea leve. Dra. Trueba lo clasifica como cereal/tubérculo (plátano amarillo).',
+    needsValidation: false,
+  },
+  {
     name: 'Elote (masa preparada — atole)',
     group: 'CEREAL_TUBER',
     alClassification: 'ASTRINGENT',
@@ -1058,10 +1403,171 @@ const cerealsTubers: FoodSeed[] = [
       'Fruta muy astringente (taninos + pectina gelificante). Se clasifica en cereales/tubérculos por su uso clínico similar al arroz para diarrea. NUNCA crudo. Cocer bien y colar.',
     needsValidation: true,
   },
+  {
+    name: 'Papa cocida (sin cáscara)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Almidón resistente con efecto astringente. Muy energético y de fácil digestión. Excelente primer alimento. Pelar antes de cocer. Sin sal ni mantequilla para bebés.',
+    needsValidation: false,
+  },
+  {
+    name: 'Elote (granos cocidos)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 9,
+    description:
+      'Retirar granos del olote y triturar o moler. Los granos enteros son riesgo de asfixia y no se digieren bien antes de los 2 años. Popular en México. Sin sal ni condimentos.',
+    needsValidation: false,
+  },
+  {
+    name: 'Arepa de maíz',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Preparación de maíz molido cocido, similar a la tortilla. Efecto astringente por almidón de maíz. Sin sal para bebés. Ofrecer en trozos blandos.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cebada cocida',
+    group: 'CEREAL_TUBER',
+    alClassification: 'NEUTRAL',
+    alScore: 0.1,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Cereal con gluten. Rico en fibra soluble (beta-glucano). Cocer bien hasta muy suave. Puede prepararse como agua de cebada sin azúcar.',
+    needsValidation: true,
+  },
+  {
+    name: 'Centeno cocido',
+    group: 'CEREAL_TUBER',
+    alClassification: 'NEUTRAL',
+    alScore: 0.1,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Cereal con gluten. Rico en fibra. Menos común en alimentación infantil mexicana. Ofrecer en forma de pan de centeno blando sin sal.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cereal de avena infantil (enriquecido)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 4,
+    description:
+      'Cereal infantil enriquecido con hierro a base de avena. Contiene beta-glucano con efecto laxante suave. Preparar con leche materna o fórmula. Puede contener trazas de gluten.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cereal de maíz infantil (enriquecido)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.4,
+    isAllergen: false,
+    ageMonths: 4,
+    description:
+      'Cereal infantil enriquecido con hierro a base de maíz. Sin gluten. Efecto astringente por almidón de maíz. Preparar con leche materna o fórmula.',
+    needsValidation: true,
+  },
+  {
+    name: 'Cereal de trigo infantil (enriquecido)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Cereal infantil enriquecido con hierro a base de trigo. Contiene gluten — introducir gradualmente. Preparar con leche materna o fórmula.',
+    needsValidation: true,
+  },
+  {
+    name: 'Galletas de dentición',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Galletas diseñadas para bebés que se ablandan con la saliva. Verificar sin azúcar, sin sal y sin miel. Siempre supervisar — pueden romperse. Efecto astringente leve.',
+    needsValidation: true,
+  },
+  {
+    name: 'Hojuelas de maíz (sin azúcar)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Hojuelas de maíz sin azúcar ni sal añadida. Efecto astringente por almidón de maíz refinado. Se ablandan en leche. Verificar que no contengan azúcar ni sodio excesivo.',
+    needsValidation: true,
+  },
+  {
+    name: 'Pancake (sin azúcar)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Preparar con harina integral, huevo y leche sin azúcar. Contiene gluten. Textura suave ideal para BLW. Cortar en tiras. Puede contener huevo y lácteos (alérgenos).',
+    needsValidation: true,
+  },
+  {
+    name: 'Papa criolla cocida',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Variedad de papa pequeña y amarilla, popular en Colombia y América Latina. Rica en almidón con efecto astringente. Cocer bien hasta ablandar. Pelar antes de ofrecer.',
+    needsValidation: true,
+  },
+  {
+    name: 'Waffle (sin azúcar)',
+    group: 'CEREAL_TUBER',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'gluten',
+    ageMonths: 6,
+    description:
+      'Similar al pancake. Preparar sin azúcar. Contiene gluten. Textura crujiente por fuera y suave por dentro — ideal para BLW. Puede contener huevo y lácteos (alérgenos).',
+    needsValidation: true,
+  },
+  {
+    name: 'Yuca cocida',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.5,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Tubérculo tropical rico en almidón resistente — efecto astringente marcado. SIEMPRE cocer bien (la yuca cruda contiene compuestos tóxicos). Pelar, cocer y ofrecer en trozos blandos.',
+    needsValidation: true,
+  },
 ];
 
 // ============================================================
-// GRASAS SALUDABLES (12 foods)
+// GRASAS SALUDABLES (20 foods)
 // ============================================================
 const healthyFats: FoodSeed[] = [
   {
@@ -1121,39 +1627,15 @@ const healthyFats: FoodSeed[] = [
     needsValidation: true,
   },
   {
-    name: 'Crema de cacahuate (sin sal, sin azúcar)',
-    group: 'HEALTHY_FAT',
-    alClassification: 'ASTRINGENT',
-    alScore: -0.2,
-    isAllergen: true,
-    allergenType: 'peanut',
-    ageMonths: 6,
-    description:
-      'INTRODUCIR TEMPRANO — evidencia LEAP (Learning Early About Peanut Allergy) demuestra que reduce riesgo de alergia. Diluir bien en puré. NUNCA en trozos (asfixia). Alérgeno — cacahuate (Top 9).',
-    needsValidation: false,
-  },
-  {
     name: 'Tahini (pasta de ajonjolí)',
     group: 'HEALTHY_FAT',
-    alClassification: 'NEUTRAL',
-    alScore: 0.0,
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
     isAllergen: true,
     allergenType: 'sesame',
     ageMonths: 8,
     description:
-      'Alérgeno potencial — ajonjolí (Top 9 en EE.UU. desde 2023). Rica en calcio y zinc. Diluir bien en puré. Introducir gradualmente con observación 48-72 horas.',
-    needsValidation: false,
-  },
-  {
-    name: 'Crema de almendras (sin sal)',
-    group: 'HEALTHY_FAT',
-    alClassification: 'ASTRINGENT',
-    alScore: -0.2,
-    isAllergen: true,
-    allergenType: 'tree_nuts',
-    ageMonths: 8,
-    description:
-      'Alérgeno — frutos secos (Top 9). Introducir diluida en puré. Rica en vitamina E y calcio. NUNCA en trozos. Introducir con observación 48-72 horas.',
+      'Alérgeno potencial — ajonjolí (Top 9 en EE.UU. desde 2023). Rica en calcio y zinc. Diluir bien en puré. Introducir gradualmente con observación 48-72 horas. Dra. Trueba clasifica ajonjolí como laxante.',
     needsValidation: false,
   },
   {
@@ -1199,6 +1681,122 @@ const healthyFats: FoodSeed[] = [
     description:
       'MOLER siempre — la linaza entera pasa sin absorberse. Efecto laxante notable por mucílago y fibra soluble. Rica en omega-3 ALA (ácido alfa-linolénico). Agregar a purés.',
     needsValidation: false,
+  },
+  {
+    name: 'Aceite de canola',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 10,
+    description:
+      'Aceite vegetal rico en omega-3 ALA y omega-6. Punto de humo moderado. Sabor neutro. Agregar 1-2 cucharaditas a purés. Disponible a partir de 10 meses según la guía.',
+    needsValidation: true,
+  },
+  {
+    name: 'Aceite de girasol',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: false,
+    ageMonths: 10,
+    description:
+      'Aceite vegetal rico en vitamina E y ácidos grasos omega-6. Punto de humo alto. Sabor neutro. Usar en pequeñas cantidades. Disponible a partir de 10 meses según la guía.',
+    needsValidation: true,
+  },
+  {
+    name: 'Aguacate Lorena/Palta',
+    group: 'HEALTHY_FAT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: false,
+    ageMonths: 10,
+    description:
+      'Variedad de aguacate más grande y acuosa que el Hass. Rico en grasas monoinsaturadas. Efecto laxante suave. En la guía aparece como grasa a partir de 10 meses.',
+    needsValidation: true,
+  },
+  {
+    name: 'Avellanas (crema)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 10,
+    description:
+      'Fruto seco — alérgeno Top 9. Ofrecer como crema diluida, NUNCA en trozos. Rica en vitamina E y grasas monoinsaturadas. Introducir con observación.',
+    needsValidation: true,
+  },
+  {
+    name: 'Coco deshidratado (rallado)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 10,
+    description:
+      'Fuente de grasa de cadena media. Alérgeno — clasificado como fruto seco en EE.UU. Ofrecer rallado fino mezclado en purés. Sin azúcar añadida.',
+    needsValidation: true,
+  },
+  {
+    name: 'Macadamia (crema)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 10,
+    description:
+      'Fruto seco — alérgeno Top 9. Rica en grasas monoinsaturadas. Ofrecer como crema diluida, NUNCA en trozos. Sabor suave y mantecoso.',
+    needsValidation: true,
+  },
+  {
+    name: 'Nuez de Brasil (crema)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 10,
+    description:
+      'Fuente excepcional de selenio — con 1-2 nueces se cubre el requerimiento diario. Alérgeno — frutos secos. Ofrecer como crema diluida. No exceder por contenido de selenio.',
+    needsValidation: true,
+  },
+  {
+    name: 'Piñones (molidos)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'tree_nuts',
+    ageMonths: 10,
+    description:
+      'Semilla del pino. Alérgeno — frutos secos. MOLER finamente. Ricos en vitamina E, zinc y grasas insaturadas. Sabor suave. Agregar a purés.',
+    needsValidation: true,
+  },
+  {
+    name: 'Mayonesa casera (con huevo pasteurizado)',
+    group: 'HEALTHY_FAT',
+    alClassification: 'NEUTRAL',
+    alScore: 0.0,
+    isAllergen: true,
+    allergenType: 'egg',
+    ageMonths: 10,
+    description:
+      'SOLO con huevo pasteurizado para evitar Salmonella. Fuente de grasa. Alérgeno — huevo. Usar en pequeñas cantidades como acompañamiento. Sin sal para bebés.',
+    needsValidation: true,
+  },
+  {
+    name: 'Semillas de cáñamo/hemp',
+    group: 'HEALTHY_FAT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.3,
+    isAllergen: false,
+    ageMonths: 10,
+    description:
+      'Semillas ricas en omega-3, omega-6 y proteína completa. No contienen THC. Efecto laxante suave por fibra. Moler o agregar directamente a purés por su textura suave.',
+    needsValidation: true,
   },
 ];
 
