@@ -764,17 +764,14 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   font-family: var(--md3-font-label);
   font-size: 12px;
   font-weight: var(--md3-weight-semibold);
-  white-space: nowrap;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 
 @media (min-width: 768px) {
   .chip {
     padding: 0.375rem var(--md3-space-3);
     font-size: var(--md3-label-sm);
-    max-width: 140px;
   }
 }
 

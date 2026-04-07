@@ -39,7 +39,7 @@ export const useFoodStore = defineStore('foods', () => {
   const error = ref<string | null>(null)
   const currentPage = ref(1)
   const totalCount = ref(0)
-  const pageLimit = ref(50)
+  const pageLimit = ref(200)
   const hasMore = ref(false)
   /** True when foods were loaded from IndexedDB (offline or stale API) */
   const isUsingCache = ref(false)
