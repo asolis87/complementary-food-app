@@ -9,7 +9,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile.dev
     # Override the dev command: run tsx via pnpm dlx (Docker injects env vars, --env-file not needed)
-    command: ["pnpm", "run", "--filter", "api", "dev:docker"]
+    command: ["pnpm", "--filter", "api", "dev:docker"]
     working_dir: /app
     depends_on:
       db:

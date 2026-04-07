@@ -66,7 +66,7 @@ const trialFeatures = [
  */
 function handleExplore(): void {
   const redirect = route.query.redirect as string | undefined
-  void router.push(redirect ?? '/plates')
+  void router.push(redirect ?? '/profile')
 }
 </script>
 

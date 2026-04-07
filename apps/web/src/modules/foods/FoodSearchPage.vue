@@ -687,6 +687,7 @@ function groupChipClass(group: FoodGroup): string {
   gap: 0.625rem;
   box-shadow: var(--md3-shadow-ambient);
   transition: box-shadow var(--md3-transition-normal), transform var(--md3-transition-normal);
+  min-width: 0; /* Prevent grid blowout from nowrap children */
 }
 
 .food-card:hover {
