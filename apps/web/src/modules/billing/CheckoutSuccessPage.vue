@@ -7,7 +7,7 @@
 
       <h1>¡Bienvenido a Pakulab Pro!</h1>
       <p class="success-msg">
-        Tu suscripción está activa. Ya podés disfrutar de todas las funciones Pro.
+        Tu suscripción está activa. Ya puedes disfrutar de todas las funciones Pro.
       </p>
 
       <ul class="features-unlocked">

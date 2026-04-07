@@ -12,8 +12,8 @@
         </h1>
 
         <p class="hero-subtitle">
-          Armá platos balanceados para tu bebé con el indicador de balance
-          astringente/laxante. Creá tu cuenta gratis y empezá a organizar las comidas de tu bebé.
+          Arma platos balanceados para tu bebé con el indicador de balance
+          astringente/laxante. Crea tu cuenta gratis y empieza a organizar las comidas de tu bebé.
         </p>
 
         <div class="hero-ctas">
@@ -32,9 +32,9 @@
     <!-- ② Features / Bento Grid -->
     <section class="features-section reveal" aria-label="Características principales">
       <header class="section-header">
-        <h2 class="section-title">¿Qué podés hacer con Pakulab?</h2>
+        <h2 class="section-title">¿Qué puedes hacer con Pakulab?</h2>
         <p class="section-subtitle">
-          Todo lo que necesitás para la alimentación complementaria en un solo lugar.
+          Todo lo que necesitas para la alimentación complementaria en un solo lugar.
         </p>
       </header>
 
@@ -47,7 +47,7 @@
           <div class="feature-card-body">
             <h3 class="feature-title">Platos Equilibrados</h3>
             <p class="feature-desc">
-              Armá el plato de tu bebé eligiendo de cada grupo de alimentos y visualizá la distribución
+              Arma el plato de tu bebé eligiendo de cada grupo de alimentos y visualiza la distribución
               en tiempo real. Grupos de 4 (básico) o 5 (con grasas saludables).
             </p>
             <div class="feature-card-tags">
@@ -85,7 +85,7 @@
           </div>
           <h3 class="feature-title">Catálogo de Alimentos</h3>
           <p class="feature-desc">
-            102 alimentos mexicanos con clasificación A/L y edad mínima recomendada.
+            154 alimentos mexicanos con clasificación A/L y edad mínima recomendada.
           </p>
         </article>
 
@@ -96,7 +96,7 @@
           </div>
           <h3 class="feature-title">Bitácora del Bebé</h3>
           <p class="feature-desc">
-            Registrá cada comida, reacción e hito del desarrollo. Identificá patrones y posibles alergias.
+              Registra cada comida, reacción e hito del desarrollo. Identifica patrones y posibles alergias.
           </p>
         </article>
 
@@ -107,7 +107,7 @@
           </div>
           <h3 class="feature-title feature-title-accent">Indicador A/L</h3>
           <p class="feature-desc feature-desc-accent">
-            Sabé al instante si el plato es astringente, laxante o equilibrado para cuidar la digestión.
+            Sabe al instante si el plato es astringente, laxante o equilibrado para cuidar la digestión.
           </p>
         </article>
       </div>
@@ -131,9 +131,9 @@
               <span class="material-symbols-outlined step-icon">menu_book</span>
             </div>
             <div class="step-body">
-              <h3 class="step-title">Elegí los alimentos</h3>
+              <h3 class="step-title">Elige los alimentos</h3>
               <p class="step-desc">
-                Buscá entre 102 alimentos. Cada uno muestra su clasificación A/L y la edad mínima recomendada para introducirlo.
+                Busca entre 154 alimentos. Cada uno muestra su clasificación A/L y la edad mínima recomendada para introducirlo.
               </p>
             </div>
           </div>
@@ -149,9 +149,9 @@
               <span class="material-symbols-outlined step-icon">restaurant</span>
             </div>
             <div class="step-body">
-              <h3 class="step-title">Armá el plato</h3>
+              <h3 class="step-title">Arma el plato</h3>
               <p class="step-desc">
-                Distribuí los alimentos en los grupos del plato. El indicador de balance se actualiza en tiempo real.
+                Distribuye los alimentos en los grupos del plato. El indicador de balance se actualiza en tiempo real.
               </p>
             </div>
           </div>
@@ -166,9 +166,9 @@
               <span class="material-symbols-outlined step-icon">book</span>
             </div>
             <div class="step-body">
-              <h3 class="step-title">Registrá en la bitácora</h3>
+              <h3 class="step-title">Registra en la bitácora</h3>
               <p class="step-desc">
-                Guardá el plato en la bitácora, exportalo como imagen o compartilo con tu pediatra.
+                Guarda el plato en la bitácora, expórtalo como imagen o compártelo con tu pediatra.
               </p>
               <!-- Baby food prep image with playful tilt -->
               <div class="baby-log-img-wrap">
@@ -252,15 +252,15 @@
         <span class="cta-deco-icon material-symbols-outlined" aria-hidden="true">flatware</span>
         <h2 class="cta-title">¿Lista para comenzar el viaje?</h2>
         <p class="cta-subtitle">
-          Creá tu cuenta gratis y empezá a guardar tus platos y el historial de tu bebé.
+          Crea tu cuenta gratis y empieza a guardar tus platos y el historial de tu bebé.
         </p>
         <RouterLink to="/auth/signup" class="btn-primary btn-large" aria-label="Crear cuenta gratis">
           <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
           Crear cuenta gratis
         </RouterLink>
         <p class="cta-note">
-          ¿Querés conocer más sobre los planes?
-          <RouterLink to="/pricing">Mirá todas las opciones disponibles</RouterLink>.
+          ¿Quieres conocer más sobre los planes?
+          <RouterLink to="/pricing">Mira todas las opciones disponibles</RouterLink>.
         </p>
       </div>
     </section>

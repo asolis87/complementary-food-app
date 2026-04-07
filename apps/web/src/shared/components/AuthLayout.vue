@@ -42,13 +42,13 @@ const props = defineProps<{
 const headline = computed(() =>
   props.variant === 'login'
     ? 'Bienvenido de vuelta'
-    : 'Empezá tu camino',
+    : 'Empieza tu camino',
 )
 
 const tagline = computed(() =>
   props.variant === 'login'
-    ? 'Registrá la alimentación de tu bebé con confianza y cariño.'
-    : 'Guiá la alimentación complementaria de tu bebé con ciencia y amor.',
+    ? 'Registra la alimentación de tu bebé con confianza y cariño.'
+    : 'Guía la alimentación complementaria de tu bebé con ciencia y amor.',
 )
 </script>
 

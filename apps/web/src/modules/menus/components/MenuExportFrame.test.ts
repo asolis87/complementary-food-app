@@ -251,7 +251,7 @@ describe('MenuExportFrame', () => {
       const disclaimer = wrapper.find('.export-disclaimer')
       expect(disclaimer.exists()).toBe(true)
       expect(disclaimer.text()).toContain('Información orientativa')
-      expect(disclaimer.text()).toContain('Consultá siempre con tu pediatra')
+      expect(disclaimer.text()).toContain('Consulta siempre con tu pediatra')
     })
 
     it('renders logo and PRO badge in header', () => {

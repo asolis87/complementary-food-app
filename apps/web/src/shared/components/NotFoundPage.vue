@@ -5,7 +5,7 @@
       <p class="not-found-number" aria-label="Error 404">404</p>
       <h1 class="not-found-title">Página no encontrada</h1>
       <p class="not-found-description">
-        La página que buscás no existe o fue movida a otro lugar.
+        La página que buscas no existe o fue movida a otro lugar.
       </p>
       <RouterLink to="/" class="home-btn">
         <span class="material-symbols-outlined" aria-hidden="true">home</span>

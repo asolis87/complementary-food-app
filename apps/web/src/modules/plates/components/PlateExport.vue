@@ -22,7 +22,7 @@
 
     <!-- Disclaimer -->
     <p class="export-disclaimer">
-      Información orientativa. Consultá siempre con tu pediatra.
+      Información orientativa. Consulta siempre con tu pediatra.
     </p>
 
     <!-- Watermark (free / anonymous) -->

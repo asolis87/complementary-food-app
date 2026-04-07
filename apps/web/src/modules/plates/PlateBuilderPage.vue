@@ -23,7 +23,7 @@
           <!-- Medical disclaimer (REQ-AL-02) -->
           <div class="disclaimer-banner" role="note">
             <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">info</span>
-            <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
+            <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
           </div>
           <!-- Toggle on mobile: below subtitle -->
           <div class="toggle-mobile">
@@ -387,7 +387,7 @@ async function handleSave() {
       router.push('/plates')
     }
   } catch {
-    showToast('Error al guardar. Intentá de nuevo.', 'error')
+    showToast('Error al guardar. Intenta de nuevo.', 'error')
   } finally {
     saving.value = false
   }
@@ -427,7 +427,7 @@ async function handleShare() {
     if (navigator.share) {
       await navigator.share({
         title: `Mi plato: ${plateStore.draftName}`,
-        text: '¡Mirá el plato que armé para mi bebé con Pakulab!',
+        text: '¡Mira el plato que armé para mi bebé con Pakulab!',
         url,
       })
     } else {

@@ -44,7 +44,7 @@
       <!-- Medical disclaimer (REQ-AL-02) -->
       <div class="disclaimer-banner" role="note">
         <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">health_and_safety</span>
-        <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
+        <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
       </div>
 
       <!-- Balance indicator -->
@@ -101,7 +101,7 @@
           {{ exporting ? 'Exportando...' : 'Exportar como imagen' }}
         </button>
         <p v-if="!authStore.isPro" class="watermark-note">
-          Las imágenes tendrán marca de agua Pakulab. <RouterLink to="/pricing">Actualizá a Pro</RouterLink> para exportar sin marca.
+          Las imágenes tendrán marca de agua Pakulab. <RouterLink to="/pricing">Actualiza a Pro</RouterLink> para exportar sin marca.
         </p>
       </div>
     </template>

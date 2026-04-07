@@ -32,7 +32,7 @@
                 <span v-if="currentItems.length > 0" class="header-current-food"> — {{ currentItems[0].food.name }}</span>
               </h2>
               <p class="header-subtitle">
-                {{ currentItems.length > 0 ? 'Tocá otro para reemplazarlo' : 'Elegí un alimento' }}
+                {{ currentItems.length > 0 ? 'Toca otro para reemplazarlo' : 'Elige un alimento' }}
               </p>
             </div>
           </div>

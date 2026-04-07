@@ -109,7 +109,7 @@ export const useBillingStore = defineStore('billing', () => {
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
-        : 'No se pudo iniciar el proceso de pago. Intentá de nuevo.'
+        : 'No se pudo iniciar el proceso de pago. Intenta de nuevo.'
       loading.value = false
     }
     // Note: loading stays true during redirect — that's intentional UX
@@ -147,7 +147,7 @@ export const useBillingStore = defineStore('billing', () => {
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
-        : 'No se pudo iniciar la prueba. Intentá de nuevo.'
+        : 'No se pudo iniciar la prueba. Intenta de nuevo.'
       throw err
     } finally {
       loading.value = false
@@ -169,7 +169,7 @@ export const useBillingStore = defineStore('billing', () => {
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
-        : 'No se pudo eliminar la cuenta. Intentá de nuevo.'
+        : 'No se pudo eliminar la cuenta. Intenta de nuevo.'
       throw err
     } finally {
       loading.value = false

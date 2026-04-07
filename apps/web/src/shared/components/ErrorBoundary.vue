@@ -18,7 +18,7 @@
 import { ref, onErrorCaptured } from 'vue'
 
 const hasError = ref(false)
-const errorMessage = ref('Intentá de nuevo o recargá la página.')
+const errorMessage = ref('Intenta de nuevo o recarga la página.')
 
 onErrorCaptured((err: unknown) => {
   hasError.value = true
@@ -31,7 +31,7 @@ onErrorCaptured((err: unknown) => {
 
 function reset() {
   hasError.value = false
-  errorMessage.value = 'Intentá de nuevo o recargá la página.'
+  errorMessage.value = 'Intenta de nuevo o recarga la página.'
 }
 </script>
 

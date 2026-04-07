@@ -184,7 +184,7 @@ export async function createTrialSubscription(
   })
 
   if (existing && (existing.status === 'ACTIVE' || existing.status === 'TRIALING')) {
-    throw new ConflictError('Ya tenés una suscripción activa')
+    throw new ConflictError('Ya tienes una suscripción activa')
   }
 
   // Calculate interval from plan

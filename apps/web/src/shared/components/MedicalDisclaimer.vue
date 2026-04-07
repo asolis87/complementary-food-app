@@ -2,7 +2,7 @@
   <!-- inline variant -->
   <p v-if="variant === 'inline'" class="disclaimer-inline" role="note">
     <span class="material-symbols-outlined inline-icon" aria-hidden="true">health_and_safety</span>
-    Esta información es orientativa y no sustituye la consulta médica. Consultá siempre con tu pediatra.
+    Esta información es orientativa y no sustituye la consulta médica. Consulta siempre con tu pediatra.
   </p>
 
   <!-- banner variant -->
@@ -11,7 +11,7 @@
     <div class="banner-body">
       <strong class="banner-title">Aviso médico</strong>
       <p class="banner-text">
-        Esta información es orientativa y no sustituye la consulta médica. Consultá siempre con tu pediatra ante cualquier duda sobre la alimentación de tu bebé.
+        Esta información es orientativa y no sustituye la consulta médica. Consulta siempre con tu pediatra ante cualquier duda sobre la alimentación de tu bebé.
       </p>
     </div>
   </div>
@@ -32,7 +32,7 @@
             <strong>NO sustituye el consejo de tu pediatra o profesional de salud.</strong> Cada bebé es único y puede reaccionar de manera diferente a los alimentos.
           </p>
           <p>
-            Al continuar, aceptás que entendés el carácter informativo de esta aplicación.
+            Al continuar, aceptas que entiendes el carácter informativo de esta aplicación.
           </p>
         </div>
         <button class="modal-btn" @click="accept">

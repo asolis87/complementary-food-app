@@ -82,13 +82,13 @@ const needlePosition = computed(() => {
 /** Reactive ProTip based on balance state */
 const proTip = computed(() => {
   if (!props.balance || props.balance.label === 'balanced') {
-    return 'Añadí grasas saludables como palta para ayudar a absorber las vitaminas.'
+    return 'Añade grasas saludables como aguacate para ayudar a absorber las vitaminas.'
   }
   if (props.balance.label === 'astringent') {
-    return 'El plato tiene tendencia astringente. Sumá frutas como ciruela o pera para equilibrar.'
+    return 'El plato tiene tendencia astringente. Suma frutas como ciruela o pera para equilibrar.'
   }
   // laxative
-  return 'El plato tiene tendencia laxante. Sumá arroz, manzana o zanahoria para equilibrar.'
+  return 'El plato tiene tendencia laxante. Suma arroz, manzana o zanahoria para equilibrar.'
 })
 </script>
 

@@ -377,7 +377,7 @@
         </div>
         <p class="empty-title">Sin registros para este día</p>
         <p class="empty-body">
-          Aún no hay comidas anotadas para esta fecha. ¡Empezá registrando la primera aventura gastronómica!
+          Aún no hay comidas anotadas para esta fecha. ¡Empieza registrando la primera aventura gastronómica!
         </p>
         <button
           class="cta-btn"

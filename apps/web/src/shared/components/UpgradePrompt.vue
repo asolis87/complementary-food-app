@@ -41,14 +41,14 @@ const title = computed(() => {
   if (isRequiringPro.value) {
     return `${props.featureName} es una función Pro`
   }
-  return `Necesitás una cuenta para ${props.featureName}`
+  return `Necesitas una cuenta para ${props.featureName}`
 })
 
 const description = computed(() => {
   if (isRequiringPro.value) {
-    return 'Mejorá a Pro para desbloquear esta función y muchas más. Desde $99 MXN/mes.'
+    return 'Mejora a Pro para desbloquear esta función y muchas más. Desde $99 MXN/mes.'
   }
-  return 'Creá una cuenta gratuita para acceder a esta función.'
+  return 'Crea una cuenta gratuita para acceder a esta función.'
 })
 
 const ctaLabel = computed(() => {

@@ -47,15 +47,15 @@
                v-if="authStore.isTrialExpired"
                to="/paywall"
                class="tier-badge badge-expired"
-               title="Período de prueba finalizado — suscribite para continuar"
-               aria-label="Período de prueba finalizado. Tocá para suscribirte"
+               title="Período de prueba finalizado — suscríbete para continuar"
+               aria-label="Período de prueba finalizado. Toca para suscribirte"
              >Expirado</RouterLink>
              <RouterLink
                v-else-if="authStore.isTrialing"
                to="/pricing"
                class="tier-badge badge-trial"
                :title="trialBadgeTitle"
-               aria-label="Período de prueba. Tocá para ver planes"
+               aria-label="Período de prueba. Toca para ver planes"
              >{{ trialBadgeLabel }}</RouterLink>
              <!-- PRO badge — shows tooltip/info, no nav needed -->
              <span
@@ -70,7 +70,7 @@
             <span
               v-if="billingStore.subscription?.status === 'PAST_DUE'"
               class="past-due-dot"
-              title="Pago pendiente — actualizá tu método de pago"
+              title="Pago pendiente — actualiza tu método de pago"
               aria-hidden="true"
             >
               <span class="material-symbols-outlined">warning</span>
@@ -262,7 +262,7 @@ const proTierLabel = computed(() => {
 const proTierTitle = computed(() => {
   const sub = billingStore.subscription
   if (!sub) return 'Plan Pro activo'
-  if (sub.status === 'PAST_DUE') return 'Pago fallido — actualizá tu método de pago'
+  if (sub.status === 'PAST_DUE') return 'Pago fallido — actualiza tu método de pago'
   // Trial-first: show trial end date when trialing
   if (authStore.isTrialing && authStore.trialEnd) {
     const date = authStore.trialEnd.toLocaleDateString('es-MX', {

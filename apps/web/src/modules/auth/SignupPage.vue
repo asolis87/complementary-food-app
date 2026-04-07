@@ -1,8 +1,8 @@
 <template>
   <AuthLayout variant="signup">
     <div class="signup-form">
-      <h1 class="signup-form__title">Creá tu cuenta gratis</h1>
-      <p class="signup-form__subtitle">Guardá tus platos y realizá seguimiento de tu bebé</p>
+      <h1 class="signup-form__title">Crea tu cuenta gratis</h1>
+      <p class="signup-form__subtitle">Guarda tus platos y realiza seguimiento de tu bebé</p>
 
       <!-- Error banner -->
       <div v-if="authStore.error" class="error-banner" role="alert">
@@ -49,7 +49,7 @@
             v-model="confirmPassword"
             type="password"
             label="Confirmar contraseña"
-            placeholder="Repetí tu contraseña"
+            placeholder="Repite tu contraseña"
             :error="errors.confirmPassword"
             icon="lock_reset"
             required
@@ -88,7 +88,7 @@
       </form>
 
       <div class="divider">
-        <span class="divider__text">o registrate con</span>
+        <span class="divider__text">o regístrate con</span>
       </div>
 
       <AppButton
@@ -102,8 +102,8 @@
       </AppButton>
 
       <p class="login-link">
-        ¿Ya tenés cuenta?
-        <router-link to="/auth/login">Iniciá sesión</router-link>
+        ¿Ya tienes cuenta?
+        <router-link to="/auth/login">Inicia sesión</router-link>
       </p>
     </div>
   </AuthLayout>
@@ -155,7 +155,7 @@ function validate(): boolean {
     errors.email = 'El correo es obligatorio'
     valid = false
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.email = 'Ingresá un correo válido'
+    errors.email = 'Ingresa un correo válido'
     valid = false
   }
 
@@ -168,7 +168,7 @@ function validate(): boolean {
   }
 
   if (!confirmPassword.value) {
-    errors.confirmPassword = 'Confirmá tu contraseña'
+    errors.confirmPassword = 'Confirma tu contraseña'
     valid = false
   } else if (confirmPassword.value !== password.value) {
     errors.confirmPassword = 'Las contraseñas no coinciden'
