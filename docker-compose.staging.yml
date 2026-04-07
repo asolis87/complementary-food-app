@@ -75,6 +75,8 @@ services:
       - "80"
     depends_on:
       - api
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
     networks:
       - dokploy-network
 
