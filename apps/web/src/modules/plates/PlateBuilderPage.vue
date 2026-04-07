@@ -299,15 +299,40 @@ onMounted(async () => {
     await foodStore.fetchFoods()
   }
 
-  // If route has an id param, load that plate into edit mode
-  const plateId = route.params.id as string | undefined
+  // If route has an id param or ?edit= query, load that plate into edit mode
+  const plateId = (route.params.id ?? route.query.edit) as string | undefined
   if (plateId) {
     const plate = await plateStore.loadPlate(plateId)
     if (plate) {
       editingPlateId.value = plateId
       plateStore.draftName = plate.name
       plateStore.setGroupCount(plate.groupCount)
-      // Note: items would be populated from API in full implementation
+      // Populate draft items from loaded plate
+      if (plate.items?.length) {
+        plateStore.resetDraft()
+        plateStore.draftName = plate.name
+        plateStore.setGroupCount(plate.groupCount)
+        for (const item of plate.items) {
+          if (item.food) {
+            plateStore.addFoodToDraft(
+              {
+                id: item.food.id,
+                name: item.food.name,
+                group: item.food.group,
+                alClassification: item.food.alClassification,
+                alScore: 0,
+                isAllergen: item.food.isAllergen,
+                allergenType: item.food.allergenType ?? null,
+                ageMonths: item.food.ageMonths,
+                needsValidation: false,
+                createdAt: '',
+                updatedAt: '',
+              },
+              item.groupAssignment,
+            )
+          }
+        }
+      }
     }
   }
 })

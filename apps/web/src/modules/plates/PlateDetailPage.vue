@@ -93,23 +93,6 @@
         </div>
       </section>
 
-      <!-- Log meal button -->
-      <div class="log-area">
-        <button
-          class="log-btn"
-          :disabled="!profileStore.activeProfile"
-          :title="!profileStore.activeProfile ? 'Crea un perfil de bebé primero' : 'Registrar este plato en la bitácora'"
-          :aria-label="!profileStore.activeProfile ? 'Crea un perfil de bebé primero' : 'Dar este plato'"
-          @click="showQuickLog = true"
-        >
-          <span class="material-symbols-outlined" aria-hidden="true">restaurant</span>
-          Dar este plato
-        </button>
-        <p v-if="!profileStore.activeProfile" class="log-hint">
-          <RouterLink to="/profile">Crea un perfil de bebé</RouterLink> para registrar comidas.
-        </p>
-      </div>
-
       <!-- Export button -->
       <div class="export-area">
         <button class="export-btn" :disabled="exporting" @click="handleExport">
@@ -122,15 +105,6 @@
         </p>
       </div>
     </template>
-
-    <!-- Quick Log Modal -->
-    <QuickLogModal
-      v-if="plate"
-      v-model="showQuickLog"
-      :plate="plate"
-      :baby-profile-id="profileStore.activeProfile?.id ?? ''"
-      @logged="onMealLogged"
-    />
 
     <!-- Delete confirmation modal -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
@@ -161,7 +135,7 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
 import BalanceIndicator from './components/BalanceIndicator.vue'
-import QuickLogModal from '@/modules/diary/components/QuickLogModal.vue'
+// QuickLogModal removed — "Dar este plato" button removed in favor of menu-based serving
 
 const route = useRoute()
 const router = useRouter()
@@ -175,7 +149,6 @@ const loading = ref(true)
 const exporting = ref(false)
 const deleting = ref(false)
 const showDeleteModal = ref(false)
-const showQuickLog = ref(false)
 
 onMounted(async () => {
   const id = route.params.id as string
@@ -309,11 +282,6 @@ async function confirmDelete() {
     deleting.value = false
     showDeleteModal.value = false
   }
-}
-
-function onMealLogged(): void {
-  showQuickLog.value = false
-  // Toast is already shown by QuickLogModal — no duplicate needed
 }
 
 async function handleExport() {
@@ -612,64 +580,6 @@ async function handleExport() {
   font-style: italic;
 }
 
-/* Log meal area */
-.log-area {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: flex-start;
-}
-
-.log-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.75rem var(--md3-space-5);
-  background: var(--md3-primary);
-  color: var(--md3-on-primary);
-  border: none;
-  border-radius: var(--md3-rounded-full);
-  cursor: pointer;
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
-  font-weight: var(--md3-weight-semibold);
-  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
-  box-shadow: var(--md3-shadow-card);
-}
-
-.log-btn .material-symbols-outlined {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.log-btn:not(:disabled):hover {
-  opacity: 0.88;
-}
-
-.log-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.log-hint {
-  margin: 0;
-  font-family: var(--md3-font-body);
-  font-size: var(--md3-body-sm);
-  color: var(--md3-on-surface-variant);
-}
-
-.log-hint a {
-  color: var(--md3-primary);
-  text-decoration: none;
-}
-
-@media (max-width: 768px) {
-  .log-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
 /* Export area */
 .export-area {
   display: flex;
@@ -682,9 +592,9 @@ async function handleExport() {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.65rem var(--md3-space-4);
-  background: var(--md3-secondary);
-  color: var(--md3-on-secondary);
+  padding: 0.75rem var(--md3-space-5);
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
   border: none;
   border-radius: var(--md3-rounded-full);
   cursor: pointer;
