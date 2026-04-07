@@ -1,0 +1,112 @@
+# ── Staging Deployment — Dokploy Compose ───────────────────────────────────────
+# Deploy via Dokploy > Compose. Traefik handles SSL + routing automatically.
+#
+# Required env vars (set in Dokploy UI):
+#   POSTGRES_PASSWORD, BETTER_AUTH_SECRET, STRIPE_SECRET_KEY, etc.
+#   See .env.staging.example for the full list.
+#
+# Usage: Dokploy Compose → paste this file → set env vars → deploy
+# ───────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL 16 ───────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pakulab_staging
+      POSTGRES_USER: pakulab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Dokploy env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pakulab -d pakulab_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ── Fastify API ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      DATABASE_URL: postgresql://pakulab:${POSTGRES_PASSWORD}@db:5432/pakulab_staging
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in Dokploy env}
+      BETTER_AUTH_URL: https://staging.pakulab.cloud
+      CORS_ORIGIN: https://staging.pakulab.cloud
+      FRONTEND_URL: https://staging.pakulab.cloud
+      # Stripe (use test keys for staging)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_MONTHLY: ${STRIPE_PRICE_MONTHLY:-}
+      STRIPE_PRICE_YEARLY: ${STRIPE_PRICE_YEARLY:-}
+      STRIPE_SUCCESS_URL: https://staging.pakulab.cloud/billing/success
+      STRIPE_CANCEL_URL: https://staging.pakulab.cloud/billing/cancel
+      # Google OAuth (optional)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      # Health check endpoint (used by Dokploy/Traefik)
+      - "traefik.http.services.pakulab-api.loadbalancer.server.port=3000"
+
+  # ── Vue PWA (Nginx) ────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pakulab-web.rule=Host(`staging.pakulab.cloud`)"
+      - "traefik.http.routers.pakulab-web.tls=true"
+      - "traefik.http.routers.pakulab-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pakulab-web.loadbalancer.server.port=80"
+
+  # ── DB Init: Schema push + Seed (run once, then exits) ─────────────────────
+  # Uses the "builder" stage which has prisma CLI, tsx, and all dev deps.
+  # After first successful run, scale to 0 or remove from compose.
+  db-init:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://pakulab:${POSTGRES_PASSWORD}@db:5432/pakulab_staging
+    command: >
+      sh -c "
+        echo '🔧 Pushing Prisma schema to database...' &&
+        npx prisma db push --schema=prisma/schema.prisma --skip-generate &&
+        echo '🌱 Seeding database with food catalog...' &&
+        npx tsx prisma/seed.ts &&
+        echo '✅ Database initialized successfully'
+      "
+    restart: "no"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:
