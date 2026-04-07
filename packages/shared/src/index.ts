@@ -59,7 +59,7 @@ export {
   BALANCE_COLORS,
 } from './constants/balance.js'
 
-export { FOOD_GROUP_LABELS as FOOD_CATEGORY_LABELS, BASE_GROUPS, OPTIONAL_GROUPS } from './constants/food-groups.js'
+export { FOOD_GROUP_LABELS as FOOD_CATEGORY_LABELS, BASE_GROUPS, OPTIONAL_GROUPS, DUAL_GROUP_FOODS, getEffectiveGroup } from './constants/food-groups.js'
 
 export {
   MEAL_KEY_TO_TYPE,

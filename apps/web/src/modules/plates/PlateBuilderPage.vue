@@ -182,6 +182,7 @@ import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
+import { getEffectiveGroup } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
@@ -214,8 +215,10 @@ const modalGroup = ref<FoodGroup>('FRUIT')
 function onGroupSelect(group: FoodGroup) {
   modalGroup.value = group
   showFoodModal.value = true
-  // Set group filter — triggers API call with group filter
-  foodStore.setFilter('group', group)
+  // Clear group filter — we filter locally using getEffectiveGroup
+  // to handle dual-group foods (e.g., cacahuate → PROTEIN in 4-group, HEALTHY_FAT in 5-group).
+  // The full catalog is already in memory from the initial fetchFoods() call.
+  foodStore.setFilter('group', null)
   // Fire-and-forget: fetch food history for this group's foods (AC: A1, A13)
   // Does NOT block modal opening — historyLoading state handles the skeleton
   const babyProfileId = profileStore.activeProfile?.id
@@ -239,11 +242,20 @@ function onModalClose() {
 
 /**
  * Foods for the currently selected modal group.
- * Uses filteredFoods which reflects the current group + search filters
- * applied by the store (server-side via API).
+ *
+ * Uses getEffectiveGroup() to handle dual-group foods that change plate zone
+ * based on groupCount. Example: Cacahuate is PROTEIN in a 4-group plate,
+ * but HEALTHY_FAT in a 5-group plate (per Dra. Trueba / Protocolo Beikost).
+ *
+ * Source: Dra. Paulina Trueba — 6-9m table has nuts under Proteínas,
+ * 10-11m table moves them to Grasas.
  */
 const foodsForModalGroup = computed((): Food[] => {
-  return foodStore.filteredFoods.filter((f) => f.group === modalGroup.value)
+  const groupCount = plateStore.draftGroupCount
+  return foodStore.filteredFoods.filter((f) => {
+    const effectiveGroup = getEffectiveGroup(f.name, f.group, groupCount)
+    return effectiveGroup === modalGroup.value
+  })
 })
 
 /** Draft items already assigned to the currently selected modal group */
