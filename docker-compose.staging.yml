@@ -87,7 +87,7 @@ services:
         echo '🔧 Pushing Prisma schema to database...' &&
         npx prisma db push --schema=prisma/schema.prisma --skip-generate &&
         echo '🌱 Seeding database with food catalog...' &&
-        npx tsx prisma/seed.ts &&
+        ./node_modules/.pnpm/node_modules/.bin/tsx prisma/seed.ts &&
         echo '✅ Database initialized successfully'
       "
     restart: "no"
