@@ -5,9 +5,8 @@
 #   POSTGRES_PASSWORD, BETTER_AUTH_SECRET, STRIPE_SECRET_KEY, etc.
 #   See .env.staging.example for the full list.
 #
-# Network topology:
-#   dokploy-network (external) — Traefik ↔ web ↔ api (routable)
-#   internal        (private)  — api ↔ db, db-init ↔ db (not exposed)
+# Domain routing: configured via Dokploy UI > Domains tab (service: web, port: 80).
+# Dokploy auto-injects Traefik labels + dokploy-network at deploy time.
 # ───────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -26,8 +25,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - internal
 
   # ── Fastify API ─────────────────────────────────────────────────────────────
   api:
@@ -38,6 +35,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -57,15 +56,10 @@ services:
       # Google OAuth (optional)
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-    expose:
-      - "3000"
-    networks:
-      - dokploy-network
-      - internal
 
   # ── Vue PWA (Nginx) ────────────────────────────────────────────────────────
-  # Domain routing is configured via Dokploy UI > Domains tab.
-  # Dokploy auto-injects Traefik labels at deploy time.
+  # Domain routing configured via Dokploy UI > Domains tab.
+  # Dokploy injects Traefik labels + dokploy-network automatically.
   web:
     build:
       context: .
@@ -75,14 +69,9 @@ services:
       - "80"
     depends_on:
       - api
-    environment:
-      NGINX_ENTRYPOINT_QUIET_LOGS: "1"
-    networks:
-      - dokploy-network
 
   # ── DB Init: Schema push + Seed (run once, then exits) ─────────────────────
   # Uses the "builder" stage which has prisma CLI, tsx, and all dev deps.
-  # After first successful run, scale to 0 or remove from compose.
   db-init:
     build:
       context: .
@@ -102,14 +91,6 @@ services:
         echo '✅ Database initialized successfully'
       "
     restart: "no"
-    networks:
-      - internal
-
-networks:
-  dokploy-network:
-    external: true
-  internal:
-    driver: bridge
 
 volumes:
   pgdata:
