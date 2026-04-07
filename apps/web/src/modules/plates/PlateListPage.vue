@@ -11,7 +11,7 @@
         class="create-btn-desktop"
         :class="{ disabled: atLimit }"
         :aria-disabled="atLimit"
-        :title="atLimit ? 'Límite de platos alcanzado. Actualizá a Pro.' : 'Crear nuevo plato'"
+        :title="atLimit ? 'Límite de platos alcanzado. Actualiza a Pro.' : 'Crear nuevo plato'"
       >
         <span class="material-symbols-outlined" aria-hidden="true">add</span>
         <span class="btn-text">Crear Nuevo Plato</span>
@@ -27,7 +27,7 @@
     <!-- Medical disclaimer (REQ-AL-02) -->
     <div class="disclaimer-banner" role="note">
       <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">health_and_safety</span>
-      <span>Esta información es orientativa. Consultá siempre con tu pediatra.</span>
+      <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
     </div>
 
     <!-- Loading -->
@@ -50,8 +50,8 @@
       role="status"
     >
       <span class="material-symbols-outlined empty-icon" aria-hidden="true">restaurant</span>
-      <h2 class="empty-title">No tenés platos guardados</h2>
-      <p class="empty-subtitle">¡Creá tu primer plato y descubrí el equilibrio A/L de los alimentos de tu bebé!</p>
+      <h2 class="empty-title">No tienes platos guardados</h2>
+      <p class="empty-subtitle">¡Crea tu primer plato y descubre el equilibrio A/L de los alimentos de tu bebé!</p>
       <RouterLink to="/plate/new" class="create-btn">Crear mi primer plato</RouterLink>
     </div>
 
@@ -129,7 +129,7 @@
             <span class="material-symbols-outlined upsell-icon" aria-hidden="true">star</span>
           </div>
           <div class="upsell-content">
-            <h3 class="upsell-title">¿Querés guardar más platos?</h3>
+            <h3 class="upsell-title">¿Quieres guardar más platos?</h3>
             <p class="upsell-text">Únete a Pakulab Pro para platos ilimitados y análisis nutricional avanzado.</p>
           </div>
           <RouterLink to="/pricing" class="upsell-btn">Hacete Pro</RouterLink>
@@ -150,7 +150,7 @@
     <!-- Mobile Upsell Banner (outside grid) -->
     <div v-if="atLimit && !authStore.isPro" class="upsell-banner mobile-only" role="complementary">
       <div class="upsell-banner-content">
-        <h4 class="upsell-banner-title">¿Querés guardar más platos?</h4>
+          <h4 class="upsell-banner-title">¿Quieres guardar más platos?</h4>
         <p class="upsell-banner-text">Obtén almacenamiento ilimitado y análisis nutricional avanzado.</p>
         <RouterLink to="/pricing" class="upsell-banner-btn">Hacete Pro</RouterLink>
       </div>

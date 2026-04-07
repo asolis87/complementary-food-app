@@ -116,7 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
-        : 'No se pudo iniciar sesión. Revisá tus datos.'
+        : 'No se pudo iniciar sesión. Revisa tus datos.'
       throw err
     } finally {
       loading.value = false
@@ -155,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
-        : 'No se pudo crear la cuenta. Intentá de nuevo.'
+        : 'No se pudo crear la cuenta. Intenta de nuevo.'
       throw err
     } finally {
       loading.value = false

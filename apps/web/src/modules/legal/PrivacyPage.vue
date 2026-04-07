@@ -17,8 +17,8 @@
         <h2 id="sec-datos">1. ¿Qué datos recopilamos?</h2>
         <ul>
           <li><strong>Correo electrónico</strong> — para crear tu cuenta y enviarte notificaciones del servicio.</li>
-          <li><strong>Perfiles de bebés</strong> — nombre y fecha de nacimiento de tu bebé, que vos proporcionás voluntariamente.</li>
-          <li><strong>Platos y registros alimentarios</strong> — los platos que armás y tu bitácora de alimentos.</li>
+          <li><strong>Perfiles de bebés</strong> — nombre y fecha de nacimiento de tu bebé, que tú proporcionas voluntariamente.</li>
+          <li><strong>Platos y registros alimentarios</strong> — los platos que armas y tu bitácora de alimentos.</li>
           <li><strong>Datos de sesión</strong> — cookies de sesión para mantenerte autenticado.</li>
           <li><strong>Datos de pago</strong> — procesados directamente por Stripe. Pakulab NO almacena números de tarjeta.</li>
           <li><strong>Datos anónimos</strong> — si usás la app sin registrarte, se genera una sesión anónima temporal.</li>
@@ -59,10 +59,10 @@
       <section class="legal-section" aria-labelledby="sec-arco">
         <h2 id="sec-arco">5. Derechos ARCO</h2>
         <p>
-          De conformidad con la LFPDPPP, tenés derecho a:
+          De conformidad con la LFPDPPP, tienes derecho a:
         </p>
         <ul>
-          <li><strong>Acceso</strong> — saber qué datos tenemos sobre vos.</li>
+          <li><strong>Acceso</strong> — saber qué datos tenemos sobre ti.</li>
           <li><strong>Rectificación</strong> — corregir datos inexactos o incompletos.</li>
           <li><strong>Cancelación</strong> — solicitar la eliminación de tus datos. Atendemos en un plazo máximo de 72 horas hábiles.</li>
           <li><strong>Oposición</strong> — oponerte al tratamiento de tus datos.</li>

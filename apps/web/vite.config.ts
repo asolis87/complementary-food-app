@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'Pakulab - Alimentación Complementaria',
         short_name: 'Pakulab',
-        description: 'Armá platos balanceados para tu bebé',
+        description: 'Arma platos balanceados para tu bebé',
         theme_color: '#00694b',
         background_color: '#ffffff',
         display: 'standalone',

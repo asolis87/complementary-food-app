@@ -5,10 +5,10 @@
       <!-- ─── Empty state: no baby profile ─── -->
       <div v-if="!hasProfile && !profilesLoading" class="no-profile-state">
         <span class="material-symbols-outlined no-profile-state__icon" aria-hidden="true">child_care</span>
-        <h2 class="no-profile-state__title">Primero creá un perfil de bebé</h2>
+        <h2 class="no-profile-state__title">Primero crea un perfil de bebé</h2>
         <p class="no-profile-state__text">
-          Para planificar el menú semanal necesitás tener un perfil de bebé.
-          Creá uno desde tu perfil y volvé acá.
+          Para planificar el menú semanal necesitas tener un perfil de bebé.
+          Crea uno desde tu perfil y regresa aquí.
         </p>
         <RouterLink to="/profile" class="no-profile-state__btn">
           <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
@@ -29,7 +29,7 @@
       <header class="menu-header">
         <div class="menu-header__titles">
           <h1 class="menu-header__title">Menú Semanal</h1>
-          <p class="menu-header__subtitle">Planificá la alimentación de tu bebé</p>
+          <p class="menu-header__subtitle">Planifica la alimentación de tu bebé</p>
         </div>
         <div class="menu-header__actions">
           <button
@@ -366,7 +366,7 @@
               <!-- Empty plates -->
               <div v-else-if="plateStore.savedPlates.length === 0" class="picker-empty">
                 <span class="material-symbols-outlined picker-empty__icon" aria-hidden="true">no_meals</span>
-                <p>No tenés platos guardados todavía.</p>
+                <p>No tienes platos guardados todavía.</p>
                 <RouterLink to="/plates" class="picker-empty__link">Crear un plato</RouterLink>
               </div>
 
@@ -448,7 +448,7 @@
 
               <div class="dialog__body">
                 <p id="confirm-desc" class="dialog__text">
-                  ¿Querés registrar de nuevo? Esto reemplazará las entradas anteriores.
+                  ¿Quieres registrar de nuevo? Esto reemplazará las entradas anteriores.
                 </p>
               </div>
 
@@ -1033,7 +1033,7 @@ function onExportDone(dataUrl: string): void {
 function onExportError(message: string): void {
   console.error('Export error:', message)
   isExporting.value = false
-  uiStore.addToast('Error al exportar el menú. Intentá de nuevo.', 'error')
+  uiStore.addToast('Error al exportar el menú. Intenta de nuevo.', 'error')
 }
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────

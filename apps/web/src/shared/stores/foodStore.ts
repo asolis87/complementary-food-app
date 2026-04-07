@@ -162,7 +162,7 @@ export const useFoodStore = defineStore('foods', () => {
       if (err instanceof OfflineError) {
         // We're offline — use whatever is in cache (may already be set above)
         if (foods.value.length === 0) {
-          error.value = 'Sin conexión. Conectate a internet para cargar el catálogo.'
+          error.value = 'Sin conexión. Conéctate a internet para cargar el catálogo.'
         }
         // Otherwise we already served cached data — no error shown
         isUsingCache.value = true

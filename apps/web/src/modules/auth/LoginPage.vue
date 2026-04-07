@@ -2,7 +2,7 @@
   <AuthLayout variant="login">
     <div class="login-form">
       <h1 class="login-form__title">¡Bienvenido de vuelta!</h1>
-      <p class="login-form__subtitle">Iniciá sesión para ver tus platos guardados</p>
+      <p class="login-form__subtitle">Inicia sesión para ver tus platos guardados</p>
 
       <!-- Error banner -->
       <div v-if="authStore.error" class="error-banner" role="alert">
@@ -55,7 +55,7 @@
       </form>
 
       <div class="divider">
-        <span class="divider__text">o continuá con</span>
+        <span class="divider__text">o continúa con</span>
       </div>
 
       <div class="alt-actions">
@@ -76,8 +76,8 @@
       </div>
 
       <p class="signup-link">
-        ¿No tenés cuenta?
-        <router-link to="/auth/signup">Registrate gratis</router-link>
+        ¿No tienes cuenta?
+        <router-link to="/auth/signup">Regístrate gratis</router-link>
       </p>
     </div>
   </AuthLayout>
@@ -115,7 +115,7 @@ function validate(): boolean {
     errors.email = 'El correo es obligatorio'
     valid = false
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.email = 'Ingresá un correo válido'
+    errors.email = 'Ingresa un correo válido'
     valid = false
   }
 

@@ -82,7 +82,7 @@
       >
         <span class="material-symbols-outlined empty-icon" aria-hidden="true">child_care</span>
         <h2 class="empty-title">No hay perfiles de bebé</h2>
-        <p class="empty-subtitle">Creá el perfil de tu bebé para personalizar sus platos y hacer seguimiento de su alimentación.</p>
+        <p class="empty-subtitle">Crea el perfil de tu bebé para personalizar sus platos y hacer seguimiento de su alimentación.</p>
         <button class="create-btn" @click="showForm = true">
           Crear primer perfil
         </button>

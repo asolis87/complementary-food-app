@@ -9,7 +9,7 @@
     <!-- Explanation -->
     <p class="paywall-explanation">
       Tu período de 21 días de prueba finalizó. Para seguir usando Pakulab y acceder a tus datos,
-      elegí uno de los planes disponibles. Si no querés continuar, podés eliminar tu cuenta y todos tus datos.
+      elige uno de los planes disponibles. Si no quieres continuar, puedes eliminar tu cuenta y todos tus datos.
     </p>
 
     <!-- Error banner -->
@@ -47,7 +47,7 @@
         <h2>Pro Anual</h2>
         <p class="price">${{ yearlyPrice }} <span>MXN / año</span></p>
         <p class="price-monthly-equiv">Equivale a ${{ yearlyMonthlyEquiv }} / mes</p>
-        <div class="savings-pill">Ahorrá {{ savingsPercent }}%</div>
+        <div class="savings-pill">Ahorra {{ savingsPercent }}%</div>
 
         <ul class="features">
           <li v-for="feature in proFeatures" :key="feature">
@@ -69,7 +69,7 @@
     <!-- Delete account section -->
     <div class="delete-section">
       <p class="delete-explanation">
-        Si no querés continuar, podés eliminar tu cuenta y todos tus datos.
+        Si no quieres continuar, puedes eliminar tu cuenta y todos tus datos.
       </p>
       <button class="btn-delete" @click="showDeleteConfirmation = true">
         Eliminar mi cuenta

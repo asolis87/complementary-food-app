@@ -1,14 +1,14 @@
 <template>
   <div class="pricing-page">
     <h1>Planes y Precios</h1>
-    <p class="subtitle">Elegí el plan que mejor se adapte a vos y a tu bebé</p>
+    <p class="subtitle">Elige el plan que mejor se adapte a ti y a tu bebé</p>
 
     <!-- Past due warning banner -->
     <div v-if="isPastDue" class="alert-banner alert-warning" role="alert">
       <span class="material-symbols-outlined alert-icon" aria-hidden="true">warning</span>
       <div>
         <strong>Tu pago falló.</strong>
-        Actualizá tu método de pago para no perder acceso Pro.
+        Actualiza tu método de pago para no perder acceso Pro.
         <button class="btn-link" @click="handleOpenPortal" :disabled="billingStore.loading">
           Administrar suscripción →
         </button>
@@ -81,7 +81,7 @@
         <h2>Pro Anual</h2>
         <p class="price">$999 <span>MXN / año</span></p>
         <p class="price-monthly-equiv">Equivale a $83 / mes</p>
-        <div v-if="!isCurrentPlan('YEARLY')" class="savings-pill">Ahorrá 17%</div>
+        <div v-if="!isCurrentPlan('YEARLY')" class="savings-pill">Ahorra 17%</div>
 
         <ul class="features">
           <li v-for="feature in proFeatures" :key="feature">
@@ -117,7 +117,7 @@
       </span>
       <span class="trust-item">
         <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
-        Cancelá cuando quieras
+        Cancela cuando quieras
       </span>
     </div>
 
@@ -162,7 +162,7 @@ const proFeatures = [
 const faqItems = [
   {
     q: '¿Puedo cancelar en cualquier momento?',
-    a: 'Sí. Podés cancelar tu suscripción desde tu perfil en cualquier momento. Seguís teniendo acceso Pro hasta el final del período ya pagado.',
+    a: 'Sí. Puedes cancelar tu suscripción desde tu perfil en cualquier momento. Sigues teniendo acceso Pro hasta el final del período ya pagado.',
   },
   {
     q: '¿Qué pasa con mis datos si cancelo?',
@@ -174,7 +174,7 @@ const faqItems = [
   },
   {
     q: '¿Cómo funciona la prueba gratis?',
-    a: 'Al crear tu cuenta recibís automáticamente 21 días de prueba Pro con todas las funciones. Después, elegís un plan para seguir accediendo. No se requiere tarjeta de crédito durante la prueba.',
+    a: 'Al crear tu cuenta recibes automáticamente 21 días de prueba Pro con todas las funciones. Después, eliges un plan para seguir accediendo. No se requiere tarjeta de crédito durante la prueba.',
   },
 ]
 

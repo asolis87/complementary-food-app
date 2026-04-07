@@ -7,14 +7,14 @@
 
     <p class="welcome-message">
       Tu <strong>prueba gratuita de 21 días</strong> ya está activa.
-      Accedé a todas las funciones Pro sin límites.
+      Accede a todas las funciones Pro sin límites.
     </p>
 
     <!-- Error banner (only shown if trial creation failed during signup) -->
     <div v-if="billingStore.error" class="error-banner" role="alert">
       <span class="material-symbols-outlined error-banner__icon" aria-hidden="true">warning</span>
       No se pudo activar tu prueba automáticamente. 
-      <router-link to="/pricing">Iniciá tu prueba manualmente</router-link>
+      <router-link to="/pricing">Inicia tu prueba manualmente</router-link>
     </div>
 
     <!-- Features list -->
@@ -39,7 +39,7 @@
 
     <!-- Info text -->
     <p class="info-text">
-      Después de los 21 días, podés elegir un plan para seguir usando Pakulab.
+      Después de los 21 días, puedes elegir un plan para seguir usando Pakulab.
     </p>
   </div>
 </template>

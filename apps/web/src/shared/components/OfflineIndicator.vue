@@ -21,7 +21,7 @@ const { isOnline } = useOnlineStatus()
 
 const bannerText = computed(() => {
   if (props.isSyncing) return 'Sincronizando...'
-  return 'Sin conexión — podés seguir armando platos'
+  return 'Sin conexión — puedes seguir armando platos'
 })
 </script>
 

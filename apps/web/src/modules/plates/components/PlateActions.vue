@@ -102,17 +102,17 @@ const authStore = useAuthStore()
 const plateStore = usePlateStore()
 
 const saveTooltip = computed(() => {
-  if (!props.hasItems) return 'Agregá alimentos al plato primero'
-  if (!authStore.isAuthenticated) return 'Iniciá sesión para guardar platos'
+  if (!props.hasItems) return 'Agrega alimentos al plato primero'
+  if (!authStore.isAuthenticated) return 'Inicia sesión para guardar platos'
   const limit = PLATE_LIMITS[authStore.tier]
   if (plateStore.savedPlates.length >= limit) {
-    return `Límite de ${limit} platos alcanzado. Actualizá a Pro para más.`
+    return `Límite de ${limit} platos alcanzado. Actualiza a Pro para más.`
   }
   return 'Guardar plato'
 })
 
 const saveHint = computed(() => {
-  if (!authStore.isAuthenticated) return 'Registrate gratis para guardar tus platos'
+  if (!authStore.isAuthenticated) return 'Regístrate gratis para guardar tus platos'
   const limit = PLATE_LIMITS[authStore.tier]
   if (plateStore.savedPlates.length >= limit)
     return `Límite de platos alcanzado (${limit}/${limit})`

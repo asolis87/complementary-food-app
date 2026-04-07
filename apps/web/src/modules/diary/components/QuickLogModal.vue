@@ -204,7 +204,7 @@ async function submit() {
     close()
   } else {
     // Total failure
-    submitError.value = 'Error al registrar los alimentos. Intentá de nuevo.'
+    submitError.value = 'Error al registrar los alimentos. Intenta de nuevo.'
     uiStore.addToast('Error al registrar los alimentos', 'error')
   }
 }

@@ -10,7 +10,7 @@
       <p class="effective-date">Vigente desde: marzo 2026</p>
 
       <p class="intro">
-        Al usar <strong>Pakulab — Alimentación Complementaria</strong> (en adelante "Pakulab"), aceptás los siguientes términos. Si no estás de acuerdo, por favor no uses la aplicación.
+        Al usar <strong>Pakulab — Alimentación Complementaria</strong> (en adelante "Pakulab"), aceptas los siguientes términos. Si no estás de acuerdo, por favor no uses la aplicación.
       </p>
 
       <!-- Medical disclaimer — highlighted -->
@@ -21,7 +21,7 @@
         <div class="disclaimer-body">
           <strong>Pakulab NO sustituye al pediatra.</strong>
           <p>
-            Esta aplicación es una <strong>herramienta informativa</strong>. No es un dispositivo médico y no debe usarse como sustituto de la atención médica profesional. <strong>Siempre consultá a tu pediatra</strong> antes de introducir nuevos alimentos, especialmente si tu bebé tiene alergias, condiciones médicas o necesidades especiales.
+            Esta aplicación es una <strong>herramienta informativa</strong>. No es un dispositivo médico y no debe usarse como sustituto de la atención médica profesional. <strong>Siempre consulta a tu pediatra</strong> antes de introducir nuevos alimentos, especialmente si tu bebé tiene alergias, condiciones médicas o necesidades especiales.
           </p>
         </div>
       </div>
@@ -32,7 +32,7 @@
           Pakulab es una <strong>herramienta informativa</strong> diseñada para ayudar a padres y cuidadores a planificar la alimentación complementaria de bebés. La app <strong>NO es un dispositivo médico</strong> y no debe usarse como sustituto de la atención médica profesional.
         </p>
         <p>
-          <strong>Siempre consultá a tu pediatra</strong> antes de introducir nuevos alimentos, especialmente si tu bebé tiene alergias, condiciones médicas o necesidades especiales.
+          <strong>Siempre consulta a tu pediatra</strong> antes de introducir nuevos alimentos, especialmente si tu bebé tiene alergias, condiciones médicas o necesidades especiales.
         </p>
       </section>
 
@@ -49,7 +49,7 @@
       <section class="legal-section" aria-labelledby="sec-cuentas">
         <h2 id="sec-cuentas">3. Cuentas de usuario</h2>
         <p>
-          Podés usar Pakulab de forma anónima (sin registro). Si creás una cuenta, sos responsable de mantener la seguridad de tus credenciales. Notificanos de inmediato si sospechás acceso no autorizado.
+          Puedes usar Pakulab de forma anónima (sin registro). Si creas una cuenta, eres responsable de mantener la seguridad de tus credenciales. Notifícanos de inmediato si sospechas acceso no autorizado.
         </p>
       </section>
 
@@ -67,10 +67,10 @@
       <section class="legal-section" aria-labelledby="sec-propiedad">
         <h2 id="sec-propiedad">5. Propiedad intelectual</h2>
         <p>
-          Todo el contenido de Pakulab (diseño, código, textos, datos de alimentos) es propiedad de Pakulab o de sus licenciantes. No podés reproducir, distribuir ni crear trabajos derivados sin autorización expresa.
+          Todo el contenido de Pakulab (diseño, código, textos, datos de alimentos) es propiedad de Pakulab o de sus licenciantes. No puedes reproducir, distribuir ni crear trabajos derivados sin autorización expresa.
         </p>
         <p>
-          Los datos que vos generás (platos, bitácora) son tuyos. Podés exportarlos o solicitar su eliminación en cualquier momento.
+          Los datos que tú generas (platos, bitácora) son tuyos. Puedes exportarlos o solicitar su eliminación en cualquier momento.
         </p>
       </section>
 

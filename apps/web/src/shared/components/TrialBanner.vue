@@ -3,7 +3,7 @@
     <span class="material-symbols-outlined banner-icon" aria-hidden="true">card_giftcard</span>
     <p class="banner-message">
       {{ message }}
-      <RouterLink to="/pricing" class="banner-link">Para actualizar tu suscripción, ingresá aquí.</RouterLink>
+      <RouterLink to="/pricing" class="banner-link">Para actualizar tu suscripción, ingresa aquí.</RouterLink>
     </p>
   </div>
 </template>
