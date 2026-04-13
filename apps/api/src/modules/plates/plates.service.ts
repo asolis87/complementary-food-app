@@ -49,6 +49,10 @@ export async function getUserPlates(
 
   const where = { userId, deletedAt: null }
 
+  // Contract: plates MUST be sorted by createdAt descending so the UI
+  // can unshift new plates at the top without re-fetching. Do NOT change
+  // this sort order without also updating plateStore.saveDraftAsPlate()
+  // which relies on unshift() for correct positioning (UX-2).
   const [plates, total] = await prisma.$transaction([
     prisma.plate.findMany({
       where,
