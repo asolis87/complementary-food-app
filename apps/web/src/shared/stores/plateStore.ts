@@ -150,6 +150,8 @@ export const usePlateStore = defineStore('plates', () => {
         groupCount: draftGroupCount.value,
         items: itemsPayload,
       })
+      // Contract: unshift preserves descending sort order from API (UX-2).
+      // The API sorts by createdAt desc, so new plates go at the top.
       savedPlates.value.unshift(result.data)
       return result.data
     } catch (err) {

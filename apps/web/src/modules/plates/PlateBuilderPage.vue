@@ -306,6 +306,9 @@ const editingPlateId = ref<string | null>(null)
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(async () => {
+  // Reset draft state first — prevents stale data from previous visits (UX-1)
+  plateStore.resetDraft()
+
   // Fetch food catalog if not loaded
   if (foodStore.foods.length === 0) {
     await foodStore.fetchFoods()

@@ -283,10 +283,16 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 
 @media (min-width: 768px) {
   .desktop-only {
-    display: flex;
+    display: flex !important;
   }
   .desktop-only.block {
-    display: block;
+    display: block !important;
+  }
+  /* Fix: h3.card-name must remain block-level on desktop (UX-7).
+     The base .desktop-only rule uses !important so the override needs
+     !important too to win the cascade. */
+  .card-name.desktop-only {
+    display: block !important;
   }
   .mobile-only {
     display: none !important;
@@ -527,6 +533,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   list-style: none;
   margin: 0;
   padding: 0;
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: var(--md3-space-3);
@@ -938,7 +945,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 /* ─── Mobile FAB ─── */
 .plate-list-fab {
   position: fixed;
-  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
   right: 1.5rem;
   z-index: 110;
   width: 3.5rem;

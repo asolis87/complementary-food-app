@@ -451,17 +451,6 @@ const vegetables: FoodSeed[] = [
     needsValidation: false,
   },
   {
-    name: 'Camote cocido',
-    group: 'VEGETABLE',
-    alClassification: 'ASTRINGENT',
-    alScore: -0.3,
-    isAllergen: false,
-    ageMonths: 6,
-    description:
-      'Dra. Trueba clasifica camote como astringente. Rico en betacaroteno, vitamina A y fibra. Textura suave y sabor dulce que los bebés aceptan bien. Cocer hasta muy blando. Sin cáscara.',
-    needsValidation: false,
-  },
-  {
     name: 'Aguacate',
     group: 'VEGETABLE',
     alClassification: 'LAXATIVE',
@@ -1199,6 +1188,17 @@ const proteins: FoodSeed[] = [
 // CEREALES Y TUBÉRCULOS (32 foods — incl. Papa, Elote, Plátano macho desde otros grupos)
 // ============================================================
 const cerealsTubers: FoodSeed[] = [
+  {
+    name: 'Camote cocido',
+    group: 'CEREAL_TUBER',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.3,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Dra. Trueba clasifica camote como astringente. Rico en betacaroteno, vitamina A y fibra. Textura suave y sabor dulce que los bebés aceptan bien. Cocer hasta muy blando. Sin cáscara.',
+    needsValidation: false,
+  },
   {
     name: 'Arroz blanco cocido',
     group: 'CEREAL_TUBER',

@@ -465,6 +465,86 @@
         </Transition>
       </Teleport>
 
+      <!-- ─── First-serve Confirmation Dialog (UX-4) ─── -->
+      <Teleport to="body">
+        <Transition name="dialog-fade">
+          <div
+            v-if="firstServeDialog.open"
+            class="dialog-backdrop"
+            role="presentation"
+            @click.self="closeFirstServeDialog"
+          >
+            <div
+              class="dialog dialog--confirm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="first-serve-title"
+              aria-describedby="first-serve-desc"
+            >
+              <div class="dialog__header dialog__header--confirm">
+                <span class="material-symbols-outlined dialog__confirm-icon" aria-hidden="true">restaurant</span>
+                <h3 id="first-serve-title" class="dialog__title">¿Registrar esta comida en la bitácora?</h3>
+              </div>
+
+              <div class="dialog__body">
+                <p id="first-serve-desc" class="dialog__text">
+                  Esto registrará la comida como servida hoy.
+                </p>
+              </div>
+
+              <div class="dialog__actions">
+                <button class="dialog__btn dialog__btn--secondary" @click="closeFirstServeDialog">
+                  Cancelar
+                </button>
+                <button class="dialog__btn dialog__btn--primary" @click="confirmFirstServe">
+                  Sí, registrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
+      <!-- ─── Apply-to-all Dialog (UX-5) ─── -->
+      <Teleport to="body">
+        <Transition name="dialog-fade">
+          <div
+            v-if="applyAllDialog.open"
+            class="dialog-backdrop"
+            role="presentation"
+            @click.self="closeApplyAllDialog"
+          >
+            <div
+              class="dialog dialog--confirm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="apply-all-title"
+              aria-describedby="apply-all-desc"
+            >
+              <div class="dialog__header dialog__header--confirm">
+                <span class="material-symbols-outlined dialog__confirm-icon" aria-hidden="true">calendar_month</span>
+                <h3 id="apply-all-title" class="dialog__title">¿Aplicar a todas las comidas del día?</h3>
+              </div>
+
+              <div class="dialog__body">
+                <p id="apply-all-desc" class="dialog__text">
+                  Puedes asignar este plato solo a esta comida o a todas las comidas del día.
+                </p>
+              </div>
+
+              <div class="dialog__actions">
+                <button class="dialog__btn dialog__btn--secondary" @click="confirmApplySingle">
+                  Solo esta comida
+                </button>
+                <button class="dialog__btn dialog__btn--primary" @click="confirmApplyAll">
+                  Aplicar a todas
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
       <!-- ─── Export Frame (off-screen, for capture) ─── -->
       <MenuExportFrame
         ref="exportFrameRef"
@@ -485,7 +565,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
 import TierGate from '@/shared/components/TierGate.vue'
@@ -533,6 +613,36 @@ const reServeDialog = ref<ReServeDialogState>({
   dayKey: null,
   mealKey: null,
 })
+
+// ─── First-serve confirmation dialog (UX-4) ──────────────────────────────────
+
+interface FirstServeDialogState {
+  open: boolean
+  dayKey: DayKey | null
+  mealKey: MealKey | null
+}
+
+const firstServeDialog = reactive<FirstServeDialogState>({
+  open: false,
+  dayKey: null,
+  mealKey: null,
+})
+
+// ─── Apply-to-all dialog (UX-5) ──────────────────────────────────────────────
+
+interface ApplyAllDialogState {
+  open: boolean
+  plate: Plate | null
+  dayKey: DayKey | null
+}
+
+const applyAllDialog = reactive<ApplyAllDialogState>({
+  open: false,
+  plate: null,
+  dayKey: null,
+})
+
+const pendingMealKey = ref<MealKey | ''>('')
 
 // ─── Export state ─────────────────────────────────────────────────────────
 
@@ -738,8 +848,10 @@ function handleServeClick(dayKey: DayKey, mealKey: MealKey): void {
       mealKey,
     }
   } else {
-    // Not served yet - serve directly
-    serveMeal(dayKey, mealKey)
+    // Not served yet — open first-serve confirmation dialog (UX-4)
+    firstServeDialog.open = true
+    firstServeDialog.dayKey = dayKey
+    firstServeDialog.mealKey = mealKey
   }
 }
 
@@ -789,6 +901,35 @@ function closeReServeDialog(): void {
     dayKey: null,
     mealKey: null,
   }
+}
+
+// ─── First-serve dialog handlers (UX-4) ──────────────────────────────────────
+
+async function confirmFirstServe(): Promise<void> {
+  if (!firstServeDialog.dayKey || !firstServeDialog.mealKey) return
+
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId) {
+    closeFirstServeDialog()
+    return
+  }
+
+  const dayKey = firstServeDialog.dayKey
+  const mealKey = firstServeDialog.mealKey
+
+  closeFirstServeDialog()
+
+  try {
+    await menuStore.serveMeal(profileId, dayKey, mealKey)
+  } catch (err) {
+    console.error('Failed to serve meal:', err)
+  }
+}
+
+function closeFirstServeDialog(): void {
+  firstServeDialog.open = false
+  firstServeDialog.dayKey = null
+  firstServeDialog.mealKey = null
 }
 
 /**
@@ -922,6 +1063,59 @@ function closePicker(): void {
   expandedPlateId.value = null
 }
 
+// ─── Apply-all dialog handlers (UX-5) ───────────────────────────────────────≡
+
+async function confirmApplySingle(): Promise<void> {
+  if (!applyAllDialog.plate || !applyAllDialog.dayKey || !pendingMealKey.value) return
+
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId) {
+    closeApplyAllDialog()
+    return
+  }
+
+  const { dayKey, plate } = applyAllDialog
+  const mealKey = pendingMealKey.value as MealKey
+
+  closeApplyAllDialog()
+
+  try {
+    await menuStore.assignPlate(profileId, weekStartISO.value, dayKey!, mealKey, plate!)
+  } catch (err) {
+    console.error('Failed to assign plate:', err)
+  }
+}
+
+async function confirmApplyAll(): Promise<void> {
+  if (!applyAllDialog.plate || !applyAllDialog.dayKey) return
+
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId) {
+    closeApplyAllDialog()
+    return
+  }
+
+  const { dayKey, plate } = applyAllDialog
+  closeApplyAllDialog()
+
+  // Sequential assignment to avoid Pinia reactive state race conditions (UX-5)
+  for (const meal of MEALS) {
+    try {
+      await menuStore.assignPlate(profileId, weekStartISO.value, dayKey!, meal.key, plate!)
+    } catch (err) {
+      console.error('Failed to assign plate to all meals:', err)
+      break
+    }
+  }
+}
+
+function closeApplyAllDialog(): void {
+  applyAllDialog.open = false
+  applyAllDialog.plate = null
+  applyAllDialog.dayKey = null
+  pendingMealKey.value = ''
+}
+
 function togglePlatePreview(plateId: string): void {
   expandedPlateId.value = expandedPlateId.value === plateId ? null : plateId
 }
@@ -940,21 +1134,17 @@ function formatGroup(group: string): string {
 
 async function assignPlate(plate: Plate): Promise<void> {
   if (!picker.value.dayKey || !picker.value.mealKey) return
-  
-  const profileId = profileStore.activeProfile?.id
-  if (!profileId) return
-  
+
   const dayKey = picker.value.dayKey
   const mealKey = picker.value.mealKey
-  
+
+  // Close picker first, then open apply-all dialog (UX-5)
   closePicker()
-  
-  try {
-    await menuStore.assignPlate(profileId, weekStartISO.value, dayKey, mealKey, plate)
-  } catch (err) {
-    // Error already handled in store (rollback + toast), just log
-    console.error('Failed to assign plate:', err)
-  }
+
+  applyAllDialog.open = true
+  applyAllDialog.plate = plate
+  applyAllDialog.dayKey = dayKey
+  pendingMealKey.value = mealKey
 }
 
 // ─── Mobile tab state ─────────────────────────────────────────────────────
