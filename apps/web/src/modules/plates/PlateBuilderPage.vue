@@ -7,7 +7,7 @@
           <span class="eyebrow">Planificación de Comidas</span>
           <!-- Editable plate name — inline input styled as heading (AD-4, AC: A8, A9) -->
           <input
-            v-model="plateStore.draftName"
+            v-model="draftName"
             type="text"
             class="plate-name-input"
             maxlength="100"
@@ -30,19 +30,19 @@
             <div class="group-toggle" role="radiogroup" aria-label="Número de grupos alimenticios">
               <button
                 class="toggle-btn"
-                :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 4 }"
+                :class="{ 'toggle-btn--active': draftGroupCount === 4 }"
                 role="radio"
-                :aria-checked="plateStore.draftGroupCount === 4"
-                @click="plateStore.setGroupCount(4)"
+                :aria-checked="draftGroupCount === 4"
+                @click="setGroupCount(4)"
               >
                 4 Grupos
               </button>
               <button
                 class="toggle-btn"
-                :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 5 }"
+                :class="{ 'toggle-btn--active': draftGroupCount === 5 }"
                 role="radio"
-                :aria-checked="plateStore.draftGroupCount === 5"
-                @click="plateStore.setGroupCount(5)"
+                :aria-checked="draftGroupCount === 5"
+                @click="setGroupCount(5)"
               >
                 5 Grupos
               </button>
@@ -55,19 +55,19 @@
           <div class="group-toggle" role="radiogroup" aria-label="Número de grupos alimenticios">
             <button
               class="toggle-btn"
-              :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 4 }"
+              :class="{ 'toggle-btn--active': draftGroupCount === 4 }"
               role="radio"
-              :aria-checked="plateStore.draftGroupCount === 4"
-              @click="plateStore.setGroupCount(4)"
+              :aria-checked="draftGroupCount === 4"
+              @click="setGroupCount(4)"
             >
               4 Grupos
             </button>
             <button
               class="toggle-btn"
-              :class="{ 'toggle-btn--active': plateStore.draftGroupCount === 5 }"
+              :class="{ 'toggle-btn--active': draftGroupCount === 5 }"
               role="radio"
-              :aria-checked="plateStore.draftGroupCount === 5"
-              @click="plateStore.setGroupCount(5)"
+              :aria-checked="draftGroupCount === 5"
+              @click="setGroupCount(5)"
             >
               5 Grupos
             </button>
@@ -88,9 +88,9 @@
             <section aria-label="Visualización del plato">
               <PlateVisualization
                 ref="vizRef"
-                :items="plateStore.draftItems"
-                :group-count="plateStore.draftGroupCount"
-                @remove-item="plateStore.removeFoodFromDraft"
+                :items="draftItems"
+                :group-count="draftGroupCount"
+                @remove-item="removeFood"
                 @select-group="onGroupSelect"
               />
             </section>
@@ -98,8 +98,8 @@
             <!-- ③ Actions -->
             <section class="actions-section" aria-label="Acciones">
               <PlateActions
-                :can-save="plateStore.canSave"
-                :has-items="plateStore.hasItems"
+                :can-save="canSave"
+                :has-items="hasItems"
                 :saving="saving"
                 :exporting="exporting"
                 @save="handleSave"
@@ -120,10 +120,10 @@
             <!-- ③ Plate Contents (list of selected foods per group) -->
             <section aria-label="Contenido del plato">
               <PlateContents
-                :items="plateStore.draftItems"
-                :group-count="plateStore.draftGroupCount"
+                :items="draftItems"
+                :group-count="draftGroupCount"
                 @select-group="onGroupSelect"
-                @remove-item="plateStore.removeFoodFromDraft"
+                @remove-item="removeFood"
               />
             </section>
           </div>
@@ -142,14 +142,14 @@
       :history-loading="foodHistoryStore.historyLoading"
       @close="onModalClose"
       @add-food="onModalAddFood"
-      @remove-food="plateStore.removeFoodFromDraft"
+      @remove-food="removeFood"
       @search="onModalSearch"
     />
 
     <!-- Export helper (off-screen capture) -->
     <PlateExport
       ref="exportRef"
-      :plate-name="plateStore.draftName"
+      :plate-name="draftName"
       :balance="balance"
       :show-watermark="!authStore.isPro"
       @done="onExportDone"
@@ -158,12 +158,23 @@
       <template #visualization>
         <div class="export-mini-plate">
           <PlateVisualization
-            :items="plateStore.draftItems"
-            :group-count="plateStore.draftGroupCount"
+            :items="draftItems"
+            :group-count="draftGroupCount"
           />
         </div>
       </template>
     </PlateExport>
+
+    <!-- ⑤ Meal Slot Picker — post-save assignment to weekly menu (AD-4) -->
+    <MealSlotPicker
+      v-if="lastSavedPlate"
+      :visible="showMealSlotPicker"
+      :plate-id="lastSavedPlate.id"
+      :plate-name="lastSavedPlate.name"
+      @assigned="onMealSlotAssigned"
+      @close="onMealSlotClose"
+      @skip="onMealSlotSkip"
+    />
 
     <!-- Toast notification -->
     <transition name="toast">
@@ -179,34 +190,62 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
 import { getEffectiveGroup } from '@pakulab/shared'
+import type { Plate } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
-import { useBalance } from '@/shared/composables/useBalance.js'
+import { usePlateBuilder } from '@/shared/composables/usePlateBuilder.js'
 import PlateVisualization from './components/PlateVisualization.vue'
 import BalanceIndicator from './components/BalanceIndicator.vue'
 import PlateContents from './components/PlateContents.vue'
 import FoodSearchModal from './components/FoodSearchModal.vue'
 import PlateActions from './components/PlateActions.vue'
 import PlateExport from './components/PlateExport.vue'
+import MealSlotPicker from '@/shared/components/MealSlotPicker.vue'
+import type { SlotSelection } from '@/shared/components/MealSlotPicker.vue'
 
-// ─── Stores & composables ─────────────────────────────────────────────────
+// ─── Meal Slot Picker state (AD-4: Builder → Menu flow) ─────────────────
+const showMealSlotPicker = ref(false)
+const lastSavedPlate = ref<{ id: string; name: string } | null>(null)
+
+/** Called by usePlateBuilder's onSaved — shows MealSlotPicker after successful save */
+function onPlateSaved(plate: Plate) {
+  lastSavedPlate.value = { id: plate.id, name: plate.name }
+  showMealSlotPicker.value = true
+}
+
+// ─── Composable: plate builder draft state (AD-1) ──────────────────────
+const {
+  draftItems,
+  draftName,
+  draftGroupCount,
+  saving,
+  balance,
+  hasItems,
+  canSave,
+  initDraft,
+  addFood,
+  removeFood,
+  setGroupCount,
+  clearItems,
+  loadPlateIntoDraft,
+  savePlate,
+  updatePlate,
+} = usePlateBuilder({ onSaved: onPlateSaved })
+
+// ─── Stores ─────────────────────────────────────────────────────────────
 const route = useRoute()
 const router = useRouter()
-const plateStore = usePlateStore()
+const plateStore = usePlateStore() // Still needed for loadPlate() in edit mode
 const foodStore = useFoodStore()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const foodHistoryStore = useFoodHistoryStore()
-// storeToRefs gives us a real Ref<PlateItemDraft[]> — required by useBalance
-const { draftItems } = storeToRefs(plateStore)
-const { balance } = useBalance(draftItems)
 
 // ─── Food Search Modal ────────────────────────────────────────────────────
 const showFoodModal = ref(false)
@@ -251,7 +290,7 @@ function onModalClose() {
  * 10-11m table moves them to Grasas.
  */
 const foodsForModalGroup = computed((): Food[] => {
-  const groupCount = plateStore.draftGroupCount
+  const groupCount = draftGroupCount.value
   return foodStore.filteredFoods.filter((f) => {
     const effectiveGroup = getEffectiveGroup(f.name, f.group, groupCount)
     return effectiveGroup === modalGroup.value
@@ -260,7 +299,7 @@ const foodsForModalGroup = computed((): Food[] => {
 
 /** Draft items already assigned to the currently selected modal group */
 const itemsForModalGroup = computed(() => {
-  return plateStore.draftItems.filter((item) => item.groupAssignment === modalGroup.value)
+  return draftItems.value.filter((item) => item.groupAssignment === modalGroup.value)
 })
 
 /**
@@ -280,7 +319,6 @@ const foodHistoriesForModal = computed((): FoodHistoryMap | undefined => {
 })
 
 // ─── State flags ──────────────────────────────────────────────────────────
-const saving = ref(false)
 const exporting = ref(false)
 const vizRef = ref<InstanceType<typeof PlateVisualization> | null>(null)
 const exportRef = ref<InstanceType<typeof PlateExport> | null>(null)
@@ -307,7 +345,7 @@ const editingPlateId = ref<string | null>(null)
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(async () => {
   // Reset draft state first — prevents stale data from previous visits (UX-1)
-  plateStore.resetDraft()
+  initDraft()
 
   // Fetch food catalog if not loaded
   if (foodStore.foods.length === 0) {
@@ -320,34 +358,8 @@ onMounted(async () => {
     const plate = await plateStore.loadPlate(plateId)
     if (plate) {
       editingPlateId.value = plateId
-      plateStore.draftName = plate.name
-      plateStore.setGroupCount(plate.groupCount)
-      // Populate draft items from loaded plate
-      if (plate.items?.length) {
-        plateStore.resetDraft()
-        plateStore.draftName = plate.name
-        plateStore.setGroupCount(plate.groupCount)
-        for (const item of plate.items) {
-          if (item.food) {
-            plateStore.addFoodToDraft(
-              {
-                id: item.food.id,
-                name: item.food.name,
-                group: item.food.group,
-                alClassification: item.food.alClassification,
-                alScore: 0,
-                isAllergen: item.food.isAllergen,
-                allergenType: item.food.allergenType ?? null,
-                ageMonths: item.food.ageMonths,
-                needsValidation: false,
-                createdAt: '',
-                updatedAt: '',
-              },
-              item.groupAssignment,
-            )
-          }
-        }
-      }
+      // Load plate data into composable draft (replaces manual property-by-property mapping)
+      loadPlateIntoDraft(plate)
     }
   }
 })
@@ -355,7 +367,7 @@ onMounted(async () => {
 // ─── Handlers ────────────────────────────────────────────────────────────
 
 function onModalAddFood(food: Food, group: FoodGroup) {
-  plateStore.addFoodToDraft(food, group)
+  addFood(food, group)
   onModalClose()
 }
 
@@ -363,38 +375,65 @@ function onModalAddFood(food: Food, group: FoodGroup) {
  * Revert to default name when the user clears the field on blur (AC: A8 scenario).
  */
 function onNameBlur() {
-  if (!plateStore.draftName.trim()) {
-    plateStore.draftName = 'Mi plato'
+  if (!draftName.value.trim()) {
+    draftName.value = 'Mi plato'
   }
 }
 
 async function handleSave() {
-  if (!plateStore.hasItems) return
+  if (!hasItems.value) return
   // Validate plate name (AC: A9)
-  if (!plateStore.draftName.trim()) {
+  if (!draftName.value.trim()) {
     showToast('El nombre no puede estar vacío', 'error')
     return
   }
-  saving.value = true
-  try {
-    if (editingPlateId.value) {
-      // Edit mode — update existing plate (name + items are included in updatePlate)
-      await plateStore.updatePlate(editingPlateId.value)
+
+  if (editingPlateId.value) {
+    // Edit mode — update existing plate (name + items are included in updatePlate)
+    try {
+      await updatePlate(editingPlateId.value)
       showToast('Plato actualizado', 'success')
       router.push('/plates')
-    } else {
-      // Create mode — requires canSave (tier limit check)
-      if (!plateStore.canSave) return
-      await plateStore.saveDraftAsPlate()
-      showToast('Plato guardado', 'success')
-      router.push('/plates')
+    } catch {
+      showToast('Error al guardar. Intenta de nuevo.', 'error')
     }
-  } catch {
-    showToast('Error al guardar. Intenta de nuevo.', 'error')
-  } finally {
-    saving.value = false
+  } else {
+    // Create mode — requires canSave (tier limit check)
+    if (!canSave.value) return
+    try {
+      await savePlate()
+      showToast('Plato guardado', 'success')
+      // onSaved callback (via usePlateBuilder) already set lastSavedPlate + showMealSlotPicker
+      // Do NOT navigate yet — user must choose to assign or skip
+    } catch {
+      showToast('Error al guardar. Intenta de nuevo.', 'error')
+    }
   }
 }
+
+// ─── Meal Slot Picker handlers (AD-4: Builder → Menu flow) ────────────
+
+function onMealSlotAssigned(selections: SlotSelection[]) {
+  showMealSlotPicker.value = false
+  const count = selections.length
+  const message = count === 1
+    ? 'Plato asignado al menú'
+    : `Plato asignado a ${count} horarios`
+  showToast(message, 'success')
+  router.push('/menus')
+}
+
+function onMealSlotSkip() {
+  showMealSlotPicker.value = false
+  router.push('/plates')
+}
+
+function onMealSlotClose() {
+  showMealSlotPicker.value = false
+  router.push('/plates')
+}
+
+// ─── Export & share handlers ───────────────────────────────────────────
 
 async function handleExport() {
   if (!exportRef.value) return
@@ -409,7 +448,7 @@ async function handleExport() {
 function onExportDone(dataUrl: string) {
   const link = document.createElement('a')
   link.href = dataUrl
-  link.download = `${plateStore.draftName || 'plato'}-pakulab.png`
+  link.download = `${draftName.value || 'plato'}-pakulab.png`
   link.click()
   showToast('Imagen descargada', 'success')
 }
@@ -420,7 +459,7 @@ function onExportError(message: string) {
 
 function handleClear() {
   if (!confirm('¿Borrar todos los alimentos del plato?')) return
-  plateStore.clearItems()
+  clearItems()
   showToast('Plato limpiado', 'info')
 }
 
@@ -429,7 +468,7 @@ async function handleShare() {
   try {
     if (navigator.share) {
       await navigator.share({
-        title: `Mi plato: ${plateStore.draftName}`,
+        title: `Mi plato: ${draftName.value}`,
         text: '¡Mira el plato que armé para mi bebé con Pakulab!',
         url,
       })
