@@ -367,7 +367,7 @@
               <div v-else-if="plateStore.savedPlates.length === 0" class="picker-empty">
                 <span class="material-symbols-outlined picker-empty__icon" aria-hidden="true">no_meals</span>
                 <p>No tienes platos guardados todavía.</p>
-                <RouterLink to="/plates" class="picker-empty__link">Crear un plato</RouterLink>
+                <button class="picker-empty__link" @click="openPlateDrawer">Crear un plato</button>
               </div>
 
               <!-- Plate list -->
@@ -418,6 +418,12 @@
                       Seleccionar plato
                     </button>
                   </div>
+                </li>
+                <li class="picker-create-item">
+                  <button class="picker-create-btn" @click="openPlateDrawer">
+                    <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                    Crear plato nuevo
+                  </button>
                 </li>
               </ul>
             </div>
@@ -545,6 +551,15 @@
         </Transition>
       </Teleport>
 
+      <!-- ─── Plate Builder Drawer (Menu→Builder flow) ─── -->
+      <PlateBuilderDrawer
+        :visible="showPlateDrawer"
+        :meal-context="drawerMealContext ?? undefined"
+        @plate-created="onPlateCreated"
+        @close="closePlateDrawer"
+        @update:visible="showPlateDrawer = $event"
+      />
+
       <!-- ─── Export Frame (off-screen, for capture) ─── -->
       <MenuExportFrame
         ref="exportFrameRef"
@@ -568,7 +583,9 @@
 import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
+import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey } from '@pakulab/shared'
 import TierGate from '@/shared/components/TierGate.vue'
+import PlateBuilderDrawer from '@/shared/components/PlateBuilderDrawer.vue'
 import MenuExportFrame from './components/MenuExportFrame.vue'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
@@ -643,6 +660,11 @@ const applyAllDialog = reactive<ApplyAllDialogState>({
 })
 
 const pendingMealKey = ref<MealKey | ''>('')
+
+// ─── Plate builder drawer state (Menu→Builder flow) ──────────────────────────
+
+const showPlateDrawer = ref(false)
+const drawerMealContext = ref<{ dayOfWeek: number; mealType: SharedMealKey } | null>(null)
 
 // ─── Export state ─────────────────────────────────────────────────────────
 
@@ -1061,6 +1083,49 @@ function openPicker(dayKey: DayKey, mealKey: MealKey): void {
 function closePicker(): void {
   picker.value = { open: false, dayKey: null, mealKey: null }
   expandedPlateId.value = null
+}
+
+// ─── Plate builder drawer handlers (Menu→Builder flow) ────────────────────
+
+function openPlateDrawer(): void {
+  if (!picker.value.dayKey || !picker.value.mealKey) return
+
+  const dayKey = picker.value.dayKey
+  const mealKey = picker.value.mealKey
+
+  // Close picker first, then open the drawer
+  closePicker()
+
+  drawerMealContext.value = {
+    dayOfWeek: DAY_KEY_TO_INDEX[dayKey],
+    mealType: mealKey as SharedMealKey,
+  }
+  showPlateDrawer.value = true
+}
+
+async function onPlateCreated(plate: Plate): Promise<void> {
+  const ctx = drawerMealContext.value
+  if (!ctx) return
+
+  const dayKey = DAY_INDEX_TO_KEY[ctx.dayOfWeek] as DayKey
+  const mealKey = ctx.mealType as MealKey
+
+  // Close drawer first
+  closePlateDrawer()
+
+  // Refresh plates list so the picker shows the new plate next time
+  await plateStore.fetchSavedPlates()
+
+  // Reuse the apply-all dialog: let user choose "solo esta comida" or "aplicar a todas"
+  applyAllDialog.open = true
+  applyAllDialog.plate = plate
+  applyAllDialog.dayKey = dayKey
+  pendingMealKey.value = mealKey
+}
+
+function closePlateDrawer(): void {
+  showPlateDrawer.value = false
+  drawerMealContext.value = null
 }
 
 // ─── Apply-all dialog handlers (UX-5) ───────────────────────────────────────≡
@@ -2363,11 +2428,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   padding: 0.5rem 1.25rem;
   background: var(--md3-primary);
   color: var(--md3-on-primary);
+  border: none;
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
   font-size: var(--md3-label-lg);
   font-weight: var(--md3-weight-semibold);
   text-decoration: none;
+  cursor: pointer;
   transition: background var(--md3-transition-fast);
 }
 
@@ -2531,6 +2598,39 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .picker-select-btn .material-symbols-outlined {
   font-size: 1.125rem;
+}
+
+/* ─── Create new plate button in picker ─── */
+.picker-create-item {
+  list-style: none;
+  padding: var(--md3-space-2) 0;
+}
+
+.picker-create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md3-space-2);
+  width: 100%;
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: transparent;
+  color: var(--md3-primary);
+  border: 2px dashed var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-lg);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), border-color var(--md3-transition-fast);
+}
+
+.picker-create-btn:hover {
+  background: var(--md3-primary-container);
+  border-color: var(--md3-primary);
+}
+
+.picker-create-btn .material-symbols-outlined {
+  font-size: 1.25rem;
 }
 
 /* ─── Dialog transition ─── */
