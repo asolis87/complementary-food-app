@@ -4,7 +4,7 @@
  * Design: AD4 — Pinia for server-synced state.
  */
 
-import type { Food, FoodGroup, Plate, BalanceResult } from '@pakulab/shared'
+import type { Food, FoodGroup, Plate, BalanceResult, CreatePlateInput } from '@pakulab/shared'
 import { calculateBalance, PLATE_LIMITS } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -136,18 +136,35 @@ export const usePlateStore = defineStore('plates', () => {
     }
   }
 
-  async function saveDraftAsPlate(): Promise<Plate> {
+  /**
+   * Save the current draft as a new plate via API.
+   *
+   * Accepts an optional `CreatePlateInput` payload for use by composable-owned
+   * drafts (AD-1). When called without arguments, builds the payload from the
+   * store's internal draft state (backward-compat for PlateBuilderPage).
+   *
+   * Design: AD-3 — composable builds payload, store executes API + caches.
+   */
+  async function saveDraftAsPlate(payload?: CreatePlateInput): Promise<Plate> {
     error.value = null
 
-    const itemsPayload = draftItems.value.map((item) => ({
-      foodId: item.food.id,
-      groupAssignment: item.groupAssignment,
-    }))
+    // When called from the composable, use the provided payload;
+    // otherwise build from internal singleton state (legacy path).
+    const platePayload: CreatePlateInput = payload ?? {
+      name: draftName.value,
+      groupCount: draftGroupCount.value,
+      items: draftItems.value.map((item) => ({
+        foodId: item.food.id,
+        groupAssignment: item.groupAssignment,
+      })),
+    }
+
+    const itemsPayload = platePayload.items ?? []
 
     try {
       const result = await apiClient.post<{ data: Plate }>('/plates', {
-        name: draftName.value,
-        groupCount: draftGroupCount.value,
+        name: platePayload.name,
+        groupCount: platePayload.groupCount,
         items: itemsPayload,
       })
       // Contract: unshift preserves descending sort order from API (UX-2).
@@ -159,12 +176,39 @@ export const usePlateStore = defineStore('plates', () => {
         // Queue the plate for sync when back online
         await enqueuePlate({
           localId: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          name: draftName.value,
-          groupCount: draftGroupCount.value,
+          name: platePayload.name ?? 'Mi plato',
+          groupCount: platePayload.groupCount ?? 4,
           items: itemsPayload,
           queuedAt: Date.now(),
         })
-        // Return an optimistic plate (computed balance client-side)
+
+        if (payload) {
+          // Composable path — no full Food objects available for balance calc.
+          // Return a minimal optimistic plate; the caller's local draft state
+          // provides immediate visual feedback for balance (AD-1).
+          const optimistic: Plate = {
+            id: `queued-${Date.now()}`,
+            userId: '',
+            name: platePayload.name ?? 'Mi plato',
+            groupCount: platePayload.groupCount ?? 4,
+            balanceScore: 0,
+            astringentCount: 0,
+            laxativeCount: 0,
+            neutralCount: 0,
+            items: itemsPayload.map((item, idx) => ({
+              id: `local-item-${idx}-${Date.now()}`,
+              plateId: '',
+              foodId: item.foodId,
+              groupAssignment: item.groupAssignment,
+            })),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+          savedPlates.value.unshift(optimistic)
+          return optimistic
+        }
+
+        // Legacy path — full food items available for accurate balance calculation
         const draftBalance = calculateBalance(
           draftItems.value.map((item) => ({ alClassification: item.food.alClassification })),
         )
@@ -202,19 +246,31 @@ export const usePlateStore = defineStore('plates', () => {
   /**
    * Update an existing plate (edit mode).
    * Sends name, groupCount, and items via PUT /plates/:id.
+   *
+   * Accepts an optional `CreatePlateInput` payload for use by composable-owned
+   * drafts (AD-1). When called without arguments, builds the payload from the
+   * store's internal draft state (backward-compat for PlateBuilderPage).
+   *
+   * Design: AD-3 — composable builds payload, store executes API + caches.
    */
-  async function updatePlate(plateId: string): Promise<Plate> {
+  async function updatePlate(plateId: string, payload?: CreatePlateInput): Promise<Plate> {
     error.value = null
 
-    const itemsPayload = draftItems.value.map((item) => ({
-      foodId: item.food.id,
-      groupAssignment: item.groupAssignment,
-    }))
-
-    const result = await apiClient.put<{ data: Plate }>(`/plates/${plateId}`, {
+    // When called from the composable, use the provided payload;
+    // otherwise build from internal singleton state (legacy path).
+    const platePayload: CreatePlateInput = payload ?? {
       name: draftName.value,
       groupCount: draftGroupCount.value,
-      items: itemsPayload,
+      items: draftItems.value.map((item) => ({
+        foodId: item.food.id,
+        groupAssignment: item.groupAssignment,
+      })),
+    }
+
+    const result = await apiClient.put<{ data: Plate }>(`/plates/${plateId}`, {
+      name: platePayload.name,
+      groupCount: platePayload.groupCount,
+      items: platePayload.items,
     })
 
     // Update in local savedPlates cache if present
