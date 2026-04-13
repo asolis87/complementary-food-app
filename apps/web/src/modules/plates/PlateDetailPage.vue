@@ -20,6 +20,10 @@
           ← Mis platos
         </RouterLink>
         <div class="header-actions">
+          <button class="icon-btn btn-assign" title="Asignar al menú" aria-label="Asignar al menú semanal" @click="openMealSlotPicker">
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_add_on</span>
+            Asignar
+          </button>
           <button class="icon-btn btn-edit" title="Editar plato" aria-label="Editar plato" @click="goEdit">
             <span class="material-symbols-outlined" aria-hidden="true">edit</span>
             Editar
@@ -122,6 +126,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Meal Slot Picker — assign plate to weekly menu -->
+    <MealSlotPicker
+      v-if="plate"
+      :visible="showMealSlotPicker"
+      :plate-id="plate.id"
+      :plate-name="plate.name"
+      @assigned="onMealSlotAssigned"
+      @close="onMealSlotClose"
+      @skip="onMealSlotSkip"
+    />
+
+    <!-- Toast notification -->
+    <transition name="toast">
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`" role="status">
+        <span class="material-symbols-outlined toast-icon" aria-hidden="true">
+          {{ toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'error' : 'info' }}
+        </span>
+        {{ toast.message }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -135,6 +160,8 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
 import BalanceIndicator from './components/BalanceIndicator.vue'
+import MealSlotPicker from '@/shared/components/MealSlotPicker.vue'
+import type { SlotSelection } from '@/shared/components/MealSlotPicker.vue'
 // QuickLogModal removed — "Dar este plato" button removed in favor of menu-based serving
 
 const route = useRoute()
@@ -149,6 +176,18 @@ const loading = ref(true)
 const exporting = ref(false)
 const deleting = ref(false)
 const showDeleteModal = ref(false)
+const showMealSlotPicker = ref(false)
+
+interface Toast {
+  message: string
+  type: 'success' | 'error' | 'info'
+}
+const toast = ref<Toast | null>(null)
+
+function showToast(message: string, type: Toast['type'] = 'info', duration = 3000) {
+  toast.value = { message, type }
+  setTimeout(() => { toast.value = null }, duration)
+}
 
 onMounted(async () => {
   const id = route.params.id as string
@@ -309,6 +348,29 @@ async function handleExport() {
   } finally {
     exporting.value = false
   }
+}
+
+// ─── Meal Slot Picker handlers ──────────────────────────────────────────
+
+function openMealSlotPicker() {
+  showMealSlotPicker.value = true
+}
+
+function onMealSlotAssigned(selections: SlotSelection[]) {
+  showMealSlotPicker.value = false
+  const count = selections.length
+  const message = count === 1
+    ? 'Plato asignado al menú'
+    : `Plato asignado a ${count} horarios`
+  showToast(message, 'success')
+}
+
+function onMealSlotClose() {
+  showMealSlotPicker.value = false
+}
+
+function onMealSlotSkip() {
+  showMealSlotPicker.value = false
 }
 </script>
 
@@ -714,5 +776,65 @@ async function handleExport() {
 .btn-confirm-delete:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-assign {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+}
+
+.btn-assign:hover {
+  background: var(--md3-secondary);
+  color: var(--md3-on-secondary);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  box-shadow: var(--md3-shadow-elevated);
+  z-index: 300;
+  white-space: nowrap;
+}
+
+.toast-icon {
+  font-size: 1.1rem;
+}
+
+.toast-success {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+}
+
+.toast-error {
+  background: var(--md3-error);
+  color: var(--md3-on-error);
+}
+
+.toast-info {
+  background: var(--md3-inverse-surface);
+  color: var(--md3-surface-container-lowest);
+}
+
+/* Toast transition */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.2s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 12px);
 }
 </style>

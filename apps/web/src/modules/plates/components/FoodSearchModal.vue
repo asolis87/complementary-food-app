@@ -5,6 +5,7 @@
       <div
         v-if="isOpen"
         class="modal-backdrop"
+        :style="{ zIndex: 200 + (zIndexOffset ?? 0) }"
         aria-hidden="true"
         @click="emit('close')"
       />
@@ -15,6 +16,7 @@
       <div
         v-if="isOpen"
         class="modal-sheet"
+        :style="{ zIndex: 201 + (zIndexOffset ?? 0) }"
         role="dialog"
         :aria-label="`Agregar alimentos a ${groupLabel}`"
         aria-modal="true"
@@ -217,6 +219,10 @@ const props = defineProps<{
   foodHistories?: FoodHistoryMap
   /** True while history is being fetched — shows skeleton pill */
   historyLoading?: boolean
+  /** Z-index offset for layering above drawers or other high-z containers.
+   *  When opened from PlateBuilderDrawer (z-1100), pass ~1000 so the modal
+   *  renders at ~1200. Default 0 = normal z-index (200/201). */
+  zIndexOffset?: number
 }>()
 
 const emit = defineEmits<{
@@ -410,7 +416,7 @@ function hasAllergenReactionWarning(food: Food): boolean {
   position: fixed;
   inset: 0;
   background: rgba(11, 15, 15, 0.55); /* --md3-inverse-surface at ~55% */
-  z-index: 200;
+  /* z-index set via :style binding — 200 + zIndexOffset */
 }
 
 /* ─── Bottom sheet ─────────────────────────────────────────────────────────── */
@@ -419,7 +425,7 @@ function hasAllergenReactionWarning(food: Food): boolean {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 201;
+  /* z-index set via :style binding — 201 + zIndexOffset */
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-lg) var(--md3-rounded-lg) 0 0;
   max-height: 72vh;

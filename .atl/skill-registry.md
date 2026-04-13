@@ -1,6 +1,6 @@
-# Skill Registry — pakulab (complementary-food-app)
+# Skill Registry — Pakulab (complementary-food)
 
-Generated: 2026-04-04
+Generated: 2026-04-13
 Project: pakulab / complementary-food-app
 
 ## Project Convention Files
@@ -53,6 +53,7 @@ Project: pakulab / complementary-food-app
 | sdd-apply | ~/.config/opencode/skills/sdd-apply/SKILL.md |
 | sdd-verify | ~/.config/opencode/skills/sdd-verify/SKILL.md |
 | sdd-archive | ~/.config/opencode/skills/sdd-archive/SKILL.md |
+| sdd-onboard | ~/.config/opencode/skills/sdd-onboard/SKILL.md |
 
 ## Skill Loading Priority (from AGENTS.md)
 
@@ -70,5 +71,7 @@ Project: pakulab / complementary-food-app
 - API: Fastify 5 + Prisma + BetterAuth + Stripe (@pakulab/api)
 - Web: Vue 3 + Vite + Pinia + vue-router + PWA (@pakulab/web)
 - Shared: types/utils/constants (@pakulab/shared)
-- Test runner: vitest (api + shared; web has NO test runner configured)
+- Test runner: vitest (api + shared; web has NO vitest config)
 - Architecture: Screaming / modular monolith (9 feature modules each side)
+- SDD mode: hybrid (engram + openspec files)
+- Strict TDD: enabled (vitest available for api + shared)
