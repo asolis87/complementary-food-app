@@ -33,6 +33,17 @@
         </div>
         <div class="menu-header__actions">
           <button
+            class="preview-btn"
+            :class="{ 'preview-btn--active': previewMode }"
+            aria-label="Previsualizar menú"
+            @click="previewMode = !previewMode"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">
+              {{ previewMode ? 'edit_calendar' : 'visibility' }}
+            </span>
+            <span class="preview-btn__label">{{ previewMode ? 'Editar' : 'Vista previa' }}</span>
+          </button>
+          <button
             class="export-btn"
             :disabled="isExporting"
             :aria-label="isExporting ? 'Exportando menú...' : 'Exportar menú semanal'"
@@ -45,7 +56,7 @@
             />
             <template v-else>
               <span class="material-symbols-outlined" aria-hidden="true">download</span>
-              <span>Exportar</span>
+              <span class="export-btn__label">Exportar</span>
             </template>
           </button>
           <div class="week-nav">
@@ -61,7 +72,7 @@
       </header>
 
       <!-- ─── Desktop: 7-column grid ─── -->
-      <div class="week-grid" role="grid" :aria-label="`Menú semana del ${weekLabel}`">
+      <div v-show="!previewMode" class="week-grid" role="grid" :aria-label="`Menú semana del ${weekLabel}`">
         <div
           v-for="day in weekDays"
           :key="day.key"
@@ -96,6 +107,7 @@
                 <div
                   class="plate-chip"
                   :class="{ 'plate-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }"
+                  :data-chip="`${day.key}:${meal.key}`"
                   @mouseenter="showTooltip(day.key, meal.key)"
                   @mouseleave="hideTooltip"
                 >
@@ -109,43 +121,28 @@
                     </span>
                   </span>
                   <span class="plate-chip__name">{{ getAssignedPlate(day.key, meal.key)!.name }}</span>
-                  <button
-                    class="plate-chip__serve"
-                    :class="{ 'plate-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
-                    :title="menuStore.getServedAt(day.key, meal.key) ? 'Servido ✓' : 'Registrar comida'"
-                    :disabled="menuStore.isServeLoading(day.key, meal.key)"
-                    @click.stop="handleServeClick(day.key, meal.key)"
-                  >
-                    <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="plate-chip__serve-spinner" />
-                    <span v-else class="material-symbols-outlined" aria-hidden="true">
-                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
-                    </span>
-                  </button>
-                  <button
-                    class="plate-chip__remove"
-                    :aria-label="`Quitar ${getAssignedPlate(day.key, meal.key)!.name}`"
-                    @click.stop="removePlate(day.key, meal.key)"
-                  >
-                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                  </button>
+                  <div class="plate-chip__actions">
+                    <button
+                      class="plate-chip__serve"
+                      :class="{ 'plate-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                      :title="menuStore.getServedAt(day.key, meal.key) ? 'Servido ✓' : 'Registrar comida'"
+                      :disabled="menuStore.isServeLoading(day.key, meal.key)"
+                      @click.stop="handleServeClick(day.key, meal.key)"
+                    >
+                      <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="plate-chip__serve-spinner" />
+                      <span v-else class="material-symbols-outlined" aria-hidden="true">
+                        {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                      </span>
+                    </button>
+                    <button
+                      class="plate-chip__remove"
+                      :aria-label="`Quitar ${getAssignedPlate(day.key, meal.key)!.name}`"
+                      @click.stop="removePlate(day.key, meal.key)"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
                 </div>
-                <!-- Food list -->
-                <ul class="food-list" v-if="getVisibleFoods(day.key, meal.key).length > 0">
-                  <li
-                    v-for="food in getVisibleFoods(day.key, meal.key)"
-                    :key="food.foodId"
-                    class="food-list__item"
-                  >
-                    <span
-                      class="food-list__dot"
-                      :class="`food-list__dot--${food.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                    />
-                    <span class="food-list__name">{{ food.food?.name ?? 'Alimento' }}</span>
-                  </li>
-                  <li v-if="getFoodOverflowCount(day.key, meal.key) > 0" class="food-list__overflow">
-                    +{{ getFoodOverflowCount(day.key, meal.key) }} más
-                  </li>
-                </ul>
               </template>
 
               <!-- Empty slot -->
@@ -158,15 +155,78 @@
                   @click="openPicker(day.key, meal.key)"
                 >
                   <span v-if="menuStore.isSlotLoading(day.key, meal.key)" class="slot-spinner" aria-hidden="true" />
-                  <template v-else>
-                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                    <span class="add-slot-btn__label">Agregar plato</span>
-                  </template>
+                  <span v-else class="material-symbols-outlined" aria-hidden="true">add</span>
                 </button>
               </template>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ─── Desktop: Preview mode (compact snapshot) ─── -->
+      <div v-show="previewMode" class="preview-grid" role="grid" aria-label="Vista previa del menú semanal">
+        <!-- Column headers -->
+        <div class="preview-grid__corner" />
+        <div
+          v-for="day in weekDays"
+          :key="`ph-${day.key}`"
+          class="preview-grid__day-header"
+          :class="{ 'preview-grid__day-header--today': day.isToday }"
+        >
+          <span class="preview-grid__day-name">{{ day.shortName }}</span>
+          <span class="preview-grid__day-number" :class="{ 'preview-grid__day-number--today': day.isToday }">
+            {{ day.dayNumber }}
+          </span>
+        </div>
+
+        <!-- Meal rows -->
+        <template v-for="meal in MEALS" :key="`pm-${meal.key}`">
+          <div class="preview-grid__meal-label" :class="`preview-grid__meal-label--${meal.key}`">
+            <span class="material-symbols-outlined" aria-hidden="true">{{ meal.icon }}</span>
+            {{ meal.name }}
+          </div>
+          <div
+            v-for="day in weekDays"
+            :key="`pv-${day.key}-${meal.key}`"
+            class="preview-grid__cell"
+            :class="{
+              'preview-grid__cell--today': day.isToday,
+              'preview-grid__cell--empty': !getAssignedPlate(day.key, meal.key),
+              'preview-grid__cell--served': !!menuStore.getServedAt(day.key, meal.key)
+            }"
+          >
+            <template v-if="getAssignedPlate(day.key, meal.key)">
+              <div class="preview-grid__cell-header">
+                <span
+                  class="preview-grid__score-dot"
+                  :class="scoreClass(getAssignedPlate(day.key, meal.key)!)"
+                />
+                <span class="preview-grid__plate-name">
+                  {{ getAssignedPlate(day.key, meal.key)!.name }}
+                </span>
+                <span
+                  v-if="menuStore.getServedAt(day.key, meal.key)"
+                  class="material-symbols-outlined preview-grid__served-icon"
+                  aria-hidden="true"
+                >check_circle</span>
+              </div>
+              <ul v-if="menuStore.getSlotFoods(day.key, meal.key).length > 0" class="preview-grid__foods">
+                <li
+                  v-for="item in menuStore.getSlotFoods(day.key, meal.key)"
+                  :key="item.foodId"
+                  class="preview-grid__food-item"
+                >
+                  <span
+                    class="preview-grid__food-dot"
+                    :class="`preview-grid__food-dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                  />
+                  <span class="preview-grid__food-name">{{ item.food?.name ?? 'Alimento' }}</span>
+                </li>
+              </ul>
+            </template>
+            <span v-else class="preview-grid__empty-dash">—</span>
+          </div>
+        </template>
       </div>
 
       <!-- Tooltip for desktop food list -->
@@ -243,7 +303,7 @@
             <!-- Assigned plate -->
             <template v-if="getAssignedPlate(day.key, meal.key)">
               <div class="mobile-plate-container">
-                <!-- Plate name row -->
+                <!-- Plate name row with inline serve -->
                 <div class="plate-row-chip" :class="{ 'plate-row-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }">
                   <span class="plate-row-chip__score" :class="scoreClass(getAssignedPlate(day.key, meal.key)!)">
                     <span class="material-symbols-outlined" aria-hidden="true">
@@ -252,6 +312,18 @@
                   </span>
                   <span class="plate-row-chip__name">{{ getAssignedPlate(day.key, meal.key)!.name }}</span>
                   <button
+                    class="plate-row-chip__serve"
+                    :class="{ 'plate-row-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                    :disabled="isServeDisabled(day.key, meal.key)"
+                    :title="getServeTooltip(day.key, meal.key)"
+                    @click.stop="handleServeClick(day.key, meal.key)"
+                  >
+                    <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="plate-row-chip__serve-spinner" />
+                    <span v-else class="material-symbols-outlined" aria-hidden="true">
+                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                    </span>
+                  </button>
+                  <button
                     class="plate-row-chip__remove"
                     :aria-label="`Quitar ${getAssignedPlate(day.key, meal.key)!.name}`"
                     @click="removePlate(day.key, meal.key)"
@@ -259,34 +331,17 @@
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                   </button>
                 </div>
-                <!-- Food chips - horizontal scrollable -->
-                <div class="food-chips-scroll">
-                  <div
-                    v-for="item in getSlotFoods(day.key, meal.key)"
-                    :key="item.foodId"
-                    class="food-chip"
-                    :class="`food-chip--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                  >
-                    <span class="food-chip__border" />
-                    <span class="food-chip__name">{{ truncateFoodName(item.food?.name ?? 'Alimento') }}</span>
-                  </div>
-                </div>
-                <!-- Serve button mobile -->
-                <button
-                  class="serve-btn serve-btn--mobile"
-                  :class="getServeButtonClass(day.key, meal.key)"
-                  :disabled="isServeDisabled(day.key, meal.key)"
-                  :title="getServeTooltip(day.key, meal.key)"
-                  @click="handleServeClick(day.key, meal.key)"
-                >
-                  <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="serve-btn__spinner" />
-                  <template v-else>
-                    <span class="material-symbols-outlined serve-btn__icon" aria-hidden="true">
-                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
-                    </span>
-                    {{ getServeButtonLabel(day.key, meal.key) }}
+                <!-- Food summary line -->
+                <div v-if="getSlotFoods(day.key, meal.key).length > 0" class="food-summary">
+                  <template v-for="(item, idx) in getSlotFoods(day.key, meal.key)" :key="item.foodId">
+                    <span v-if="idx > 0" class="food-summary__sep">·</span>
+                    <span
+                      class="food-summary__dot"
+                      :class="`food-summary__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                    />
+                    <span class="food-summary__name">{{ item.food?.name ?? 'Alimento' }}</span>
                   </template>
-                </button>
+                </div>
               </div>
             </template>
 
@@ -665,6 +720,10 @@ const pendingMealKey = ref<MealKey | ''>('')
 
 const showPlateDrawer = ref(false)
 const drawerMealContext = ref<{ dayOfWeek: number; mealType: SharedMealKey } | null>(null)
+
+// ─── Preview mode ────────────────────────────────────────────────────────
+
+const previewMode = ref(false)
 
 // ─── Export state ─────────────────────────────────────────────────────────
 
@@ -1049,13 +1108,17 @@ function showTooltip(dayKey: DayKey, mealKey: MealKey): void {
   tooltip.value.content = foods
   tooltip.value.visible = true
 
-  // Position tooltip near the slot (will be updated on mousemove)
-  const slotKey = `${dayKey}:${mealKey}`
-  const slotElement = document.querySelector(`[data-slot="${slotKey}"]`)
-  if (slotElement) {
-    const rect = slotElement.getBoundingClientRect()
-    tooltip.value.x = rect.left + rect.width / 2
-    tooltip.value.y = rect.bottom + 8
+  // Position tooltip anchored to the plate-chip, not the full meal-slot
+  const chipKey = `${dayKey}:${mealKey}`
+  const chipElement = document.querySelector(`[data-chip="${chipKey}"]`)
+  if (chipElement) {
+    const rect = chipElement.getBoundingClientRect()
+    const tooltipWidth = 200
+    // Center horizontally on the chip, clamp to viewport
+    let x = rect.left + rect.width / 2 - tooltipWidth / 2
+    x = Math.max(8, Math.min(x, window.innerWidth - tooltipWidth - 8))
+    tooltip.value.x = x
+    tooltip.value.y = rect.bottom + 6
   }
 }
 
@@ -1455,6 +1518,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   color: var(--md3-on-surface-variant);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .menu-header__subtitle {
+    display: block;
+  }
 }
 
 .menu-header__actions {
@@ -1547,6 +1617,78 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   animation: spin 0.7s linear infinite;
 }
 
+/* Mobile: icon-only export button */
+.export-btn__label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .export-btn__label {
+    display: inline;
+  }
+}
+
+@media (max-width: 767px) {
+  .export-btn {
+    padding: 0.5rem;
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .menu-header {
+    gap: var(--md3-space-2);
+  }
+
+  .menu-header__actions {
+    gap: var(--md3-space-2);
+  }
+
+  .menu-header__title {
+    font-size: var(--md3-headline-sm);
+  }
+}
+
+/* ─── Preview button ─── */
+.preview-btn {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .preview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border: 1.5px solid var(--md3-outline-variant);
+    background: transparent;
+    color: var(--md3-on-surface);
+    border-radius: var(--md3-rounded-full);
+    font-family: var(--md3-font-label);
+    font-size: var(--md3-label-lg);
+    font-weight: var(--md3-weight-semibold);
+    cursor: pointer;
+    transition: border-color var(--md3-transition-fast), background var(--md3-transition-fast), color var(--md3-transition-fast);
+    min-height: 40px;
+  }
+
+  .preview-btn:hover {
+    border-color: var(--md3-primary);
+    color: var(--md3-primary);
+    background: var(--md3-surface-container-low);
+  }
+
+  .preview-btn--active {
+    border-color: var(--md3-primary);
+    background: var(--md3-primary-container);
+    color: var(--md3-on-primary-container);
+  }
+
+  .preview-btn .material-symbols-outlined {
+    font-size: 1.125rem;
+  }
+}
+
 /* ─── Desktop: Week grid ─── */
 .week-grid {
   display: none;
@@ -1567,26 +1709,33 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .day-column {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-md);
-  padding: var(--md3-space-3);
+  padding: var(--md3-space-2);
+  box-shadow: none;
+  border: 1px solid var(--md3-outline-variant);
+  transition: box-shadow var(--md3-transition-fast), border-color var(--md3-transition-fast);
+}
+
+.day-column:hover {
+  border-color: var(--md3-primary);
   box-shadow: var(--md3-shadow-soft);
-  transition: box-shadow var(--md3-transition-fast);
 }
 
 .day-column--today {
   background: var(--md3-primary-container);
-  box-shadow: var(--md3-shadow-card);
+  border-color: var(--md3-primary);
+  box-shadow: var(--md3-shadow-soft);
 }
 
 .day-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--md3-space-1);
-  padding-bottom: var(--md3-space-2);
-  border-bottom: 1.5px solid var(--md3-outline-variant);
+  gap: 2px;
+  padding-bottom: var(--md3-space-1);
+  border-bottom: 1px solid var(--md3-outline-variant);
 }
 
 .day-column--today .day-header {
@@ -1607,13 +1756,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 }
 
 .day-header__date {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-md);
+  font-size: var(--md3-body-md);
   font-weight: var(--md3-weight-bold);
   color: var(--md3-on-surface);
   border-radius: var(--md3-rounded-full);
@@ -1627,15 +1776,15 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .meal-slots {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
 }
 
 /* ─── Meal slot (desktop) ─── */
 .meal-slot {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-1);
-  min-height: 68px;
+  gap: 2px;
+  min-height: 48px;
 }
 
 .meal-slot__label {
@@ -1676,16 +1825,21 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--md3-space-1);
   width: 100%;
-  min-height: 44px;
-  padding: var(--md3-space-2);
+  min-height: 32px;
+  padding: var(--md3-space-1);
   border: 1.5px dashed var(--md3-outline-variant);
   border-radius: var(--md3-rounded-sm);
   background: transparent;
-  color: var(--md3-on-surface-variant);
+  color: var(--md3-outline-variant);
   cursor: pointer;
-  transition: border-color var(--md3-transition-fast), background var(--md3-transition-fast), color var(--md3-transition-fast);
+  opacity: 0.5;
+  transition: border-color var(--md3-transition-fast), background var(--md3-transition-fast), color var(--md3-transition-fast), opacity var(--md3-transition-fast);
+}
+
+.day-column:hover .add-slot-btn,
+.add-slot-btn:hover {
+  opacity: 1;
 }
 
 .add-slot-btn:hover {
@@ -1695,13 +1849,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 }
 
 .add-slot-btn .material-symbols-outlined {
-  font-size: 1.125rem;
-}
-
-.add-slot-btn__label {
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
-  font-weight: var(--md3-weight-medium);
+  font-size: 1rem;
 }
 
 /* ─── Plate chip (desktop) ─── */
@@ -1709,10 +1857,11 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   align-items: center;
   gap: var(--md3-space-1);
-  padding: var(--md3-space-1) var(--md3-space-2);
+  padding: 4px 6px;
   background: var(--md3-surface-container);
   border-radius: var(--md3-rounded-sm);
-  min-height: 36px;
+  min-height: 30px;
+  cursor: default;
 }
 
 .plate-chip__score {
@@ -1739,14 +1888,31 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   line-height: var(--md3-label-line-height);
 }
 
+.plate-chip__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--md3-transition-fast);
+}
+
+.plate-chip:hover .plate-chip__actions {
+  opacity: 1;
+}
+
+/* Always show serve icon when already served */
+.plate-chip:has(.plate-chip__serve--served) .plate-chip__actions {
+  opacity: 1;
+}
+
 .plate-chip__serve {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 8px;
-  margin: -8px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--md3-primary);
@@ -1785,8 +1951,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: none;
   background: transparent;
   color: var(--md3-on-surface-variant);
@@ -1810,12 +1976,12 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   pointer-events: none;
 }
 
-/* ─── Food list (desktop) ─── */
+/* ─── Food list (desktop — hidden, tooltip replaces it) ─── */
 .food-list {
   list-style: none;
   margin: var(--md3-space-1) 0 0;
   padding: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 2px;
 }
@@ -1868,11 +2034,12 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .food-tooltip {
   position: fixed;
   z-index: 1001;
-  background: var(--md3-surface-container-high);
+  background: var(--md3-surface-container-highest);
   border-radius: var(--md3-rounded-md);
-  padding: var(--md3-space-3);
-  box-shadow: var(--md3-shadow-ambient);
-  min-width: 200px;
+  padding: var(--md3-space-2) var(--md3-space-3);
+  box-shadow: var(--md3-shadow-card);
+  min-width: 180px;
+  max-width: 240px;
   pointer-events: none;
 }
 
@@ -1947,11 +2114,234 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   transform: translateY(-4px);
 }
 
-/* ─── Mobile food chips ─── */
+/* ─── Preview grid (desktop only) ─── */
+.preview-grid {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .preview-grid {
+    display: grid;
+    grid-template-columns: auto repeat(7, 1fr);
+    gap: 1px;
+    background: var(--md3-outline-variant);
+    border-radius: var(--md3-rounded-md);
+    overflow: hidden;
+    border: 1px solid var(--md3-outline-variant);
+    grid-auto-rows: auto;
+  }
+}
+
+.preview-grid__corner {
+  background: var(--md3-surface-container-low);
+  padding: var(--md3-space-2);
+}
+
+.preview-grid__day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--md3-space-2);
+  background: var(--md3-surface-container-low);
+}
+
+.preview-grid__day-header--today {
+  background: var(--md3-primary-container);
+}
+
+.preview-grid__day-name {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--md3-label-tracking);
+  color: var(--md3-on-surface-variant);
+}
+
+.preview-grid__day-header--today .preview-grid__day-name {
+  color: var(--md3-on-primary-container);
+}
+
+.preview-grid__day-number {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-on-surface);
+  border-radius: var(--md3-rounded-full);
+}
+
+.preview-grid__day-number--today {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
+}
+
+.preview-grid__meal-label {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  padding: var(--md3-space-2) var(--md3-space-3);
+  background: var(--md3-surface-container-low);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--md3-label-tracking);
+  color: var(--md3-on-surface-variant);
+  white-space: nowrap;
+}
+
+.preview-grid__meal-label .material-symbols-outlined {
+  font-size: 0.875rem;
+}
+
+.preview-grid__meal-label--desayuno { color: var(--md3-tertiary); }
+.preview-grid__meal-label--comida { color: var(--md3-primary); }
+.preview-grid__meal-label--cena { color: var(--md3-secondary); }
+
+.preview-grid__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--md3-space-2);
+  background: var(--md3-surface-container-lowest);
+  min-height: 40px;
+}
+
+.preview-grid__cell-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-grid__cell--today {
+  background: color-mix(in srgb, var(--md3-primary-container) 30%, var(--md3-surface-container-lowest));
+}
+
+.preview-grid__cell--empty {
+  justify-content: center;
+}
+
+.preview-grid__cell--served {
+  background: color-mix(in srgb, var(--md3-primary-container) 15%, var(--md3-surface-container-lowest));
+}
+
+.preview-grid__score-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.preview-grid__score-dot.score--balanced { background: #22c55e; }
+.preview-grid__score-dot.score--neutral { background: #f59e0b; }
+.preview-grid__score-dot.score--unbalanced { background: #ef4444; }
+
+.preview-grid__plate-name {
+  flex: 1;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.preview-grid__served-icon {
+  font-size: 0.875rem;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+  font-variation-settings: 'FILL' 1;
+}
+
+.preview-grid__foods {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.preview-grid__food-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-grid__food-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.preview-grid__food-dot--astringent { background: #ef4444; }
+.preview-grid__food-dot--laxative { background: #22c55e; }
+.preview-grid__food-dot--neutral { background: #9ca3af; }
+
+.preview-grid__food-name {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.preview-grid__empty-dash {
+  color: var(--md3-outline-variant);
+  font-size: var(--md3-body-sm);
+  align-self: center;
+}
+
+/* ─── Food summary line (mobile) ─── */
+.food-summary {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  row-gap: 1px;
+  overflow: hidden;
+  max-height: 2.4em;
+}
+
+.food-summary__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.food-summary__dot--astringent { background: #ef4444; }
+.food-summary__dot--laxative { background: #22c55e; }
+.food-summary__dot--neutral { background: #9ca3af; }
+
+.food-summary__name {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
+}
+
+.food-summary__sep {
+  color: var(--md3-outline-variant);
+  font-size: var(--md3-label-sm);
+}
+
+/* ─── Mobile plate container ─── */
 .mobile-plate-container {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -1959,11 +2349,10 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .food-chips-scroll {
   display: flex;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   overflow-x: auto;
-  padding-bottom: var(--md3-space-1);
-  scrollbar-width: thin;
-  scrollbar-color: var(--md3-outline-variant) transparent;
+  padding-bottom: 2px;
+  scrollbar-width: none;
 }
 
 .food-chips-scroll::-webkit-scrollbar {
@@ -1982,12 +2371,12 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .food-chip {
   display: flex;
   align-items: center;
-  gap: var(--md3-space-1);
-  padding: var(--md3-space-1) var(--md3-space-2);
-  background: var(--md3-surface-container);
+  gap: 3px;
+  padding: 2px 6px;
+  background: var(--md3-surface-container-low);
   border-radius: var(--md3-rounded-sm);
   flex-shrink: 0;
-  border-left: 3px solid transparent;
+  border-left: 2.5px solid transparent;
 }
 
 .food-chip--astringent {
@@ -2004,8 +2393,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .food-chip__name {
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-sm);
-  color: var(--md3-on-surface);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
   white-space: nowrap;
 }
 
@@ -2092,7 +2481,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .day-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-3);
+  gap: var(--md3-space-2);
   min-width: 0;
 }
 
@@ -2102,13 +2491,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .meal-row {
   display: flex;
-  align-items: center;
-  gap: var(--md3-space-3);
-  padding: var(--md3-space-3);
+  align-items: flex-start;
+  gap: var(--md3-space-2);
+  padding: var(--md3-space-2) var(--md3-space-3);
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-md);
-  box-shadow: var(--md3-shadow-soft);
-  min-height: 64px;
+  border: 1px solid var(--md3-outline-variant);
+  min-height: 48px;
   min-width: 0;
   overflow: hidden;
 }
@@ -2117,12 +2506,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--md3-space-1);
-  min-width: 52px;
+  gap: 2px;
+  min-width: 44px;
+  padding-top: 2px;
 }
 
 .meal-row__icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: var(--md3-on-surface-variant);
 }
 
@@ -2143,23 +2533,23 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .plate-row-chip {
   display: flex;
   align-items: center;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   flex: 1;
   min-width: 0;
-  padding: var(--md3-space-2) var(--md3-space-3);
+  padding: 4px 8px;
   background: var(--md3-surface-container);
   border-radius: var(--md3-rounded-sm);
 }
 
 .plate-row-chip__score .material-symbols-outlined {
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 .plate-row-chip__name {
   flex: 1;
   min-width: 0;
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
+  font-size: var(--md3-body-sm);
   font-weight: var(--md3-weight-medium);
   color: var(--md3-on-surface);
   overflow: hidden;
@@ -2167,14 +2557,52 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   white-space: nowrap;
 }
 
+.plate-row-chip__serve {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--md3-primary);
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.plate-row-chip__serve:active {
+  background: var(--md3-primary-container);
+}
+
+.plate-row-chip__serve--served {
+  color: var(--md3-primary);
+}
+
+.plate-row-chip__serve--served .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.plate-row-chip__serve .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.plate-row-chip__serve-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 .plate-row-chip__remove {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   border: none;
   background: transparent;
@@ -2190,7 +2618,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 }
 
 .plate-row-chip__remove .material-symbols-outlined {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 .plate-row-chip--loading {
