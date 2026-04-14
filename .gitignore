@@ -19,6 +19,9 @@ prisma/migrations/
 .env.*.local
 !.env.example
 
+# Docker overrides (contains local secrets)
+docker-compose.override.yml
+
 # IDE
 .vscode/settings.json
 .idea/

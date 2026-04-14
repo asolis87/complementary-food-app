@@ -178,6 +178,37 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Redirect to Google OAuth via BetterAuth.
+   * POSTs to the social sign-in endpoint and redirects to the Google auth URL.
+   */
+  async function signInWithGoogle(): Promise<void> {
+    try {
+      const origin = window.location.origin
+      const res = await fetch('/api/auth/sign-in/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          provider: 'google',
+          callbackURL: `${origin}/`,
+          newUserCallbackURL: `${origin}/onboarding/plan`,
+          disableRedirect: true,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data?.url) {
+        window.location.href = data.url
+      } else {
+        error.value = 'No se pudo iniciar sesión con Google. Intenta de nuevo.'
+      }
+    } catch {
+      error.value = 'No se pudo conectar con Google. Intenta de nuevo.'
+    }
+  }
+
   /** Clear any auth error (call before showing form) */
   function clearError(): void {
     error.value = null
@@ -206,6 +237,7 @@ export const useAuthStore = defineStore('auth', () => {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     clearError,
     // Aliases for backward compat with existing callers
     fetchSession: checkSession,

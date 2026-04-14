@@ -142,9 +142,8 @@ async function handleSubmit() {
   }
 }
 
-async function handleGoogleLogin() {
-  // Google sign-in — to be implemented when OAuth provider is configured
-  // authStore.signInWithGoogle()
+function handleGoogleLogin() {
+  authStore.signInWithGoogle()
 }
 </script>
 
