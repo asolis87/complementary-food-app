@@ -179,31 +179,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Redirect to Google OAuth via BetterAuth.
-   * Uses a form POST to let BetterAuth handle the redirect server-side,
-   * preserving the OAuth state cookie correctly across environments.
+   * Redirect to Google OAuth via BetterAuth client SDK.
+   * The SDK handles the POST, state cookie, and redirect correctly.
    */
-  function signInWithGoogle(): void {
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = '/api/auth/sign-in/social'
+  async function signInWithGoogle(): Promise<void> {
+    const { createAuthClient } = await import('better-auth/client')
+    const authClient = createAuthClient()
 
-    const fields: Record<string, string> = {
+    await authClient.signIn.social({
       provider: 'google',
       callbackURL: '/',
       newUserCallbackURL: '/onboarding/plan',
-    }
-
-    for (const [key, value] of Object.entries(fields)) {
-      const input = document.createElement('input')
-      input.type = 'hidden'
-      input.name = key
-      input.value = value
-      form.appendChild(input)
-    }
-
-    document.body.appendChild(form)
-    form.submit()
+    })
   }
 
   /** Clear any auth error (call before showing form) */
