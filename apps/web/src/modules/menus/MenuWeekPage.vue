@@ -41,7 +41,7 @@
             <span class="material-symbols-outlined" aria-hidden="true">
               {{ previewMode ? 'edit_calendar' : 'visibility' }}
             </span>
-            <span>{{ previewMode ? 'Editar' : 'Vista previa' }}</span>
+            <span class="preview-btn__label">{{ previewMode ? 'Editar' : 'Vista previa' }}</span>
           </button>
           <button
             class="export-btn"
@@ -56,7 +56,7 @@
             />
             <template v-else>
               <span class="material-symbols-outlined" aria-hidden="true">download</span>
-              <span>Exportar</span>
+              <span class="export-btn__label">Exportar</span>
             </template>
           </button>
           <div class="week-nav">
@@ -303,7 +303,7 @@
             <!-- Assigned plate -->
             <template v-if="getAssignedPlate(day.key, meal.key)">
               <div class="mobile-plate-container">
-                <!-- Plate name row -->
+                <!-- Plate name row with inline serve -->
                 <div class="plate-row-chip" :class="{ 'plate-row-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }">
                   <span class="plate-row-chip__score" :class="scoreClass(getAssignedPlate(day.key, meal.key)!)">
                     <span class="material-symbols-outlined" aria-hidden="true">
@@ -312,6 +312,18 @@
                   </span>
                   <span class="plate-row-chip__name">{{ getAssignedPlate(day.key, meal.key)!.name }}</span>
                   <button
+                    class="plate-row-chip__serve"
+                    :class="{ 'plate-row-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                    :disabled="isServeDisabled(day.key, meal.key)"
+                    :title="getServeTooltip(day.key, meal.key)"
+                    @click.stop="handleServeClick(day.key, meal.key)"
+                  >
+                    <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="plate-row-chip__serve-spinner" />
+                    <span v-else class="material-symbols-outlined" aria-hidden="true">
+                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                    </span>
+                  </button>
+                  <button
                     class="plate-row-chip__remove"
                     :aria-label="`Quitar ${getAssignedPlate(day.key, meal.key)!.name}`"
                     @click="removePlate(day.key, meal.key)"
@@ -319,34 +331,17 @@
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                   </button>
                 </div>
-                <!-- Food chips - horizontal scrollable -->
-                <div class="food-chips-scroll">
-                  <div
-                    v-for="item in getSlotFoods(day.key, meal.key)"
-                    :key="item.foodId"
-                    class="food-chip"
-                    :class="`food-chip--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                  >
-                    <span class="food-chip__border" />
-                    <span class="food-chip__name">{{ truncateFoodName(item.food?.name ?? 'Alimento') }}</span>
-                  </div>
-                </div>
-                <!-- Serve button mobile -->
-                <button
-                  class="serve-btn serve-btn--mobile"
-                  :class="getServeButtonClass(day.key, meal.key)"
-                  :disabled="isServeDisabled(day.key, meal.key)"
-                  :title="getServeTooltip(day.key, meal.key)"
-                  @click="handleServeClick(day.key, meal.key)"
-                >
-                  <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="serve-btn__spinner" />
-                  <template v-else>
-                    <span class="material-symbols-outlined serve-btn__icon" aria-hidden="true">
-                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
-                    </span>
-                    {{ getServeButtonLabel(day.key, meal.key) }}
+                <!-- Food summary line -->
+                <div v-if="getSlotFoods(day.key, meal.key).length > 0" class="food-summary">
+                  <template v-for="(item, idx) in getSlotFoods(day.key, meal.key)" :key="item.foodId">
+                    <span v-if="idx > 0" class="food-summary__sep">·</span>
+                    <span
+                      class="food-summary__dot"
+                      :class="`food-summary__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                    />
+                    <span class="food-summary__name">{{ item.food?.name ?? 'Alimento' }}</span>
                   </template>
-                </button>
+                </div>
               </div>
             </template>
 
@@ -1523,6 +1518,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   color: var(--md3-on-surface-variant);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .menu-header__subtitle {
+    display: block;
+  }
 }
 
 .menu-header__actions {
@@ -1613,6 +1615,37 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   border-top-color: var(--md3-on-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+/* Mobile: icon-only export button */
+.export-btn__label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .export-btn__label {
+    display: inline;
+  }
+}
+
+@media (max-width: 767px) {
+  .export-btn {
+    padding: 0.5rem;
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .menu-header {
+    gap: var(--md3-space-2);
+  }
+
+  .menu-header__actions {
+    gap: var(--md3-space-2);
+  }
+
+  .menu-header__title {
+    font-size: var(--md3-headline-sm);
+  }
 }
 
 /* ─── Preview button ─── */
@@ -2271,11 +2304,44 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   align-self: center;
 }
 
-/* ─── Mobile food chips ─── */
+/* ─── Food summary line (mobile) ─── */
+.food-summary {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  row-gap: 1px;
+  overflow: hidden;
+  max-height: 2.4em;
+}
+
+.food-summary__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.food-summary__dot--astringent { background: #ef4444; }
+.food-summary__dot--laxative { background: #22c55e; }
+.food-summary__dot--neutral { background: #9ca3af; }
+
+.food-summary__name {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
+}
+
+.food-summary__sep {
+  color: var(--md3-outline-variant);
+  font-size: var(--md3-label-sm);
+}
+
+/* ─── Mobile plate container ─── */
 .mobile-plate-container {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -2283,11 +2349,10 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .food-chips-scroll {
   display: flex;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   overflow-x: auto;
-  padding-bottom: var(--md3-space-1);
-  scrollbar-width: thin;
-  scrollbar-color: var(--md3-outline-variant) transparent;
+  padding-bottom: 2px;
+  scrollbar-width: none;
 }
 
 .food-chips-scroll::-webkit-scrollbar {
@@ -2306,12 +2371,12 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .food-chip {
   display: flex;
   align-items: center;
-  gap: var(--md3-space-1);
-  padding: var(--md3-space-1) var(--md3-space-2);
-  background: var(--md3-surface-container);
+  gap: 3px;
+  padding: 2px 6px;
+  background: var(--md3-surface-container-low);
   border-radius: var(--md3-rounded-sm);
   flex-shrink: 0;
-  border-left: 3px solid transparent;
+  border-left: 2.5px solid transparent;
 }
 
 .food-chip--astringent {
@@ -2328,8 +2393,8 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .food-chip__name {
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-sm);
-  color: var(--md3-on-surface);
+  font-size: var(--md3-label-sm);
+  color: var(--md3-on-surface-variant);
   white-space: nowrap;
 }
 
@@ -2416,7 +2481,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .day-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-3);
+  gap: var(--md3-space-2);
   min-width: 0;
 }
 
@@ -2426,13 +2491,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 
 .meal-row {
   display: flex;
-  align-items: center;
-  gap: var(--md3-space-3);
-  padding: var(--md3-space-3);
+  align-items: flex-start;
+  gap: var(--md3-space-2);
+  padding: var(--md3-space-2) var(--md3-space-3);
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-md);
-  box-shadow: var(--md3-shadow-soft);
-  min-height: 64px;
+  border: 1px solid var(--md3-outline-variant);
+  min-height: 48px;
   min-width: 0;
   overflow: hidden;
 }
@@ -2441,12 +2506,13 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--md3-space-1);
-  min-width: 52px;
+  gap: 2px;
+  min-width: 44px;
+  padding-top: 2px;
 }
 
 .meal-row__icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: var(--md3-on-surface-variant);
 }
 
@@ -2467,23 +2533,23 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .plate-row-chip {
   display: flex;
   align-items: center;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-1);
   flex: 1;
   min-width: 0;
-  padding: var(--md3-space-2) var(--md3-space-3);
+  padding: 4px 8px;
   background: var(--md3-surface-container);
   border-radius: var(--md3-rounded-sm);
 }
 
 .plate-row-chip__score .material-symbols-outlined {
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 .plate-row-chip__name {
   flex: 1;
   min-width: 0;
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
+  font-size: var(--md3-body-sm);
   font-weight: var(--md3-weight-medium);
   color: var(--md3-on-surface);
   overflow: hidden;
@@ -2491,14 +2557,52 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   white-space: nowrap;
 }
 
+.plate-row-chip__serve {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--md3-primary);
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.plate-row-chip__serve:active {
+  background: var(--md3-primary-container);
+}
+
+.plate-row-chip__serve--served {
+  color: var(--md3-primary);
+}
+
+.plate-row-chip__serve--served .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.plate-row-chip__serve .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.plate-row-chip__serve-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 .plate-row-chip__remove {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   border: none;
   background: transparent;
@@ -2514,7 +2618,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 }
 
 .plate-row-chip__remove .material-symbols-outlined {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 .plate-row-chip--loading {
