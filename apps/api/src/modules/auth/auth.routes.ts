@@ -32,6 +32,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addContentTypeParser('text/plain', (_req, _payload, done) => {
     done(null, null)
   })
+  fastify.addContentTypeParser('application/x-www-form-urlencoded', (_req, _payload, done) => {
+    done(null, null)
+  })
 
   /**
    * GET /api/auth/session-info
