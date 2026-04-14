@@ -49,6 +49,12 @@ export default defineConfig({
         // Precache entire app shell (HTML, CSS, JS, fonts, images)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 
+        // CRITICAL: exclude /api/ from navigation fallback.
+        // Without this, the SW intercepts browser navigations to /api/auth/callback/google
+        // (the OAuth callback redirect) and serves the cached SPA instead of letting it
+        // reach the server. This breaks the entire OAuth flow.
+        navigateFallbackDenylist: [/^\/api\//],
+
         // Runtime cache strategies
         runtimeCaching: [
           {
