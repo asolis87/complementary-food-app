@@ -1,6 +1,7 @@
 change: google-oauth-authentication
-status: applied
+status: archived
 created: 2026-04-14
+archived: 2026-04-14
 phases:
   explore: complete
   proposal: complete
@@ -8,5 +9,5 @@ phases:
   design: complete
   tasks: complete
   apply: complete
-  verify: pending
-  archive: pending
+  verify: complete
+  archive: complete
