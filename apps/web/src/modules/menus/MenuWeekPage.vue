@@ -2144,6 +2144,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   gap: 2px;
   padding: var(--md3-space-2);
   background: var(--md3-surface-container-low);
+  min-width: 0;
 }
 
 .preview-grid__day-header--today {
@@ -2211,12 +2212,14 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   padding: var(--md3-space-2);
   background: var(--md3-surface-container-lowest);
   min-height: 40px;
+  min-width: 0;
 }
 
 .preview-grid__cell-header {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .preview-grid__cell--today {
@@ -2275,6 +2278,7 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .preview-grid__food-dot {
