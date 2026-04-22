@@ -42,6 +42,19 @@ jobs:
           gga version
           gga config
 
+      - name: Debug - Show files changed in PR
+        run: |
+          echo "==================================="
+          echo "Files changed in PR (git diff):"
+          echo "==================================="
+          git diff --name-only ${{ github.base_ref }}...HEAD
+          echo ""
+          echo "==================================="
+          echo "GGA will review these files:"
+          echo "==================================="
+          git diff --name-only ${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx|vue|py|go|rs|java|php|rb|cs|swift|kt|dart|html|css|scss|sass|less|json|yaml|yml|md|sql|sh|bash)$' || echo "No matching files found"
+          echo ""
+
       - name: Run GGA PR Review
         run: |
           echo "Starting code review with GitHub Models (Claude Sonnet 4)..."

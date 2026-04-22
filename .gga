@@ -9,7 +9,8 @@ PROVIDER=github:claude-sonnet-4
 
 # File Patterns to Review
 # Glob patterns for files to include in review
-FILE_PATTERNS=*
+# Explicit extensions for better matching in PR mode
+FILE_PATTERNS=*.ts,*.tsx,*.js,*.jsx,*.vue,*.py,*.go,*.rs,*.java,*.php,*.rb,*.cs,*.swift,*.kt,*.dart,*.html,*.css,*.scss,*.sass,*.less,*.json,*.yaml,*.yml,*.md,*.sql,*.sh,*.bash
 
 # File Patterns to Exclude
 # Comma-separated glob patterns for files to skip
