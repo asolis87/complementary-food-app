@@ -39,7 +39,9 @@ RULES_FILE=AGENTS-GGA.md
 # PR Mode Settings
 # Only applies when using --pr-mode flag
 # BASE_BRANCH: Branch to compare against (auto-detected if not set)
-# BASE_BRANCH=staging
+# Auto-detection only works for: main, master, develop
+# For other branches (like staging), you MUST set this explicitly
+PR_BASE_BRANCH=staging
 
 # Diff Only
 # Send only diffs + full file content for context (faster, cheaper)
