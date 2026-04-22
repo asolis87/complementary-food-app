@@ -55,3 +55,10 @@ When multiple skills apply, load them in this order:
 4. **Use conventional commits** — see `git-workflow` skill
 5. **Type everything** — TypeScript strict mode, no `any`
 6. **Test domain and application layers** — minimum 80% coverage
+
+---
+
+## Related Files
+
+- [AGENTS-GGA.md](./AGENTS-GGA.md) — Code review rules for GGA (Gentleman Guardian Angel)
+- [docs/GITHUB_MODELS_SETUP.md](./docs/GITHUB_MODELS_SETUP.md) — Setup guide for GitHub Models provider
