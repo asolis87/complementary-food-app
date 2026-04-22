@@ -116,6 +116,21 @@ gga run --pr-mode
 
 ---
 
+## 📊 Modelos Disponibles en GitHub Models
+
+Con tu suscripción Pro, tenés acceso a estos modelos:
+
+| Modelo | Provider String | Recomendado para |
+|--------|----------------|------------------|
+| **Claude 3.5 Sonnet** | `github:claude-3-5-sonnet` | ✅ Code review (mejor siguiendo reglas) |
+| **Claude 3.7 Sonnet** | `github:claude-3-7-sonnet` | ✅ Code review (más reciente) |
+| **GPT-4o** | `github:gpt-4o` | Code review (alternativa) |
+| **Gemini 2.0 Flash** | `github:gemini-2.0-flash` | Code review (más rápido) |
+
+**Modelo por defecto en este proyecto**: `github:claude-3-5-sonnet` (configurado en `.gga`)
+
+---
+
 ## 📊 Paso 5: Monitorear en CI
 
 Una vez que abrís un PR a `staging`:
