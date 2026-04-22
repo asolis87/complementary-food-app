@@ -28,8 +28,9 @@ import {
   DAY_KEYS
 } from '@pakulab/shared'
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { apiClient } from '../api/client.js'
+import { usePlateStore } from './plateStore.js'
 
 /** Slot key format: `${dayKey}:${mealKey}` e.g., "lun:desayuno" */
 type SlotKey = `${DayKey}:${MealKey}`
@@ -563,6 +564,38 @@ export const useMenuStore = defineStore('menus', () => {
     // Set the cloned & mutated object to trigger reactivity
     weekMenus.value.set(menu.weekStart, menu)
   }
+
+  /**
+   * Synchronize plate changes from plateStore into all cached weekMenus.
+   * When a plate is updated in plateStore.savedPlates, this watcher finds all
+   * occurrences of that plate in weekMenus and updates them to reflect the changes.
+   * Fixes the snapshot staleness issue where menuStore had a copy of the plate at
+   * assignment time that didn't update when the plate was later modified.
+   */
+  watch(
+    () => {
+      const plateStore = usePlateStore()
+      return plateStore.savedPlates.slice()
+    },
+    (newPlates) => {
+      for (const updatedPlate of newPlates) {
+        // Find all menus that contain this plate and update them
+        for (const menu of weekMenus.value.values()) {
+          if (!menu) continue
+
+          for (const day of menu.days) {
+            for (const meal of day.meals) {
+              if (meal.plate?.id === updatedPlate.id && meal.plate !== updatedPlate) {
+                // Replace the stale plate copy with the updated reference
+                meal.plate = JSON.parse(JSON.stringify(updatedPlate))
+              }
+            }
+          }
+        }
+      }
+    },
+    { deep: true }
+  )
 
   return {
     // State

@@ -90,6 +90,7 @@
                 ref="vizRef"
                 :items="draftItems"
                 :group-count="draftGroupCount"
+                :times-offered-by-food-id="timesOfferedByFoodId"
                 @remove-item="removeFood"
                 @select-group="onGroupSelect"
               />
@@ -122,6 +123,7 @@
               <PlateContents
                 :items="draftItems"
                 :group-count="draftGroupCount"
+                :times-offered-by-food-id="timesOfferedByFoodId"
                 @select-group="onGroupSelect"
                 @remove-item="removeFood"
               />
@@ -160,6 +162,7 @@
           <PlateVisualization
             :items="draftItems"
             :group-count="draftGroupCount"
+            :times-offered-by-food-id="timesOfferedByFoodId"
           />
         </div>
       </template>
@@ -189,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
 import { getEffectiveGroup } from '@pakulab/shared'
@@ -200,6 +203,7 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
 import { usePlateBuilder } from '@/shared/composables/usePlateBuilder.js'
+import { useFoodExposure } from '@/shared/composables/useFoodExposure.js'
 import PlateVisualization from './components/PlateVisualization.vue'
 import BalanceIndicator from './components/BalanceIndicator.vue'
 import PlateContents from './components/PlateContents.vue'
@@ -246,6 +250,38 @@ const foodStore = useFoodStore()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const foodHistoryStore = useFoodHistoryStore()
+
+// ─── Food Exposure ─────────────────────────────────────────────────────────
+const foodExposure = useFoodExposure()
+
+/** Unique food IDs from the current draft items */
+const draftFoodIds = computed<string[]>(() => {
+  const ids = draftItems.value.map((item) => item.food.id)
+  return [...new Set(ids)]
+})
+
+/** Map of foodId → timesOffered for passing to child components (null = unknown) */
+const timesOfferedByFoodId = computed<Record<string, number | null>>(() => {
+  const result: Record<string, number | null> = {}
+  for (const foodId of draftFoodIds.value) {
+    result[foodId] = foodExposure.getTimesOffered(foodId)
+  }
+  return result
+})
+
+/** Fetch exposure data whenever draft items change */
+watch(draftItems, async () => {
+  if (draftFoodIds.value.length > 0) {
+    await foodExposure.fetch(draftFoodIds.value)
+  }
+}, { deep: true })
+
+/** Re-fetch when active profile changes (new baby → different exposure data) */
+watch(() => profileStore.activeProfile?.id, async (profileId) => {
+  if (profileId && draftFoodIds.value.length > 0) {
+    await foodExposure.fetch(draftFoodIds.value)
+  }
+})
 
 // ─── Food Search Modal ────────────────────────────────────────────────────
 const showFoodModal = ref(false)
@@ -350,6 +386,11 @@ onMounted(async () => {
   // Fetch food catalog if not loaded
   if (foodStore.foods.length === 0) {
     await foodStore.fetchFoods()
+  }
+
+  // Fetch exposure data for draft foods
+  if (draftFoodIds.value.length > 0) {
+    await foodExposure.fetch(draftFoodIds.value)
   }
 
   // If route has an id param or ?edit= query, load that plate into edit mode

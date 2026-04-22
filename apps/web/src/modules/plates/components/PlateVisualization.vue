@@ -29,10 +29,15 @@
               v-for="item in groupItems('FRUIT')"
               :key="item.id"
               class="segment-food-name"
-              :class="alClass(item)"
+              :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
               <span class="food-name-text">{{ item.food.name }}</span>
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
               <span
                 v-if="item.food.isAllergen"
                 class="material-symbols-outlined allergen-icon"
@@ -59,10 +64,15 @@
               v-for="item in groupItems('VEGETABLE')"
               :key="item.id"
               class="segment-food-name"
-              :class="alClass(item)"
+              :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
               <span class="food-name-text">{{ item.food.name }}</span>
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
               <span
                 v-if="item.food.isAllergen"
                 class="material-symbols-outlined allergen-icon"
@@ -89,10 +99,15 @@
               v-for="item in groupItems('CEREAL_TUBER')"
               :key="item.id"
               class="segment-food-name"
-              :class="alClass(item)"
+              :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
               <span class="food-name-text">{{ item.food.name }}</span>
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
               <span
                 v-if="item.food.isAllergen"
                 class="material-symbols-outlined allergen-icon"
@@ -116,10 +131,15 @@
               v-for="item in groupItems('PROTEIN')"
               :key="item.id"
               class="segment-food-name"
-              :class="alClass(item)"
+              :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
               <span class="food-name-text">{{ item.food.name }}</span>
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
               <span
                 v-if="item.food.isAllergen"
                 class="material-symbols-outlined allergen-icon"
@@ -144,10 +164,15 @@
               v-for="item in groupItems('HEALTHY_FAT')"
               :key="item.id"
               class="segment-food-name segment-food-name--fat"
-              :class="alClass(item)"
+              :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
               <span class="food-name-text">{{ item.food.name }}</span>
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
               <span
                 v-if="item.food.isAllergen"
                 class="material-symbols-outlined allergen-icon"
@@ -171,10 +196,13 @@ import { computed } from 'vue'
 import type { FoodGroup } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS } from '@pakulab/shared'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
+import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
 
 const props = defineProps<{
   items: PlateItemDraft[]
   groupCount: 4 | 5
+  /** Map of foodId → timesOffered for exposure indicators (null = unknown) */
+  timesOfferedByFoodId?: Record<string, number | null>
 }>()
 
 const emit = defineEmits<{
@@ -196,6 +224,15 @@ function alClass(item: PlateItemDraft): string {
     case 'LAXATIVE': return 'al-laxative'
     default: return 'al-neutral'
   }
+}
+
+/** Returns CSS class suffix for the exposure level of a food */
+function exposureClass(foodId: string): string {
+  const times = props.timesOfferedByFoodId?.[foodId]
+  if (times === null || times === undefined) return 'exposure-unknown'
+  if (times === 0) return 'exposure-new'
+  if (times <= 3) return 'exposure-exploring'
+  return 'exposure-known'
 }
 
 const plateAriaLabel = computed(() => {

@@ -77,6 +77,7 @@
             <PlateVisualization
               :items="builder.draftItems.value"
               :group-count="builder.draftGroupCount.value"
+              :times-offered-by-food-id="timesOfferedByFoodId"
               @remove-item="builder.removeFood"
               @select-group="onGroupSelect"
             />
@@ -151,6 +152,7 @@ import { usePlateBuilder } from '@/shared/composables/usePlateBuilder.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
+import { useFoodExposure } from '@/shared/composables/useFoodExposure.js'
 import PlateVisualization from '@/modules/plates/components/PlateVisualization.vue'
 import FoodSearchModal from '@/modules/plates/components/FoodSearchModal.vue'
 
@@ -188,6 +190,45 @@ const builder = usePlateBuilder({
 const foodStore = useFoodStore()
 const profileStore = useProfileStore()
 const foodHistoryStore = useFoodHistoryStore()
+
+// ─── Food Exposure ─────────────────────────────────────────────────────────────
+const foodExposure = useFoodExposure()
+
+/** Unique food IDs from the current drawer draft items */
+const drawerFoodIds = computed<string[]>(() => {
+  const ids = builder.draftItems.value.map((item) => item.food.id)
+  return [...new Set(ids)]
+})
+
+/** Map of foodId → timesOffered for passing to PlateVisualization (null = unknown) */
+const timesOfferedByFoodId = computed<Record<string, number | null>>(() => {
+  const result: Record<string, number | null> = {}
+  for (const foodId of drawerFoodIds.value) {
+    result[foodId] = foodExposure.getTimesOffered(foodId)
+  }
+  return result
+})
+
+/** Fetch exposure data whenever draft items change */
+watch(
+  () => builder.draftItems.value,
+  async () => {
+    if (drawerFoodIds.value.length > 0) {
+      await foodExposure.fetch(drawerFoodIds.value)
+    }
+  },
+  { deep: true },
+)
+
+/** Re-fetch when active profile changes */
+watch(
+  () => profileStore.activeProfile?.id,
+  async (profileId) => {
+    if (profileId && drawerFoodIds.value.length > 0) {
+      await foodExposure.fetch(drawerFoodIds.value)
+    }
+  },
+)
 
 // ─── Food Search Modal ─────────────────────────────────────────────────────────
 
@@ -293,6 +334,10 @@ watch(
       builder.initDraft()
       if (foodStore.foods.length === 0) {
         await foodStore.fetchFoods()
+      }
+      // Fetch exposure data for draft foods
+      if (drawerFoodIds.value.length > 0) {
+        await foodExposure.fetch(drawerFoodIds.value)
       }
     } else {
       builder.resetDraft()
