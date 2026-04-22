@@ -4,12 +4,14 @@
 
 # AI Provider
 # Format: provider[:model]
-# Options: github:claude-sonnet-4, github:gpt-4o, github:gemini-2.0-flash, claude, gemini, ollama:<model>, etc.
-PROVIDER=github:claude-sonnet-4
+# GitHub Models available: github:gpt-4o, github:gemini-2.0-flash, github:claude-3-5-sonnet
+# Using gpt-4o (most reliable and widely available in GitHub Models)
+PROVIDER=github:gpt-4o
 
 # File Patterns to Review
 # Glob patterns for files to include in review
-FILE_PATTERNS=*
+# Explicit extensions for better matching in PR mode
+FILE_PATTERNS=*.ts,*.tsx,*.js,*.jsx,*.vue,*.py,*.go,*.rs,*.java,*.php,*.rb,*.cs,*.swift,*.kt,*.dart,*.html,*.css,*.scss,*.sass,*.less,*.json,*.yaml,*.yml,*.md,*.sql,*.sh,*.bash
 
 # File Patterns to Exclude
 # Comma-separated glob patterns for files to skip

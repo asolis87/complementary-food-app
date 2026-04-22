@@ -28,6 +28,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for git diff base...HEAD
+          ref: ${{ github.event.pull_request.head.sha }}  # Checkout the PR commit
+
+      - name: Fetch base branch
+        run: |
+          echo "Fetching base branch: ${{ github.base_ref }}"
+          git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
+          echo "Base branch fetched successfully"
 
       - name: Install GGA
         run: |
@@ -41,6 +48,19 @@ jobs:
         run: |
           gga version
           gga config
+
+      - name: Debug - Show files changed in PR
+        run: |
+          echo "==================================="
+          echo "Files changed in PR (git diff):"
+          echo "==================================="
+          git diff --name-only ${{ github.base_ref }}...HEAD
+          echo ""
+          echo "==================================="
+          echo "GGA will review these files:"
+          echo "==================================="
+          git diff --name-only ${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx|vue|py|go|rs|java|php|rb|cs|swift|kt|dart|html|css|scss|sass|less|json|yaml|yml|md|sql|sh|bash)$' || echo "No matching files found"
+          echo ""
 
       - name: Run GGA PR Review
         run: |
