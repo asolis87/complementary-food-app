@@ -33,7 +33,7 @@ jobs:
       - name: Fetch base branch
         run: |
           echo "Fetching base branch: ${{ github.base_ref }}"
-          git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} --depth 0
+          git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
           echo "Base branch fetched successfully"
 
       - name: Install GGA
