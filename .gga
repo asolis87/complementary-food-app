@@ -1,0 +1,56 @@
+# GGA Configuration — Gentleman Guardian Angel
+# Provider-agnostic code review using AI
+# Docs: https://github.com/Gentleman-Programming/gentleman-guardian-angel
+
+# AI Provider
+# Format: provider[:model]
+# Options: github:claude-sonnet-4, github:gpt-4o, github:gemini-2.0-flash, claude, gemini, ollama:<model>, etc.
+PROVIDER=github:claude-sonnet-4
+
+# File Patterns to Review
+# Glob patterns for files to include in review
+FILE_PATTERNS=*
+
+# File Patterns to Exclude
+# Comma-separated glob patterns for files to skip
+EXCLUDE_PATTERNS=tests/,*.spec.ts,*.test.ts,*.spec.js,*.test.js,node_modules/,dist/,build/,coverage/,*.min.js,vendor/
+
+# Strict Mode
+# true = PR fails if review fails (CI/CD)
+# false = Review runs but doesn't block (advisory only)
+STRICT_MODE=true
+
+# Timeout
+# Maximum time in seconds for AI review before failing
+# Increase for large PRs (default: 300)
+TIMEOUT=600
+
+# Cache
+# Enable smart caching to skip unchanged files
+# true = Skip files that haven't changed since last review
+# false = Review all files every time
+CACHE=true
+
+# Rules File
+# Path to the rules file (relative to repo root)
+# Default: AGENTS.md
+RULES_FILE=AGENTS-GGA.md
+
+# PR Mode Settings
+# Only applies when using --pr-mode flag
+# BASE_BRANCH: Branch to compare against (auto-detected if not set)
+# Auto-detection only works for: main, master, develop
+# For other branches (like staging), you MUST set this explicitly
+PR_BASE_BRANCH=staging
+
+# Diff Only
+# Send only diffs + full file content for context (faster, cheaper)
+# true = Send diffs + content
+# false = Send full content only
+DIFF_ONLY=true
+
+# Verbose
+# Enable verbose output for debugging
+# true = Detailed logs
+# false = Minimal output (CI/CD friendly)
+VERBOSE=false
