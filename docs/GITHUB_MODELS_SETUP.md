@@ -127,7 +127,13 @@ Con tu suscripción Pro, tenés acceso a estos modelos:
 | **GPT-4o** | `github:gpt-4o` | Code review (alternativa) |
 | **Gemini 2.0 Flash** | `github:gemini-2.0-flash` | Code review (más rápido) |
 
-**Modelo por defecto en este proyecto**: `github:claude-3-5-sonnet` (configurado en `.gga`)
+**Modelo por defecto en este proyecto**: `github:gpt-4o` (configurado en `.gga`)
+
+> **Nota**: Los nombres de modelos en GitHub Models pueden cambiar. Si `gpt-4o` falla, probá con:
+> - `github:gemini-2.0-flash` (Google - más rápido)
+> - `github:claude-3-5-sonnet` (Anthropic - puede no estar disponible)
+> 
+> Verificá los modelos disponibles en: https://github.com/marketplace/models
 
 ---
 
