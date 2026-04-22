@@ -210,56 +210,67 @@
                   aria-hidden="true"
                 >check_circle</span>
               </div>
-              <ul v-if="menuStore.getSlotFoods(day.key, meal.key).length > 0" class="preview-grid__foods">
-                <li
-                  v-for="item in menuStore.getSlotFoods(day.key, meal.key)"
-                  :key="item.foodId"
-                  class="preview-grid__food-item"
-                >
-                  <span
-                    class="preview-grid__food-dot"
-                    :class="`preview-grid__food-dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                  />
-                  <span class="preview-grid__food-name">{{ item.food?.name ?? 'Alimento' }}</span>
-                </li>
-              </ul>
-            </template>
-            <span v-else class="preview-grid__empty-dash">—</span>
-          </div>
-        </template>
-      </div>
+               <ul v-if="menuStore.getSlotFoods(day.key, meal.key).length > 0" class="preview-grid__foods">
+                 <li
+                   v-for="item in menuStore.getSlotFoods(day.key, meal.key)"
+                   :key="item.foodId"
+                   class="preview-grid__food-item"
+                 >
+                    <span
+                      class="preview-grid__food-dot"
+                      :class="`preview-grid__food-dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                    />
+                    <span class="preview-grid__food-name">{{ item.food?.name ?? 'Alimento' }}</span>
+                    <!-- Compact exposure indicator after name -->
+                    <span
+                      class="preview-grid__exposure-mark"
+                      :class="exposureDotClass(timesOfferedByFoodId[item.foodId] ?? null)"
+                      :title="exposureDotTitle(timesOfferedByFoodId[item.foodId] ?? null)"
+                    />
+                 </li>
+               </ul>
+             </template>
+             <span v-else class="preview-grid__empty-dash">—</span>
+           </div>
+         </template>
+       </div>
 
-      <!-- Tooltip for desktop food list -->
-      <Teleport to="body">
-        <Transition name="tooltip-fade">
-          <div
-            v-if="tooltip.visible && tooltip.content"
-            class="food-tooltip"
-            :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
-            role="tooltip"
-          >
-            <div class="food-tooltip__title">Alimentos</div>
-            <ul class="food-tooltip__list">
-              <li
-                v-for="item in tooltip.content"
-                :key="item.foodId"
-                class="food-tooltip__item"
-              >
-                <span
-                  class="food-tooltip__dot"
-                  :class="`food-tooltip__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
-                />
-                <span class="food-tooltip__name">{{ item.food?.name ?? 'Alimento' }}</span>
-                <span class="food-tooltip__al">
-                  {{ getALLabel(item.food?.alClassification) }}
-                </span>
-              </li>
-            </ul>
-          </div>
-        </Transition>
-      </Teleport>
+       <!-- Tooltip for desktop food list -->
+       <Teleport to="body">
+         <Transition name="tooltip-fade">
+           <div
+             v-if="tooltip.visible && tooltip.content"
+             class="food-tooltip"
+             :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+             role="tooltip"
+           >
+             <div class="food-tooltip__title">Alimentos</div>
+             <ul class="food-tooltip__list">
+               <li
+                 v-for="item in tooltip.content"
+                 :key="item.foodId"
+                 class="food-tooltip__item"
+               >
+                 <span
+                   class="food-tooltip__dot"
+                   :class="`food-tooltip__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
+                 />
+                 <span class="food-tooltip__name">{{ item.food?.name ?? 'Alimento' }}</span>
+                 <FoodExposureBadge
+                   v-if="item.foodId && timesOfferedByFoodId[item.foodId] !== undefined"
+                   :times-offered="timesOfferedByFoodId[item.foodId] ?? null"
+                   size="sm"
+                 />
+                 <span class="food-tooltip__al">
+                   {{ getALLabel(item.food?.alClassification) }}
+                 </span>
+               </li>
+             </ul>
+           </div>
+          </Transition>
+        </Teleport>
 
-      <!-- ─── Mobile: Day tabs + selected day detail ─── -->
+        <!-- ─── Mobile: Day tabs + selected day detail ─── -->
       <div class="mobile-view" role="region" aria-label="Vista móvil del menú semanal">
         <!-- Day tabs -->
         <div class="day-tabs" role="tablist">
@@ -340,6 +351,13 @@
                       :class="`food-summary__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
                     />
                     <span class="food-summary__name">{{ item.food?.name ?? 'Alimento' }}</span>
+                    <!-- Compact exposure indicator (dot) for mobile summary -->
+                    <span
+                      v-if="item.foodId && timesOfferedByFoodId[item.foodId] !== undefined"
+                      class="food-summary__exposure-dot"
+                      :class="exposureDotClass(timesOfferedByFoodId[item.foodId] ?? null)"
+                      :title="exposureDotTitle(timesOfferedByFoodId[item.foodId] ?? null)"
+                    />
                   </template>
                 </div>
               </div>
@@ -464,6 +482,11 @@
                           :class="`picker-food-item__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
                         />
                         <span class="picker-food-item__name">{{ item.food?.name ?? 'Alimento' }}</span>
+                        <FoodExposureBadge
+                          v-if="item.foodId && timesOfferedByFoodId[item.foodId] !== undefined"
+                          :times-offered="timesOfferedByFoodId[item.foodId] ?? null"
+                          size="sm"
+                        />
                         <span class="picker-food-item__group">{{ formatGroup(item.groupAssignment) }}</span>
                       </li>
                     </ul>
@@ -646,6 +669,8 @@ import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
+import { useFoodExposure } from '@/shared/composables/useFoodExposure.js'
+import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
 
 // ─── Food visualization helpers ───────────────────────────────────────────
 
@@ -827,6 +852,75 @@ const weekDays = computed<DayInfo[]>(() => {
       isToday,
     }
   })
+})
+
+// ─── Food Exposure ─────────────────────────────────────────────────────────
+const foodExposure = useFoodExposure()
+
+/**
+ * Collect all unique food IDs from currently visible week slots and picker plates.
+ * Includes assigned plates in the week grid + saved plates in the picker.
+ */
+const weekFoodIds = computed<string[]>(() => {
+  const ids = new Set<string>()
+  // Week grid foods
+  for (const day of weekDays.value) {
+    for (const meal of MEALS) {
+      const plate = menuStore.getPlate(day.key, meal.key as MealKey)
+      if (plate?.items) {
+        for (const item of plate.items) {
+          if (item.foodId) ids.add(item.foodId)
+        }
+      }
+    }
+  }
+  // Picker plate foods (so badges show when user expands plates in picker)
+  for (const plate of plateStore.savedPlates) {
+    if (plate.items) {
+      for (const item of plate.items) {
+        if (item.foodId) ids.add(item.foodId)
+      }
+    }
+  }
+  return [...ids]
+})
+
+/** Map of foodId → timesOffered (null when not yet cached) for passing to child templates */
+const timesOfferedByFoodId = computed<Record<string, number | null>>(() => {
+  const result: Record<string, number | null> = {}
+  for (const foodId of weekFoodIds.value) {
+    result[foodId] = foodExposure.getTimesOffered(foodId)
+  }
+  return result
+})
+
+/** Fetch exposure data for all week foods when week changes or profile switches */
+async function fetchWeekExposure() {
+  if (weekFoodIds.value.length > 0) {
+    await foodExposure.fetch(weekFoodIds.value)
+  }
+}
+
+/** Re-fetch exposure when week changes or when the set of food IDs changes */
+watch([weekOffset, weekFoodIds], async () => {
+  if (weekFoodIds.value.length > 0) {
+    await foodExposure.fetch(weekFoodIds.value)
+  }
+})
+
+/** Re-fetch exposure when active profile changes */
+watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
+  if (newProfileId) {
+    menuStore.clearProfileCache()
+    await menuStore.fetchWeekMenu(newProfileId, weekStartISO.value)
+  }
+})
+
+/** Re-fetch exposure when saved plates are loaded (picker plate foods) */
+watch(() => plateStore.savedPlates.length, async () => {
+  if (weekFoodIds.value.length > 0) {
+    await foodExposure.fetch(weekFoodIds.value)
+  }
 })
 
 /** Export view-models for MenuExportFrame */
@@ -1098,6 +1192,27 @@ function getALLabel(classification: string | undefined): string {
 }
 
 /**
+ * CSS class for the compact exposure dot in preview grid.
+ * Returns empty string for KNOWN or UNKNOWN (no dot shown).
+ */
+function exposureDotClass(timesOffered: number | null): string {
+  if (timesOffered === null) return ''
+  if (timesOffered === 0) return 'exposure-mark--new'
+  if (timesOffered <= 3) return 'exposure-mark--exploring'
+  return ''
+}
+
+/**
+ * Tooltip text for the compact exposure dot.
+ */
+function exposureDotTitle(timesOffered: number | null): string {
+  if (timesOffered === null) return ''
+  if (timesOffered === 0) return 'Nuevo alimento'
+  if (timesOffered <= 3) return `Ofrecido ${timesOffered} vez${timesOffered === 1 ? '' : 'es'}`
+  return ''
+}
+
+/**
  * Show tooltip with food list on desktop hover.
  * REQ-003: Tooltip shows full food names with A/L classification.
  */
@@ -1366,12 +1481,15 @@ onMounted(async () => {
   if (plateStore.savedPlates.length === 0) {
     await plateStore.fetchSavedPlates()
   }
-  
+
   // Fetch menu for current week
   const profileId = profileStore.activeProfile?.id
   if (profileId) {
     await menuStore.fetchWeekMenu(profileId, weekStartISO.value)
   }
+
+  // Fetch food exposure data for visible week foods
+  await fetchWeekExposure()
 })
 
 // ─── Watchers ─────────────────────────────────────────────────────────────
@@ -2281,6 +2399,26 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   min-width: 0;
 }
 
+/* Force exposure mark to never shrink, even when food name is long */
+.preview-grid__exposure-mark {
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  flex-grow: 0;
+  /* Default: amber while loading / unknown */
+  background: #f59e0b !important;
+  border: 2px solid rgba(255,255,255,0.95);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+}
+.preview-grid__exposure-mark--new {
+  background: #22c55e !important;
+}
+.preview-grid__exposure-mark--exploring {
+  background: #f59e0b !important;
+}
+
 .preview-grid__food-dot {
   width: 5px;
   height: 5px;
@@ -2291,6 +2429,23 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .preview-grid__food-dot--astringent { background: #ef4444; }
 .preview-grid__food-dot--laxative { background: #22c55e; }
 .preview-grid__food-dot--neutral { background: #9ca3af; }
+
+/* Compact exposure mark after food name */
+.preview-grid__exposure-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* Default: amber while loading / unknown */
+  background: #f59e0b !important;
+  border: 1.5px solid rgba(255,255,255,0.9);
+}
+.preview-grid__exposure-mark--new {
+  background: #22c55e !important;
+}
+.preview-grid__exposure-mark--exploring {
+  background: #f59e0b !important;
+}
 
 .preview-grid__food-name {
   font-family: var(--md3-font-body);
@@ -2329,6 +2484,20 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 .food-summary__dot--astringent { background: #ef4444; }
 .food-summary__dot--laxative { background: #22c55e; }
 .food-summary__dot--neutral { background: #9ca3af; }
+
+/* Compact exposure indicator dot (mobile food summary) */
+.food-summary__exposure-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.food-summary__exposure-dot--new {
+  background: var(--md3-tertiary, #006c4c);
+}
+.food-summary__exposure-dot--exploring {
+  background: var(--md3-secondary, #f59e0b);
+}
 
 .food-summary__name {
   font-family: var(--md3-font-body);

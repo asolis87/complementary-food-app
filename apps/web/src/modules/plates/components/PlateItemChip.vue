@@ -4,6 +4,13 @@
     <div class="chip-row chip-row-top">
       <span class="chip-name" :title="item.food.name">{{ item.food.name }}</span>
 
+      <!-- Exposure badge -->
+      <FoodExposureBadge
+        v-if="timesOffered !== undefined"
+        :times-offered="timesOffered"
+        size="sm"
+      />
+
       <!-- Allergen warning icon -->
       <span
         v-if="item.food.isAllergen"
@@ -45,9 +52,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
+import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
 
 const props = defineProps<{
   item: PlateItemDraft
+  /** Number of times this food has been offered (0 = never, null = unknown/not cached) */
+  timesOffered?: number | null
 }>()
 
 const emit = defineEmits<{

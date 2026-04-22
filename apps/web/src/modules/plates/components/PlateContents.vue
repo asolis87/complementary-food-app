@@ -53,6 +53,13 @@
                 aria-hidden="true"
               >warning</span>
 
+              <!-- Exposure badge -->
+              <FoodExposureBadge
+                v-if="item.food.id && timesOfferedByFoodId"
+                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                size="sm"
+              />
+
               <!-- Remove button -->
               <button
                 class="remove-btn"
@@ -74,12 +81,15 @@ import { computed } from 'vue'
 import type { FoodGroup, ALClassification } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS, BASE_GROUPS, OPTIONAL_GROUPS } from '@pakulab/shared'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
+import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
 
 // ─── Props & emits ─────────────────────────────────────────────────────────
 
 const props = defineProps<{
   items: PlateItemDraft[]
   groupCount: 4 | 5
+  /** Map of foodId → timesOffered for exposure badges (null = unknown) */
+  timesOfferedByFoodId?: Record<string, number | null>
 }>()
 
 const emit = defineEmits<{
