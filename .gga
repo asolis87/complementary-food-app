@@ -4,8 +4,9 @@
 
 # AI Provider
 # Format: provider[:model]
-# Options: github:claude-sonnet-4, github:gpt-4o, github:gemini-2.0-flash, claude, gemini, ollama:<model>, etc.
-PROVIDER=github:claude-sonnet-4
+# GitHub Models available: github:claude-3-5-sonnet, github:claude-3-7-sonnet, github:gpt-4o, github:gemini-2.0-flash
+# Using claude-3-5-sonnet (stable, widely available in GitHub Models)
+PROVIDER=github:claude-3-5-sonnet
 
 # File Patterns to Review
 # Glob patterns for files to include in review
