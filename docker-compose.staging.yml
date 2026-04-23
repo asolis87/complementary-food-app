@@ -87,6 +87,9 @@ services:
       DATABASE_URL: postgresql://pakulab:${POSTGRES_PASSWORD}@db:5432/pakulab_staging
     command: >
       sh -c "
+        echo '🔌 Ensuring required Postgres extensions...' &&
+        echo 'CREATE EXTENSION IF NOT EXISTS unaccent;' | npx prisma db execute --stdin --schema=prisma/schema.prisma &&
+        echo '✅ Extensions ready' &&
         echo '🔧 Applying Prisma schema...' &&
         (npx prisma migrate deploy --schema=prisma/schema.prisma ||
          (echo '⚠️  migrate deploy failed — falling back to db push...' &&
