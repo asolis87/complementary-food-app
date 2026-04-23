@@ -27,6 +27,7 @@ export interface AuthUser {
   email?: string
   name?: string
   tier: UserTier
+  emailVerified?: boolean
   subscriptionStatus?: SubscriptionStatus | null
   trialEnd?: string | null // ISO date string
   createdAt: string

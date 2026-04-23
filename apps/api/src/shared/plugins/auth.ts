@@ -19,6 +19,7 @@ declare module 'fastify' {
     user?: {
       id: string
       email?: string
+      emailVerified?: boolean
       tier: UserTier
       subscriptionStatus?: SubscriptionStatus | null
       trialEnd?: Date | null
@@ -74,6 +75,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       request.user = {
         id: session.user.id,
         email: session.user.email ?? undefined,
+        emailVerified: session.user.emailVerified ?? false,
         tier,
         subscriptionStatus,
         trialEnd,

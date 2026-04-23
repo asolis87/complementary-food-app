@@ -6,6 +6,9 @@
     <!-- Offline indicator — shows when offline or syncing (T-028) -->
     <OfflineIndicator :is-syncing="isSyncing" />
 
+    <!-- Verification banner — shows when user has unverified email -->
+    <VerificationBanner />
+
     <!-- Trial banner — shows when user is trialing -->
     <TrialBanner />
 
@@ -167,6 +170,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useBillingStore } from '@/shared/stores/billingStore.js'
 import OfflineIndicator from '@/shared/components/OfflineIndicator.vue'
+import VerificationBanner from '@/shared/components/VerificationBanner.vue'
 import TrialBanner from '@/shared/components/TrialBanner.vue'
 import { getPendingCount, getPendingPlates, removeFromQueue } from '@/shared/services/syncQueue.js'
 import { apiClient } from '@/shared/api/client.js'

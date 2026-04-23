@@ -45,6 +45,24 @@ export const router = createRouter({
       component: () => import('@/modules/auth/SignupPage.vue'),
       meta: { requiresAuth: false, guestOnly: true },
     },
+    {
+      path: '/auth/verify-email',
+      name: 'verify-email',
+      component: () => import('@/modules/auth/VerifyEmailPage.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/auth/forgot-password',
+      name: 'forgot-password',
+      component: () => import('@/modules/auth/ForgotPasswordPage.vue'),
+      meta: { requiresAuth: false, guestOnly: true },
+    },
+    {
+      path: '/auth/reset-password',
+      name: 'reset-password',
+      component: () => import('@/modules/auth/ResetPasswordPage.vue'),
+      meta: { requiresAuth: false },
+    },
 
     // === Authenticated routes (FREE tier removed — all users are PRO during trial) ===
     {
