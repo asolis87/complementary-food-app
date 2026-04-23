@@ -56,6 +56,9 @@ services:
       # Google OAuth (optional)
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Resend (email delivery — required in production)
+      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY in Dokploy env}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-noreply@pakulab.com}
 
   # ── Vue PWA (Nginx) ────────────────────────────────────────────────────────
   # Domain routing configured via Dokploy UI > Domains tab.

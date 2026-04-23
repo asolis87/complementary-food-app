@@ -4,6 +4,7 @@
  */
 
 import type { FastifyPluginAsync } from 'fastify'
+import { checkEmailHealth } from '../email/email.service.js'
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/health', async (_request, reply) => {
@@ -22,5 +23,15 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
         database: 'disconnected',
       })
     }
+  })
+
+  // Deep health check for the email provider.
+  // Intentionally NOT part of /api/health — email outages must not mark
+  // the whole API unhealthy (signup fails, but login/browse keep working).
+  fastify.get('/api/health/email', async (_request, reply) => {
+    const health = await checkEmailHealth()
+    reply
+      .status(health.status === 'ok' ? 200 : 503)
+      .send({ ...health, timestamp: new Date().toISOString() })
   })
 }

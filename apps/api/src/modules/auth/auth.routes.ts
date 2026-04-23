@@ -43,6 +43,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
    * Unauthenticated users receive tier: 'FREE' (not 'ANONYMOUS' - that flow was removed).
    *
    * AD4: Includes subscriptionStatus and trialEnd for frontend lockout logic.
+   * Phase 3: Includes emailVerified from BetterAuth session.
    */
   fastify.get('/session-info', async (request, reply) => {
     if (!request.user) {
@@ -56,6 +57,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         email: request.user.email,
         name: undefined as string | undefined,
         tier: request.user.tier,
+        emailVerified: request.user.emailVerified ?? false,
         subscriptionStatus: request.user.subscriptionStatus,
         trialEnd: request.user.trialEnd?.toISOString() ?? null,
         createdAt: new Date().toISOString(),

@@ -37,6 +37,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isFree = computed(() => tier.value === 'FREE')
   const displayName = computed(() => user.value?.name ?? user.value?.email ?? 'Usuario')
 
+  // Email verification computed
+  const emailVerified = computed(() => user.value?.emailVerified ?? false)
+
   // Trial-related computeds
   const subscriptionStatus = computed((): SubscriptionStatus | null =>
     user.value?.subscriptionStatus ?? null
@@ -64,6 +67,10 @@ export const useAuthStore = defineStore('auth', () => {
   
   const isLockedOut = computed(() => 
     isTrialExpired.value && !isPro.value
+  )
+
+  const showVerificationBanner = computed(() =>
+    isAuthenticated.value && !emailVerified.value
   )
   
   const trialDaysLeft = computed((): number => {
@@ -126,16 +133,34 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Register a new account.
    * AD3: Auto-provision 21-day trial after signup.
+   * REQ-EV-01: Send verification email with callbackURL.
    */
   async function signUp(email: string, password: string, name: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      await apiClient.post<AuthResponse>('/auth/sign-up/email', {
+      // Use BetterAuth client SDK for signup to handle email verification properly.
+      // Same-origin: nginx proxies /api/* → api container. No CORS, no per-env config.
+      const { createAuthClient } = await import('better-auth/client')
+      const authClient = createAuthClient()
+
+      const result = await authClient.signUp.email({
         email,
         password,
         name,
       })
+
+      if (result.error) {
+        throw new Error(result.error.message || 'No se pudo crear la cuenta')
+      }
+
+      // REQ-EV-01: Trigger verification email manually so the callbackURL
+      // is respected at call-time (sendOnSignUp ignores it — see bug #692).
+      await authClient.sendVerificationEmail({
+        email,
+        callbackURL: `${window.location.origin}/auth/verify-email`,
+      })
+
       // After sign-up, fetch session to populate user
       await checkSession()
 
@@ -198,6 +223,85 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
+  /**
+   * Verify email with a token from the verification link.
+   * REQ-EV-01: Successful email verification.
+   */
+  async function verifyEmail(token: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.post('/auth/verify-email', { token })
+      // Refresh session to get updated emailVerified state
+      await checkSession()
+    } catch (err) {
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo verificar el correo. El enlace puede haber expirado.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Request a password reset email.
+   * REQ-FP-01: Returns generic success regardless of email existence (enumeration prevention).
+   */
+  async function forgotPassword(email: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.post('/auth/forgot-password', { email })
+    } catch (err) {
+      // Generic error — do not reveal whether email exists
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo procesar la solicitud. Intenta de nuevo.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Reset password with a token from the reset email.
+   * REQ-FP-02: Successful password reset.
+   */
+  async function resetPassword(token: string, newPassword: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.post('/auth/reset-password', { token, password: newPassword })
+    } catch (err) {
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo restablecer la contraseña. El enlace puede haber expirado.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Resend the verification email.
+   * REQ-EV-02: Resend with 60-second cooldown enforced by backend rate limiting.
+   */
+  async function resendVerificationEmail(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await apiClient.post('/auth/verify-email/resend', {})
+    } catch (err) {
+      error.value = err instanceof ApiError
+        ? err.message
+        : 'No se pudo reenviar el correo. Intenta de nuevo.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     user,
@@ -216,6 +320,9 @@ export const useAuthStore = defineStore('auth', () => {
     isTrialExpired,
     isLockedOut,
     trialDaysLeft,
+    // Getters — email verification
+    emailVerified,
+    showVerificationBanner,
     // Actions
     checkSession,
     signIn,
@@ -223,6 +330,10 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     signInWithGoogle,
     clearError,
+    verifyEmail,
+    forgotPassword,
+    resetPassword,
+    resendVerificationEmail,
     // Aliases for backward compat with existing callers
     fetchSession: checkSession,
     login: signIn,

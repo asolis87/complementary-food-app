@@ -2,14 +2,31 @@
  * BetterAuth configuration.
  * Design: AD5 — Free → Pro flow (anonymous removed).
  * Spec: REQ-AUTH-01, REQ-AUTH-02, REQ-GOAUTH-01..08
+ *
+ * Email Verification & Password Reset (AD-EV-01, AD-EV-02):
+ * - emailVerification.sendVerificationEmail: sends verification emails on signup/resend
+ * - emailAndPassword.sendResetPassword: sends password reset emails
  */
 
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { PrismaClient } from '@prisma/client'
 import { createTrialSubscription } from '../billing/billing.service.js'
+import { getAdapter } from '../email/email.service.js'
+import {
+  verificationEmailHtml,
+  verificationEmailText,
+  resetPasswordEmailHtml,
+  resetPasswordEmailText,
+} from '../email/infrastructure/templates/email-templates.js'
 
 const prisma = new PrismaClient()
+
+// In-memory rate limit store for email sending (email verification & password reset)
+// Key: email address, Value: timestamp of last send
+// Count store: tracks send count within the window
+const rateLimitStore = new Map<string, number>()
+const rateLimitCount = new Map<string, number>()
 
 // Google OAuth: require BOTH env vars to activate (REQ-GOAUTH-04)
 const googleClientId = process.env['GOOGLE_CLIENT_ID']
@@ -40,6 +57,89 @@ export const auth = betterAuth({
   // Email + password auth
   emailAndPassword: {
     enabled: true,
+    // Send password reset email when user requests it
+    sendResetPassword: async ({ user, url }) => {
+      // Rate limiting: max 3 password reset emails per email per hour
+      const rateLimitKey = `reset:${user.email}`
+      const now = Date.now()
+      const windowMs = 60 * 60 * 1000 // 1 hour
+
+      const lastSend = rateLimitStore.get(rateLimitKey)
+      if (lastSend && now - lastSend < windowMs) {
+        const count = rateLimitCount.get(rateLimitKey) ?? 0
+        if (count >= 3) {
+          console.warn(`[auth] Rate limit exceeded for password reset email: ${user.email}`)
+          return // Silently ignore - BetterAuth will return success anyway
+        }
+        rateLimitCount.set(rateLimitKey, count + 1)
+      } else {
+        rateLimitStore.set(rateLimitKey, now)
+        rateLimitCount.set(rateLimitKey, 1)
+      }
+
+      const emailAdapter = getAdapter()
+      await emailAdapter.sendEmail({
+        to: user.email,
+        subject: 'Restablece tu contraseña',
+        htmlBody: resetPasswordEmailHtml({ name: user.name ?? user.email.split('@')[0], url }),
+        textBody: resetPasswordEmailText({ name: user.name ?? user.email.split('@')[0], url }),
+      })
+    },
+    // Token expires in 1 hour (3600 seconds) - BetterAuth default
+    resetPasswordTokenExpiresIn: 3600,
+  },
+
+  // Email verification (built into BetterAuth core)
+  emailVerification: {
+    // Send verification email on signup and resend requests
+    sendVerificationEmail: async ({ user, url, token }) => {
+      console.log('[auth] sendVerificationEmail TRIGGERED for:', user.email)
+      console.log('[auth] Verification URL:', url)
+      console.log('[auth] Token:', token)
+      
+      // Rate limiting: max 3 verification emails per email per hour
+      const rateLimitKey = `verification:${user.email}`
+      const now = Date.now()
+      const windowMs = 60 * 60 * 1000 // 1 hour
+
+      const lastSend = rateLimitStore.get(rateLimitKey)
+      if (lastSend && now - lastSend < windowMs) {
+        const count = rateLimitCount.get(rateLimitKey) ?? 0
+        if (count >= 3) {
+          console.warn(`[auth] Rate limit exceeded for verification email: ${user.email}`)
+          return // Silently ignore - BetterAuth will return success anyway
+        }
+        rateLimitCount.set(rateLimitKey, count + 1)
+      } else {
+        rateLimitStore.set(rateLimitKey, now)
+        rateLimitCount.set(rateLimitKey, 1)
+      }
+
+      const emailAdapter = getAdapter()
+      console.log('[auth] Getting email adapter...')
+      
+      // Fire and forget - don't await
+      void emailAdapter.sendEmail({
+        to: user.email,
+        subject: 'Verifica tu email',
+        htmlBody: verificationEmailHtml({ 
+          name: user.name ?? user.email.split('@')[0], 
+          url 
+        }),
+        textBody: verificationEmailText({ 
+          name: user.name ?? user.email.split('@')[0], 
+          url 
+        }),
+      }).then(() => {
+        console.log('[auth] ✅ Email sent successfully to:', user.email)
+      }).catch((err) => {
+        console.error('[auth] ❌ Email send failed:', err)
+      })
+    },
+    // Auto sign-in after verification
+    autoSignInAfterVerification: true,
+    // Token expires in 1 hour (3600 seconds)
+    expiresIn: 3600,
   },
 
   // Google OAuth (optional — activated only when both env vars are set)
