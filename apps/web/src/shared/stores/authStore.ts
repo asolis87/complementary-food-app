@@ -254,9 +254,13 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       // BetterAuth endpoint for password reset
+      // Use VITE_AUTH_REDIRECT_URL if set, otherwise fallback to current origin
+      const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL 
+        ?? `${window.location.origin}/auth`
+      
       await apiClient.post('/auth/request-password-reset', {
         email,
-        redirectTo: `${import.meta.env.VITE_AUTH_REDIRECT_URL}/reset-password`,
+        redirectTo: `${authRedirectUrl}/reset-password`,
       })
       // Always return success (enumeration prevention)
     } catch (err) {
