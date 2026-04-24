@@ -247,12 +247,18 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Request a password reset email.
    * REQ-FP-01: Returns generic success regardless of email existence (enumeration prevention).
+   * BetterAuth endpoint: POST /api/auth/request-password-reset
    */
   async function forgotPassword(email: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      await apiClient.post('/auth/forgot-password', { email })
+      // BetterAuth endpoint for password reset
+      await apiClient.post('/auth/request-password-reset', {
+        email,
+        redirectTo: `${import.meta.env.VITE_AUTH_REDIRECT_URL}/reset-password`,
+      })
+      // Always return success (enumeration prevention)
     } catch (err) {
       // Generic error — do not reveal whether email exists
       error.value = err instanceof ApiError
@@ -267,12 +273,17 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Reset password with a token from the reset email.
    * REQ-FP-02: Successful password reset.
+   * BetterAuth endpoint: POST /api/auth/reset-password
    */
   async function resetPassword(token: string, newPassword: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      await apiClient.post('/auth/reset-password', { token, password: newPassword })
+      // BetterAuth endpoint for password reset
+      await apiClient.post('/auth/reset-password', {
+        token,
+        newPassword,
+      })
     } catch (err) {
       error.value = err instanceof ApiError
         ? err.message
