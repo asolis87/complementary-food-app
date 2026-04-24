@@ -56,9 +56,11 @@ export class ResendAdapter implements EmailPort {
     const start = Date.now()
     try {
       const resend = getResend()
-      const result = (await resend.domains.list()) as {
-        data?: { data?: Array<{ name: string; status: string }> }
-        error?: { message?: string }
+      // Resend SDK's ListDomainsResponse has `error: null` on success, which
+      // doesn't overlap our narrowed shape. Go through `unknown` explicitly.
+      const result = (await resend.domains.list()) as unknown as {
+        data?: { data?: Array<{ name: string; status: string }> } | null
+        error?: { message?: string } | null
       }
       const latencyMs = Date.now() - start
 
