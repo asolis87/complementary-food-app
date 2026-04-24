@@ -256,7 +256,7 @@ export const useAuthStore = defineStore('auth', () => {
       // BetterAuth endpoint for password reset
       await apiClient.post('/auth/request-password-reset', {
         email,
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${import.meta.env.VITE_AUTH_REDIRECT_URL}/reset-password`,
       })
       // Always return success (enumeration prevention)
     } catch (err) {
