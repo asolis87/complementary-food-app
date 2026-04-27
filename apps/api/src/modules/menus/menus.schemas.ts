@@ -7,6 +7,7 @@
 
 import { z } from 'zod'
 import { MealType } from '@pakulab/shared'
+import { sanitizeOptional } from '../../shared/utils/sanitize.js'
 
 /**
  * Validates that a date string represents a Monday.
@@ -49,14 +50,14 @@ export const createMenuSchema = z.object({
     .refine(isMonday, {
       message: 'weekStart must be a Monday',
     }),
-  name: z.string().max(100).optional(),
+  name: z.string().max(100).optional().transform(sanitizeOptional),
 })
 
 export const patchMealSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   mealType: z.nativeEnum(MealType),
   plateId: z.string().cuid().nullable(), // null = remove plate from slot
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).optional().transform(sanitizeOptional),
 })
 
 export const menuIdParamSchema = z.object({
