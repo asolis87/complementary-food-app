@@ -54,9 +54,20 @@ export const auth = betterAuth({
     process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
   ],
 
+  // Session lifetime — explicit policy, audit H-06 (A07:2021)
+  // expiresIn: 7 days; refreshed (rolling) every 24h of activity
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+  },
+
   // Email + password auth
   emailAndPassword: {
     enabled: true,
+    // Password policy — audit M-03 (A07:2021): enforce a minimum length.
+    // 12 chars follows current OWASP guidance; complexity rules intentionally not enforced.
+    minPasswordLength: 12,
+    maxPasswordLength: 128,
     // Send password reset email when user requests it
     sendResetPassword: async ({ user, url }) => {
       // Rate limiting: max 3 password reset emails per email per hour

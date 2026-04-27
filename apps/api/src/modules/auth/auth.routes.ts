@@ -13,11 +13,25 @@
  * the stream unconsumed so BetterAuth can read it from request.raw.
  */
 
-import type { FastifyPluginAsync } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './auth.config.js'
 
 const betterAuthHandler = toNodeHandler(auth)
+
+// Audit M-02 (A04:2021) — paths exposed to brute-force / spam abuse.
+// Strict per-IP limit (5/min). Other auth paths fall back to the global limit (100/min).
+const SENSITIVE_AUTH_PATHS = [
+  '/sign-in/email',
+  '/sign-up/email',
+  '/request-password-reset',
+  '/reset-password',
+  '/verify-email',
+] as const
+
+function isSensitiveAuthPath(url: string): boolean {
+  return SENSITIVE_AUTH_PATHS.some((p) => url.includes(p))
+}
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -76,7 +90,18 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
    *
    * NOTE: this wildcard must be registered AFTER the named routes above.
    */
-  fastify.all('/*', async (request, reply) => {
-    await betterAuthHandler(request.raw, reply.raw)
-  })
+  fastify.all(
+    '/*',
+    {
+      config: {
+        rateLimit: {
+          max: (req: FastifyRequest) => (isSensitiveAuthPath(req.url) ? 5 : 100),
+          timeWindow: '1 minute',
+        },
+      },
+    },
+    async (request, reply) => {
+      await betterAuthHandler(request.raw, reply.raw)
+    },
+  )
 }
