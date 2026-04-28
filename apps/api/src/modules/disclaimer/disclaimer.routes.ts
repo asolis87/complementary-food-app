@@ -65,23 +65,14 @@ export const disclaimerRoutes: FastifyPluginAsync<DisclaimerRoutesOptions> = asy
         ipAddress: request.ip ?? undefined,
       })
 
-      // Return the full session-info user shape so the frontend can update authStore
-      // from a single round-trip (AD-DC-04). lastAcceptedDisclaimerVersion comes from
-      // the newly inserted row — overriding the stale value hydrated at request start.
-      const user = request.user!
+      // Minimal response — the frontend already has the rest of the user in
+      // authStore from the prior session-info call; it only needs the new
+      // lastAcceptedDisclaimerVersion to flip the gate. This intentionally
+      // narrows AD-DC-04 (full session-info shape was over-spec).
       reply.status(200).send({
         user: {
-          id: user.id,
-          email: user.email,
-          name: undefined as string | undefined,
-          tier: user.tier,
-          emailVerified: user.emailVerified ?? false,
-          subscriptionStatus: user.subscriptionStatus,
-          trialEnd: user.trialEnd?.toISOString() ?? null,
-          createdAt: new Date().toISOString(),
           lastAcceptedDisclaimerVersion: row.version,
         },
-        tier: user.tier,
       })
     },
   )
