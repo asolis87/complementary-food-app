@@ -224,7 +224,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Remediación** | Configurar `trustProxy` en Fastify con las IPs del reverse proxy: `app.register(helmet, { trustProxy: 'loopback' })` o lista explícita de IPs. |
 | **Estado** | ✅ Remediado en `fix/trustproxy-and-console-adapter-guard`. Se agregó `parseTrustProxy()` en `apps/api/src/app.ts` y se pasa a `Fastify({ trustProxy })`. Política configurable vía `TRUST_PROXY` env var: `false` (default seguro), `true`, número de hops, o lista CSV de IPs/CIDRs. En staging detrás de Dokploy/Traefik usar `TRUST_PROXY=1`. 6 tests en verde. |
 
-#### M-05: Caché de PWA podría almacenar respuestas de API sensibles
+#### M-05: Caché de PWA podría almacenar respuestas de API sensibles ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟡 MEDIO |
@@ -233,6 +233,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Descripción** | Aunque el Service Worker tiene `navigateFallbackDenylist` para `/api/`, las estrategias de caché para recursos estáticos podrían cachear accidentalmente respuestas de API si la configuración no es precisa. |
 | **Impacto** | Datos sensibles de usuarios (perfiles de bebés, menús, diarios) podrían quedar almacenados en el cache del navegador y ser accesibles por otros usuarios del mismo dispositivo. |
 | **Remediación** | Verificar que la estrategia de caché del Service Worker excluya explícitamente todas las rutas `/api/*`. Agregar headers `Cache-Control: no-store` a respuestas de API con datos sensibles. |
+| **Estado** | ✅ Remediado en `fix/pwa-cache-and-cache-control`. Frontend (`apps/web/vite.config.ts`): nueva regla `NetworkOnly` para `/api/(profiles\|diary\|menus\|allergens)` registrada antes de la regla de plates (workbox usa el primer match). `/api/plates` se mantiene `NetworkFirst` para soporte offline de recetas guardadas. Backend (`apps/api/src/shared/plugins/cache-control.ts`): nuevo plugin que setea `Cache-Control: no-store, private` en toda respuesta `/api/*` excepto `/api/foods` (catálogo público); no sobreescribe headers explícitos del handler. Defensa en profundidad contra caches de proxy. 6 tests en verde. |
 
 #### L-01: NODE_ENV check para secure cookies
 | Campo | Detalle |

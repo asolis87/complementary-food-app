@@ -90,7 +90,18 @@ export default defineConfig({
             },
           },
           {
-            // User plates — NetworkFirst (user data should be fresh)
+            // Personal baby data — NetworkOnly (audit M-05).
+            // Prevents shared-device leakage: the SW must NOT persist these
+            // responses. Listed BEFORE /api/plates so the catch-all of plates
+            // does not absorb these paths.
+            urlPattern: /\/api\/(profiles|diary|menus|allergens)/,
+            handler: 'NetworkOnly',
+          },
+          {
+            // User plates — NetworkFirst (user data should be fresh).
+            // Kept cached for offline access to saved recipes; backend sets
+            // Cache-Control: no-store, private as defense-in-depth for any
+            // cache layer the SW does not control.
             urlPattern: /\/api\/plates/,
             handler: 'NetworkFirst',
             options: {
