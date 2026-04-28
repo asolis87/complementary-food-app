@@ -15,6 +15,7 @@ import { AppError } from './shared/errors/index.js'
 import { ZodError } from 'zod'
 import prismaPlugin from './shared/plugins/prisma.js'
 import authPlugin from './shared/plugins/auth.js'
+import originGuardPlugin from './shared/plugins/origin-guard.js'
 import { healthRoutes } from './modules/health/health.routes.js'
 import { foodsRoutes } from './modules/foods/foods.routes.js'
 import { platesRoutes } from './modules/plates/plates.routes.js'
@@ -38,13 +39,21 @@ export async function buildApp() {
   // BetterAuth routes (auth.routes.ts) override the parser to leave the stream unconsumed.
 
   // === Security Plugins ===
+  // Audit H-04 (A05:2021): tightened CSP. The API serves JSON only, so
+  // styleSrc/scriptSrc do not need 'unsafe-inline'. frame-ancestors blocks
+  // clickjacking; form-action and base-uri prevent injection-driven redirects.
   await app.register(helmet, {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'"],
+        scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
         connectSrc: ["'self'"],
+        frameAncestors: ["'none'"],
+        formAction: ["'self'"],
+        baseUri: ["'self'"],
+        objectSrc: ["'none'"],
       },
     },
   })
@@ -54,6 +63,11 @@ export async function buildApp() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
+
+  // Audit H-01 (A01:2021): defense-in-depth CSRF guard via Origin/Referer
+  // validation on state-changing methods. Must run after CORS so preflight
+  // OPTIONS short-circuits first.
+  await app.register(originGuardPlugin)
 
   await app.register(rateLimit, {
     global: true,

