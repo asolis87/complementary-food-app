@@ -20,7 +20,7 @@ export const useProfileStore = defineStore('profiles', () => {
   const profiles = ref<BabyProfile[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const activeProfileId = ref<string | null>(localStorage.getItem('pakulab_active_profile'))
+  const activeProfileId = ref<string | null>(sessionStorage.getItem('pakulab_active_profile'))
 
   // ─── Computed ─────────────────────────────────────────────────────────────
 
@@ -75,7 +75,7 @@ export const useProfileStore = defineStore('profiles', () => {
 
   function setActiveProfile(id: string): void {
     activeProfileId.value = id
-    localStorage.setItem('pakulab_active_profile', id)
+    sessionStorage.setItem('pakulab_active_profile', id)
   }
 
   return {

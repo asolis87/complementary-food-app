@@ -15,6 +15,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { NotFoundError, TierLimitError } from '../../shared/errors/index.js'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { requireTier } from '../../shared/hooks/requireTier.js'
+import { sanitizeText, sanitizeOptional } from '../../shared/utils/sanitize.js'
 import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
 import { deleteUserAccount } from '../billing/billing.service.js'
 
@@ -26,10 +27,10 @@ const dateField = z
   .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
 
 const createProfileSchema = z.object({
-  name: z.string().min(1).max(50),
+  name: z.string().min(1).max(50).transform(sanitizeText),
   birthDate: dateField,
   acStartDate: dateField.optional(),
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).optional().transform(sanitizeOptional),
 })
 
 const updateProfileSchema = createProfileSchema.partial()
