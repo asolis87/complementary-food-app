@@ -31,6 +31,8 @@ export interface AuthUser {
   subscriptionStatus?: SubscriptionStatus | null
   trialEnd?: string | null // ISO date string
   createdAt: string
+  /** Version string of the last accepted disclaimer, or null if never accepted. REQ-DC-06 */
+  lastAcceptedDisclaimerVersion: string | null
 }
 
 /** Reaction types for food log entries */

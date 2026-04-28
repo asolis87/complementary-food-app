@@ -25,11 +25,12 @@ model User {
   createdAt     DateTime
   updatedAt     DateTime
 
-  sessions     Session[]
-  accounts     Account[]
-  babyProfiles BabyProfile[]
-  plates       Plate[]
-  subscription Subscription?
+  sessions               Session[]
+  accounts               Account[]
+  babyProfiles           BabyProfile[]
+  plates                 Plate[]
+  subscription           Subscription?
+  disclaimerAcceptances  DisclaimerAcceptance[]
 
   @@map("user")
 }
@@ -320,4 +321,22 @@ model Subscription {
 
   @@index([userId])
   @@index([stripeSubId])
+}
+
+// ==========================================
+// DOMAIN: Legal — Disclaimer Acceptance
+// ==========================================
+
+model DisclaimerAcceptance {
+  id         String   @id @default(cuid())
+  userId     String
+  version    String
+  acceptedAt DateTime @default(now())
+  userAgent  String?
+  ipAddress  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, acceptedAt(sort: Desc)])
+  @@map("disclaimer_acceptance")
 }
