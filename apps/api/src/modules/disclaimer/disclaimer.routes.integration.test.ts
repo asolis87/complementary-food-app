@@ -8,10 +8,8 @@
  *   originGuardPlugin (must pass CORS origin header on mutating requests)
  *   cacheControlPlugin
  *   a fake-auth plugin that controls request.user
- * - Injects a fake DisclaimerService via the __testService decorator to avoid
- *   a real Prisma connection.
- *
- * TDD Phase: RED — written before disclaimer.routes.ts exists.
+ * - Injects a fake DisclaimerRepository via the route plugin's options to
+ *   avoid a real Prisma connection.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -22,8 +20,11 @@ import originGuardPlugin from '../../shared/plugins/origin-guard.js'
 import cacheControlPlugin from '../../shared/plugins/cache-control.js'
 import { AppError } from '../../shared/errors/index.js'
 import { DISCLAIMER_CURRENT_VERSION } from './disclaimer.constants.js'
-import { DisclaimerService } from './disclaimer.service.js'
-import type { DisclaimerAcceptanceRow } from './domain/ports/disclaimer.repository.port.js'
+import { disclaimerRoutes } from './disclaimer.routes.js'
+import type {
+  DisclaimerAcceptanceRow,
+  DisclaimerRepository,
+} from './domain/ports/disclaimer.repository.port.js'
 
 // ─── Test constants ───────────────────────────────────────────────────────────
 
@@ -92,18 +93,15 @@ async function buildTestApp(opts: BuildOptions = {}): Promise<FastifyInstance> {
     { name: 'fake-auth' },
   )
 
-  // Build a fake repo that delegates create() to the spy function
-  const fakeRepo = {
+  const fakeRepo: DisclaimerRepository = {
     create: acceptFn,
     findLatestByUser: vi.fn().mockResolvedValue(null),
   }
-  const fakeService = new DisclaimerService(fakeRepo)
 
-  // Inject fake service via the __testService decoration path in disclaimer.routes.ts
-  app.decorate('__testService', fakeService)
-
-  const { disclaimerRoutes } = await import('./disclaimer.routes.js')
-  await app.register(disclaimerRoutes, { prefix: '/api/disclaimer' })
+  await app.register(disclaimerRoutes, {
+    prefix: '/api/disclaimer',
+    repository: fakeRepo,
+  })
 
   await app.ready()
   return app

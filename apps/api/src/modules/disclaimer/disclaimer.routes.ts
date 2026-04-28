@@ -13,6 +13,11 @@
  * - originGuardPlugin (global) blocks non-whitelisted POST origins (H-01).
  * - cacheControlPlugin (global) sets Cache-Control: no-store, private (M-05).
  * - requireAuth (preHandler) returns 401 when no session.
+ *
+ * Dependency injection: callers may pass `repository` to override the default
+ * Prisma adapter. Production registration omits it (real Prisma instance comes
+ * from `fastify.prisma`); tests pass a fake. Plugin builds the service once at
+ * registration time, not per request.
  */
 
 import { z } from 'zod'
@@ -20,26 +25,24 @@ import type { FastifyPluginAsync } from 'fastify'
 import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { PrismaDisclaimerRepository } from './infrastructure/adapters/prisma-disclaimer.repository.js'
 import { DisclaimerService } from './disclaimer.service.js'
+import type { DisclaimerRepository } from './domain/ports/disclaimer.repository.port.js'
 
-// ─── Request body schema (AD-DC-04) ──────────────────────────────────────────
+export interface DisclaimerRoutesOptions {
+  /** Optional repository override; defaults to the Prisma adapter. */
+  repository?: DisclaimerRepository
+}
 
 const acceptDisclaimerBodySchema = z.object({
   version: z.string().min(1).max(32),
 })
 
-// ─── Route plugin ─────────────────────────────────────────────────────────────
+export const disclaimerRoutes: FastifyPluginAsync<DisclaimerRoutesOptions> = async (
+  fastify,
+  opts,
+) => {
+  const repository = opts.repository ?? new PrismaDisclaimerRepository(fastify.prisma)
+  const service = new DisclaimerService(repository)
 
-export const disclaimerRoutes: FastifyPluginAsync = async (fastify) => {
-  /**
-   * POST /api/disclaimer/accept
-   *
-   * Validates the disclaimer version, persists an acceptance row, and returns
-   * the lastAcceptedDisclaimerVersion so the frontend can update authStore
-   * without a page reload (AD-DC-04).
-   *
-   * Response is intentionally minimal — Phase 4 will extend session-info with
-   * this field; for now we return only what is needed for the store update.
-   */
   fastify.post(
     '/accept',
     {
@@ -51,30 +54,15 @@ export const disclaimerRoutes: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
-      // ── Auth guard ──────────────────────────────────────────────────────
       await requireAuth(request, reply)
 
-      // ── Zod validation ──────────────────────────────────────────────────
       const { version } = acceptDisclaimerBodySchema.parse(request.body)
 
-      // ── Build service (depends on Prisma when in production) ────────────
-      // In integration tests, prisma is not available, but the service is
-      // injected via the __testService decorator when present.
-      const fastifyAny = fastify as typeof fastify & { __testService?: DisclaimerService }
-      const service: DisclaimerService =
-        fastifyAny.__testService ??
-        new DisclaimerService(new PrismaDisclaimerRepository(fastify.prisma))
-
-      // ── Capture forensic headers ─────────────────────────────────────────
-      const userAgent = request.headers['user-agent']
-      const ipAddress = request.ip ?? undefined
-
-      // ── Execute use case ─────────────────────────────────────────────────
       const row = await service.acceptDisclaimer({
         userId: request.user!.id,
         version,
-        userAgent,
-        ipAddress,
+        userAgent: request.headers['user-agent'],
+        ipAddress: request.ip ?? undefined,
       })
 
       reply.status(200).send({
