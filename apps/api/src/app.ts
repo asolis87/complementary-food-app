@@ -16,6 +16,7 @@ import { ZodError } from 'zod'
 import prismaPlugin from './shared/plugins/prisma.js'
 import authPlugin from './shared/plugins/auth.js'
 import originGuardPlugin from './shared/plugins/origin-guard.js'
+import cacheControlPlugin from './shared/plugins/cache-control.js'
 import { healthRoutes } from './modules/health/health.routes.js'
 import { foodsRoutes } from './modules/foods/foods.routes.js'
 import { platesRoutes } from './modules/plates/plates.routes.js'
@@ -68,6 +69,10 @@ export async function buildApp() {
   // validation on state-changing methods. Must run after CORS so preflight
   // OPTIONS short-circuits first.
   await app.register(originGuardPlugin)
+
+  // Audit M-05 (A05:2021): default no-store on private API responses to
+  // prevent PWA / browser / proxy caches from storing personal data.
+  await app.register(cacheControlPlugin)
 
   await app.register(rateLimit, {
     global: true,
