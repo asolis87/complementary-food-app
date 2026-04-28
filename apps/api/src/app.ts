@@ -26,11 +26,31 @@ import { allergensRoutes } from './modules/allergens/allergens.routes.js'
 import { billingRoutes } from './modules/billing/billing.routes.js'
 import { authRoutes } from './modules/auth/auth.routes.js'
 
+/**
+ * Audit M-04 (A05:2021): explicit trust-proxy policy.
+ *
+ * Behind a reverse proxy (Dokploy/Traefik), Fastify must opt in to trust
+ * X-Forwarded-* headers — otherwise rate limiting and HTTPS detection rely
+ * on spoofable values. Configured via TRUST_PROXY env var:
+ *   - unset / "false" → false (safe default for direct exposure)
+ *   - "true"          → true  (trust all hops; only for testing)
+ *   - numeric ("1")   → trust that many hops in front
+ *   - CSV / string    → list of trusted proxy IPs or CIDRs
+ */
+export function parseTrustProxy(value: string | undefined): boolean | number | string {
+  if (!value || value === 'false') return false
+  if (value === 'true') return true
+  const asNumber = Number(value)
+  if (Number.isInteger(asNumber) && asNumber > 0) return asNumber
+  return value
+}
+
 export async function buildApp() {
   const app = Fastify({
     logger: {
       level: process.env['NODE_ENV'] === 'production' ? 'info' : 'debug',
     },
+    trustProxy: parseTrustProxy(process.env['TRUST_PROXY']),
   })
 
   // Note: No global custom content type parser here.
