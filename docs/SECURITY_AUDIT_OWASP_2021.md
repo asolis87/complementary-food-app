@@ -213,7 +213,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Remediación** | Usar nonces o hashes para estilos inline. Si se requiere para frameworks CSS, considerar `style-src-elem` con hashes. |
 | **Estado** | ✅ Remediado en `fix/xss-hardening-and-profile-storage`. La API solo emite JSON, así que se removió `'unsafe-inline'` de `styleSrc` y se reforzó el header con `scriptSrc: 'self'`, `frameAncestors: 'none'`, `formAction: 'self'`, `baseUri: 'self'`, `objectSrc: 'none'`. El CSP del frontend Vue se trata aparte (host estático). |
 
-#### M-04: Trust proxy headers sin configuración explícita de proxies confiables
+#### M-04: Trust proxy headers sin configuración explícita de proxies confiables ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟡 MEDIO |
@@ -222,6 +222,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Descripción** | BetterAuth tiene `useSecureCookies` basado en `NODE_ENV === 'production'`, pero no se configura `trustProxy` explícitamente en Fastify. Si la app está detrás de un reverse proxy, los headers `X-Forwarded-*` pueden ser spoofeados. |
 | **Impacto** | Un atacante en la red interna podría spoofear la IP origen, bypassando rate limits basados en IP o engañando a la lógica de detección de HTTPS. |
 | **Remediación** | Configurar `trustProxy` en Fastify con las IPs del reverse proxy: `app.register(helmet, { trustProxy: 'loopback' })` o lista explícita de IPs. |
+| **Estado** | ✅ Remediado en `fix/trustproxy-and-console-adapter-guard`. Se agregó `parseTrustProxy()` en `apps/api/src/app.ts` y se pasa a `Fastify({ trustProxy })`. Política configurable vía `TRUST_PROXY` env var: `false` (default seguro), `true`, número de hops, o lista CSV de IPs/CIDRs. En staging detrás de Dokploy/Traefik usar `TRUST_PROXY=1`. 6 tests en verde. |
 
 #### M-05: Caché de PWA podría almacenar respuestas de API sensibles
 | Campo | Detalle |
@@ -306,7 +307,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 
 ### A08:2021 — Software and Data Integrity Failures
 
-#### M-06: ConsoleLogAdapter expone contenido completo de emails
+#### M-06: ConsoleLogAdapter expone contenido completo de emails ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟡 MEDIO |
@@ -315,6 +316,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Descripción** | El adaptador de email para desarrollo loguea el contenido completo del email, incluyendo el cuerpo HTML y el destinatario. Si este adaptador se usa en producción (por error de configuración), expone datos sensibles. |
 | **Impacto** | Exposición de contenido de emails de verificación y reset de password en logs de producción. |
 | **Remediación** | Asegurar que el ConsoleLogAdapter solo se use cuando `NODE_ENV !== 'production'`. Agregar un check explícito que lance error si se intenta usar en producción. |
+| **Estado** | ✅ Remediado en `fix/trustproxy-and-console-adapter-guard`. Se agregó guard en el constructor de `ConsoleLogAdapter` que tira error si `NODE_ENV === 'production'`. La factoría en `email.service.ts` ya rutea por `NODE_ENV`; el guard es defensa en profundidad para evitar leak silencioso ante una mala configuración. 8 tests en verde. |
 
 ---
 

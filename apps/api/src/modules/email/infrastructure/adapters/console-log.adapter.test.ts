@@ -124,6 +124,28 @@ describe('ConsoleLogAdapter', () => {
   // ERROR CASE TESTS
   // ===========================================================================
 
+  it('throws when instantiated with NODE_ENV=production (audit M-06)', () => {
+    const original = process.env['NODE_ENV']
+    process.env['NODE_ENV'] = 'production'
+    try {
+      expect(() => new ConsoleLogAdapter()).toThrow(/must not be used in production/)
+    } finally {
+      if (original === undefined) delete process.env['NODE_ENV']
+      else process.env['NODE_ENV'] = original
+    }
+  })
+
+  it('instantiates normally when NODE_ENV is not production', () => {
+    const original = process.env['NODE_ENV']
+    process.env['NODE_ENV'] = 'development'
+    try {
+      expect(() => new ConsoleLogAdapter()).not.toThrow()
+    } finally {
+      if (original === undefined) delete process.env['NODE_ENV']
+      else process.env['NODE_ENV'] = original
+    }
+  })
+
   it('catches and logs errors without throwing', async () => {
     // Force console.log to throw during the adapter call
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
