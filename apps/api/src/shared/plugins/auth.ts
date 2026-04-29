@@ -23,6 +23,7 @@ declare module 'fastify' {
       tier: UserTier
       subscriptionStatus?: SubscriptionStatus | null
       trialEnd?: Date | null
+      lastAcceptedDisclaimerVersion: string | null
     }
   }
 }
@@ -39,11 +40,25 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         return
       }
 
-      // Determine tier and subscription status
-      const sub = await fastify.prisma.subscription.findUnique({
-        where: { userId: session.user.id },
-        select: { status: true, currentPeriodEnd: true, trialEnd: true },
+      // Single query: subscription + latest disclaimer acceptance (AD-DC-03, NF-DC-02).
+      // A second separate round-trip is PROHIBITED per REQ-DC-05.
+      const userData = await fastify.prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          subscription: {
+            select: { status: true, currentPeriodEnd: true, trialEnd: true },
+          },
+          disclaimerAcceptances: {
+            orderBy: { acceptedAt: 'desc' },
+            take: 1,
+            select: { version: true },
+          },
+        },
       })
+
+      const sub = userData?.subscription ?? null
+      const lastAcceptedDisclaimerVersion =
+        (userData?.disclaimerAcceptances[0]?.version) ?? null
 
       let tier: UserTier = 'FREE'
       let subscriptionStatus: SubscriptionStatus | null = sub?.status ?? null
@@ -79,6 +94,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         tier,
         subscriptionStatus,
         trialEnd,
+        lastAcceptedDisclaimerVersion,
       }
     } catch {
       // Never block the request on auth errors — let requireAuth handle it

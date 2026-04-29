@@ -75,6 +75,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         subscriptionStatus: request.user.subscriptionStatus,
         trialEnd: request.user.trialEnd?.toISOString() ?? null,
         createdAt: new Date().toISOString(),
+        lastAcceptedDisclaimerVersion: request.user.lastAcceptedDisclaimerVersion,
       },
       tier: request.user.tier,
     })

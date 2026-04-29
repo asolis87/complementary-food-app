@@ -61,6 +61,8 @@ export {
 
 export { FOOD_GROUP_LABELS as FOOD_CATEGORY_LABELS, BASE_GROUPS, OPTIONAL_GROUPS, DUAL_GROUP_FOODS, getEffectiveGroup } from './constants/food-groups.js'
 
+export { DISCLAIMER_CURRENT_VERSION } from './constants/disclaimer.js'
+
 export {
   MEAL_KEY_TO_TYPE,
   MEAL_TYPE_TO_KEY,

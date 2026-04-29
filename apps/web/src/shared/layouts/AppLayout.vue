@@ -161,6 +161,9 @@
         <button class="btn btn-primary" @click="showDisclaimer = false">Entendido</button>
       </div>
     </div>
+
+    <!-- Disclaimer Gate — backend-persisted acceptance (M-01) -->
+    <DisclaimerGate v-if="authStore.isAuthenticated" />
   </div>
 </template>
 
@@ -172,6 +175,7 @@ import { useBillingStore } from '@/shared/stores/billingStore.js'
 import OfflineIndicator from '@/shared/components/OfflineIndicator.vue'
 import VerificationBanner from '@/shared/components/VerificationBanner.vue'
 import TrialBanner from '@/shared/components/TrialBanner.vue'
+import DisclaimerGate from '@/shared/components/DisclaimerGate.vue'
 import { getPendingCount, getPendingPlates, removeFromQueue } from '@/shared/services/syncQueue.js'
 import { apiClient } from '@/shared/api/client.js'
 const router = useRouter()

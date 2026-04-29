@@ -168,7 +168,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 
 ### A04:2021 — Insecure Design
 
-#### M-01: Disclaimer médico almacenado en localStorage
+#### M-01: Disclaimer médico almacenado en localStorage ✅ REMEDIADO
 | Campo | Detalle |
 |-------|---------|
 | **Severidad** | 🟡 MEDIO |
@@ -177,6 +177,7 @@ Los siguientes controles fueron evaluados y considerados **adecuados**:
 | **Descripción** | La aceptación del disclaimer médico se almacena en `localStorage`, lo que permite que un usuario o script lo modifique o elimine, bypassando la aceptación. |
 | **Impacto** | Riesgo legal: un usuario podría argumentar que no vio el disclaimer si el frontend lo "pierde". Un script malicioso podría marcarlo como aceptado sin interacción del usuario. |
 | **Remediación** | Registrar la aceptación en el backend con timestamp y user ID. Usar como fuente de verdad, no el localStorage. |
+| **Estado** | ✅ Remediado en `fix/disclaimer-to-backend` (SDD completo). Nueva tabla `DisclaimerAcceptance` (append-only: `userId`, `version`, `acceptedAt`, `userAgent?`, `ipAddress?`, índice `(userId, acceptedAt DESC)`). Constante compartida `DISCLAIMER_CURRENT_VERSION = 'v1'` en `@pakulab/shared`. Endpoint `POST /api/disclaimer/accept` (Zod-validated, auth-guarded, rate-limited 10/min) inserta una fila por aceptación y devuelve `lastAcceptedDisclaimerVersion`. Auth plugin hidrata `request.user.lastAcceptedDisclaimerVersion` vía `prisma.user.findUnique` con `disclaimerAcceptances: { orderBy: acceptedAt desc, take: 1 }`. Session-info expone el campo. Frontend: `authStore.mustShowDisclaimer` computed + `acceptDisclaimer()` action; nuevo componente `DisclaimerGate.vue` (modal no-dismissible, sin X, sin overlay-click) montado en `AppLayout` cuando hay sesión. Legacy `localStorage['pakulab_disclaimer_accepted']` removido en `main.ts` y desmontado de `App.vue`. 23 tests nuevos verdes (repo + service + routes + auth plugin). |
 
 #### M-02: Rate limiting global demasiado permisivo para auth
 | Campo | Detalle |
