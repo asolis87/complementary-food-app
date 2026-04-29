@@ -34,6 +34,7 @@ const MOCK_USER = {
   email: 'test@example.com',
   tier: 'PRO' as const,
   emailVerified: true,
+  lastAcceptedDisclaimerVersion: null,
 }
 
 // ─── Fake row factory ─────────────────────────────────────────────────────────
