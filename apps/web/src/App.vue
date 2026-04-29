@@ -9,9 +9,6 @@
     <RouterView />
   </AppLayout>
 
-  <!-- First-time medical disclaimer (T-029) -->
-  <MedicalDisclaimer variant="modal" />
-
   <!-- Global toast notifications (T-032) -->
   <ToastNotification />
 
@@ -28,7 +25,6 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/shared/layouts/AppLayout.vue'
-import MedicalDisclaimer from '@/shared/components/MedicalDisclaimer.vue'
 import ToastNotification from '@/shared/components/ToastNotification.vue'
 
 const route = useRoute()

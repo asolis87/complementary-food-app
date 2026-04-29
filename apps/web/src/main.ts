@@ -15,4 +15,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
+localStorage.removeItem('pakulab_disclaimer_accepted')
+
 app.mount('#app')
