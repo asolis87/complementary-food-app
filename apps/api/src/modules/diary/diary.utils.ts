@@ -71,6 +71,7 @@ export function aggregateFoodHistory(
       reactions: [],
       lastReaction: null,
       lastDate: null,
+      firstDate: null,
       hasSuspectedReaction: false,
     }
   }
@@ -91,6 +92,9 @@ export function aggregateFoodHistory(
     if (history.lastDate === null) {
       history.lastDate = dateKey
     }
+
+    // ── firstDate: last seen wins (entries are DESC; the last iteration gives the oldest date)
+    history.firstDate = dateKey
 
     // ── lastReaction: first non-null reaction we encounter (most recent by date DESC ordering)
     if (entry.reaction !== null && history.lastReaction === null) {

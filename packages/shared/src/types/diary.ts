@@ -138,6 +138,8 @@ export interface FoodHistory {
   lastReaction: ReactionType | null
   /** Date of last offering (YYYY-MM-DD), or null if never offered */
   lastDate: string | null
+  /** Date of FIRST offering (YYYY-MM-DD), or null if never offered. Used to flag "primera vez" introductions. */
+  firstDate: string | null
   /** Convenience flag: true if ALLERGY_SUSPECT or RASH symptom was observed on any day this food was introduced */
   hasSuspectedReaction: boolean
 }

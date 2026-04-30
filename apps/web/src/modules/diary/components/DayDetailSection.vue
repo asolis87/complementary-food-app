@@ -40,6 +40,7 @@
           <!-- Food name + reaction -->
           <div class="entry-row">
             <span class="entry-food">{{ entry.food?.name ?? '—' }}</span>
+            <span v-if="newEntryIds.has(entry.id)" class="entry-new-badge">NUEVO</span>
             <span
               v-if="entry.reaction"
               class="entry-reaction"
@@ -112,6 +113,12 @@ const props = defineProps<{
   observation: DayObservation | null
   babyProfile: BabyProfile
   date: string  // YYYY-MM-DD
+  /**
+   * Map of foodId → firstOfferedDate (YYYY-MM-DD) | null.
+   * When `firstDateByFoodId[foodId] === props.date` the entry is flagged as "primera vez"
+   * (only on its first occurrence within the day, to match the weekly-plan rule).
+   */
+  firstDateByFoodId?: Record<string, string | null>
 }>()
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -159,6 +166,30 @@ const groupedMeals = computed<MealGroup[]>(() => {
   return MEAL_ORDER
     .filter((mt) => map.has(mt))
     .map((mt) => ({ mealType: mt, entries: map.get(mt)! }))
+})
+
+/**
+ * Set of MealLog ids that should display the "primera vez" badge.
+ * Rule: only the first chronological occurrence per foodId on this day.
+ * Walks meals in MEAL_ORDER (already the sorted order from `groupedMeals`).
+ */
+const newEntryIds = computed<Set<string>>(() => {
+  const result = new Set<string>()
+  const firstMap = props.firstDateByFoodId
+  if (!firstMap) return result
+
+  const seen = new Set<string>()
+  for (const group of groupedMeals.value) {
+    for (const entry of group.entries) {
+      const fid = entry.foodId
+      if (!fid || seen.has(fid)) continue
+      if (firstMap[fid] === props.date) {
+        result.add(entry.id)
+      }
+      seen.add(fid)
+    }
+  }
+  return result
 })
 
 const formattedDate = computed<string>(() => {
@@ -319,6 +350,19 @@ function symptomEmoji(sym: SymptomType): string {
 .entry-reaction--none {
   font-style: italic;
   opacity: 0.7;
+}
+
+/* "NUEVO" badge — flags first time the food was offered to the baby */
+.entry-new-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  background: #f59e0b;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .entry-notes {

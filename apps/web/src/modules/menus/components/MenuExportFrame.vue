@@ -49,6 +49,7 @@
                       :class="`export-food__dot--${food.alClassification.toLowerCase()}`"
                     />
                     <span class="export-food__name">{{ food.name }}</span>
+                    <span v-if="food.isNew" class="export-food__new-badge">NUEVO</span>
                   </li>
                 </ul>
               </template>
@@ -59,6 +60,27 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- New foods summary (only shown when there are introductions this week) -->
+    <div v-if="hasNewFoods" class="export-new-summary">
+      <h2 class="export-new-summary__title">
+        Alimentos nuevos esta semana
+      </h2>
+      <p class="export-new-summary__hint">
+        Si aparece una reacción, sospecha primero del alimento nuevo del día.
+      </p>
+      <ul class="export-new-summary__list">
+        <li
+          v-for="day in days"
+          v-show="(day.newFoods?.length ?? 0) > 0"
+          :key="`new-${day.label}`"
+          class="export-new-summary__item"
+        >
+          <span class="export-new-summary__day">{{ day.label }}:</span>
+          <span class="export-new-summary__foods">{{ (day.newFoods ?? []).join(', ') }}</span>
+        </li>
+      </ul>
     </div>
 
     <!-- Footer: Stats and disclaimer -->
@@ -82,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 /** Food classification for A/L dots */
 type ALClassification = 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL'
@@ -91,6 +113,8 @@ type ALClassification = 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL'
 interface ExportFood {
   name: string
   alClassification: ALClassification
+  /** True when this is the chronologically-first occurrence of a never-before-offered food */
+  isNew?: boolean
 }
 
 /** Single meal slot (Desayuno/Comida/Cena) */
@@ -104,6 +128,8 @@ interface ExportMeal {
 interface ExportDay {
   label: string
   date: string
+  /** Names of foods that are introduced for the first time this day (in order of appearance) */
+  newFoods?: string[]
   meals: ExportMeal[]
 }
 
@@ -127,6 +153,10 @@ const emit = defineEmits<{
 }>()
 
 const exportRef = ref<HTMLElement | null>(null)
+
+const hasNewFoods = computed(() =>
+  props.days.some((d) => (d.newFoods?.length ?? 0) > 0),
+)
 
 /**
  * Capture the export frame as PNG using html2canvas.
@@ -349,6 +379,68 @@ defineExpose({ capture })
   font-size: 11px;
   color: #374151;
   line-height: 1.2;
+}
+
+/* "NUEVO" badge — flags first chronological introduction of a never-offered food */
+.export-food__new-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  background: #f59e0b;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* New foods summary section (above footer) */
+.export-new-summary {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.export-new-summary__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.export-new-summary__hint {
+  font-size: 11px;
+  color: #b45309;
+  margin: 0 0 10px 0;
+  font-style: italic;
+}
+
+.export-new-summary__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.export-new-summary__item {
+  font-size: 12px;
+  color: #1a1a1a;
+  display: flex;
+  gap: 6px;
+}
+
+.export-new-summary__day {
+  font-weight: 700;
+  min-width: 80px;
+}
+
+.export-new-summary__foods {
+  color: #374151;
 }
 
 /* Footer */
