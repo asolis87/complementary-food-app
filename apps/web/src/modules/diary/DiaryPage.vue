@@ -426,6 +426,7 @@
             :observation="diaryStore.observationForSelectedDate"
             :baby-profile="profileStore.activeProfile"
             :date="diaryStore.selectedDate"
+            :first-date-by-food-id="firstDateByFoodId"
           />
 
           <button
@@ -512,13 +513,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { FoodGroup } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS, MealType, ReactionType } from '@pakulab/shared'
 import type { MealLog } from '@pakulab/shared'
 import { useDiaryStore } from '../../shared/stores/diaryStore.js'
 import { useProfileStore } from '../../shared/stores/profileStore.js'
 import { useUiStore } from '../../shared/stores/uiStore.js'
+import { useFoodHistoryStore } from '../../shared/stores/foodHistoryStore.js'
 import LoadingSkeleton from '../../shared/components/LoadingSkeleton.vue'
 import AddMealModal from './components/AddMealModal.vue'
 import EditLogModal from './components/EditLogModal.vue'
@@ -532,6 +534,7 @@ import { useDiaryExport } from './export/useDiaryExport.js'
 const diaryStore = useDiaryStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
+const foodHistoryStore = useFoodHistoryStore()
 
 // ── Export composable ──────────────────────────────────────────────────────
 
@@ -569,6 +572,40 @@ const entriesForDate = computed(() =>
     if (!a.time || !b.time) return 0
     return a.time.localeCompare(b.time)
   }),
+)
+
+/**
+ * Map of foodId → firstOfferedDate for the foods present in the selected day's entries.
+ * Used by DayDetailSection to flag entries whose food is being introduced for the first time
+ * (i.e. firstDate === selected date). The store caches per (babyProfileId, foodId).
+ */
+const firstDateByFoodId = computed<Record<string, string | null>>(() => {
+  const result: Record<string, string | null> = {}
+  const profileId = activeProfileId.value
+  if (!profileId) return result
+  for (const entry of entriesForDate.value) {
+    if (!entry.foodId) continue
+    const history = foodHistoryStore.historyForFood(profileId, entry.foodId)
+    result[entry.foodId] = history?.firstDate ?? null
+  }
+  return result
+})
+
+/** Fetch food history for the foods of the currently selected day so badges can render. */
+async function ensureFoodHistoryForSelectedDate() {
+  const profileId = activeProfileId.value
+  if (!profileId) return
+  const ids = Array.from(
+    new Set(entriesForDate.value.map((e) => e.foodId).filter((id): id is string => !!id)),
+  )
+  if (ids.length === 0) return
+  await foodHistoryStore.fetchForFoods(profileId, ids)
+}
+
+watch(
+  [activeProfileId, () => diaryStore.selectedDate, () => entriesForDate.value.length],
+  () => { void ensureFoodHistoryForSelectedDate() },
+  { immediate: true },
 )
 
 // ── Grouped entries (T-5.2) ────────────────────────────────────────────────

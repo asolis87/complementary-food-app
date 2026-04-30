@@ -669,6 +669,7 @@ import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
+import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
 import { useFoodExposure } from '@/shared/composables/useFoodExposure.js'
 import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
 
@@ -787,6 +788,7 @@ const plateStore = usePlateStore()
 const menuStore = useMenuStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
+const foodHistoryStore = useFoodHistoryStore()
 
 // ─── Profile guard ────────────────────────────────────────────────────────
 
@@ -901,6 +903,13 @@ async function fetchWeekExposure() {
   }
 }
 
+/** Fetch food history (timesOffered + firstDate) for all week foods. Used to flag "primera vez". */
+async function fetchWeekFoodHistory() {
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId || weekFoodIds.value.length === 0) return
+  await foodHistoryStore.fetchForFoods(profileId, weekFoodIds.value)
+}
+
 /** Re-fetch exposure when week changes or when the set of food IDs changes */
 watch([weekOffset, weekFoodIds], async () => {
   if (weekFoodIds.value.length > 0) {
@@ -925,8 +934,11 @@ watch(() => plateStore.savedPlates.length, async () => {
 
 /** Export view-models for MenuExportFrame */
 interface ExportFood {
+  foodId: string
   name: string
   alClassification: 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL'
+  /** True when this is the first occurrence of a never-before-offered food in the chronological week walk */
+  isNew: boolean
 }
 
 interface ExportMeal {
@@ -938,24 +950,63 @@ interface ExportMeal {
 interface ExportDay {
   label: string
   date: string
+  newFoods: string[]
   meals: ExportMeal[]
 }
 
+/**
+ * Build export data with chronological "primera vez" tracking.
+ *
+ * Algorithm:
+ *   1. Foods with timesOffered > 0 historically are seeded into `seenSoFar`.
+ *   2. Walk days lun→dom; for each day mark the FIRST occurrence of any food
+ *      not in `seenSoFar` as `isNew`. After processing the day, add those
+ *      newly introduced foods to `seenSoFar` so they don't re-flag on later days.
+ */
 const exportData = computed<ExportDay[]>(() => {
   const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
   const keys: DayKey[] = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+
+  const profileId = profileStore.activeProfile?.id
+  const seenSoFar = new Set<string>()
+  if (profileId) {
+    for (const foodId of weekFoodIds.value) {
+      const history = foodHistoryStore.historyForFood(profileId, foodId)
+      if (history && history.timesOffered > 0) {
+        seenSoFar.add(foodId)
+      }
+    }
+  }
 
   return Array.from({ length: 7 }, (_, i) => {
     const date = new Date(weekStart.value)
     date.setDate(weekStart.value.getDate() + i)
 
     const dayKey = keys[i]!
+    const newFoodIdsToday = new Set<string>()
+    const newFoodNamesToday: string[] = []
+
     const meals: ExportMeal[] = MEALS.map((meal) => {
       const plate = menuStore.getPlate(dayKey, meal.key)
-      const foods = menuStore.getSlotFoods(dayKey, meal.key).map((item) => ({
-        name: item.food?.name ?? 'Alimento',
-        alClassification: (item.food?.alClassification ?? 'NEUTRAL') as 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL',
-      }))
+      const foods: ExportFood[] = menuStore.getSlotFoods(dayKey, meal.key).map((item) => {
+        const foodId = item.foodId ?? ''
+        const name = item.food?.name ?? 'Alimento'
+        // Mark as new only the FIRST occurrence per day of an unseen food
+        const isNew =
+          !!foodId &&
+          !seenSoFar.has(foodId) &&
+          !newFoodIdsToday.has(foodId)
+        if (isNew) {
+          newFoodIdsToday.add(foodId)
+          newFoodNamesToday.push(name)
+        }
+        return {
+          foodId,
+          name,
+          alClassification: (item.food?.alClassification ?? 'NEUTRAL') as 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL',
+          isNew,
+        }
+      })
 
       return {
         type: meal.name,
@@ -964,9 +1015,13 @@ const exportData = computed<ExportDay[]>(() => {
       }
     })
 
+    // After processing this day, today's "new" foods become "seen" for later days
+    for (const id of newFoodIdsToday) seenSoFar.add(id)
+
     return {
       label: dayNames[i]!,
       date: date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+      newFoods: newFoodNamesToday,
       meals,
     }
   })
@@ -1435,6 +1490,8 @@ async function handleExport(): Promise<void> {
   isExporting.value = true
 
   try {
+    // Make sure the food history is loaded so "primera vez" badges render correctly
+    await fetchWeekFoodHistory()
     // Wait for frame to render
     await nextTick()
     // Trigger capture

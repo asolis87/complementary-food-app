@@ -28,6 +28,7 @@ export interface ExportWeekPdfOptions {
   babyProfile: BabyProfile
   from: string          // YYYY-MM-DD
   to: string            // YYYY-MM-DD
+  firstDateByFoodId?: Record<string, string | null>
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ export async function exportWeekPdf({
   babyProfile,
   from,
   to,
+  firstDateByFoodId,
 }: ExportWeekPdfOptions): Promise<void> {
   // A4 in points (portrait)
   const pdfWidth = 595
@@ -64,6 +66,7 @@ export async function exportWeekPdf({
       observation: day.observation,
       babyProfile,
       date: day.date,
+      firstDateByFoodId,
     })
 
     try {

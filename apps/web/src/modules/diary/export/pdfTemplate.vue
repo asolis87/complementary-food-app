@@ -22,6 +22,7 @@
       :observation="observation"
       :baby-profile="babyProfile"
       :date="date"
+      :first-date-by-food-id="firstDateByFoodId"
     />
   </div>
 </template>
@@ -38,6 +39,7 @@ defineProps<{
   observation: DayObservation | null
   babyProfile: BabyProfile
   date: string // YYYY-MM-DD
+  firstDateByFoodId?: Record<string, string | null>
 }>()
 
 // ── Expose root element so the caller can pass it to html2canvas ───────────

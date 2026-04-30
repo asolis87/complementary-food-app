@@ -38,6 +38,7 @@ describe('aggregateFoodHistory', () => {
       reactions: [],
       lastReaction: null,
       lastDate: null,
+      firstDate: null,
       hasSuspectedReaction: false,
     })
     expect(result['food-2']).toEqual({
@@ -46,6 +47,7 @@ describe('aggregateFoodHistory', () => {
       reactions: [],
       lastReaction: null,
       lastDate: null,
+      firstDate: null,
       hasSuspectedReaction: false,
     })
   })
@@ -167,6 +169,35 @@ describe('aggregateFoodHistory', () => {
   it('lastDate is null when the food was never offered', () => {
     const result = aggregateFoodHistory([], [], ['food-1'])
     expect(result['food-1']?.lastDate).toBeNull()
+  })
+
+  // ── firstDate ─────────────────────────────────────────────────────────────
+
+  it('firstDate is the date of the OLDEST entry for the food', () => {
+    const entries: FoodLogEntry[] = [
+      { foodId: 'food-1', reaction: null, date: daysAgo(0) },
+      { foodId: 'food-1', reaction: 'LIKED', date: daysAgo(5) },
+      { foodId: 'food-1', reaction: 'NEUTRAL', date: daysAgo(10) },
+    ]
+    const result = aggregateFoodHistory(entries, [], ['food-1'])
+    const expectedDate = daysAgo(10).toISOString().split('T')[0]
+    expect(result['food-1']?.firstDate).toBe(expectedDate)
+  })
+
+  it('firstDate is null when the food was never offered', () => {
+    const result = aggregateFoodHistory([], [], ['food-1'])
+    expect(result['food-1']?.firstDate).toBeNull()
+  })
+
+  it('firstDate equals lastDate when food was offered exactly once', () => {
+    const onlyDate = daysAgo(3)
+    const entries: FoodLogEntry[] = [
+      { foodId: 'food-1', reaction: 'LIKED', date: onlyDate },
+    ]
+    const result = aggregateFoodHistory(entries, [], ['food-1'])
+    const key = onlyDate.toISOString().split('T')[0]
+    expect(result['food-1']?.firstDate).toBe(key)
+    expect(result['food-1']?.lastDate).toBe(key)
   })
 
   // ── hasSuspectedReaction — derived from DayObservation (REQ-D1, REQ-D2) ──

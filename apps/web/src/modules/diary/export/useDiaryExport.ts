@@ -9,7 +9,30 @@
 import { ref } from 'vue'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useProfileStore } from '../../../shared/stores/profileStore.js'
+import { useFoodHistoryStore } from '../../../shared/stores/foodHistoryStore.js'
 import { toDateOnlyString } from '../../../shared/utils/date.js'
+import type { MealLog } from '@pakulab/shared'
+
+/**
+ * Build a foodId → firstOfferedDate map for a given set of meal logs.
+ * Fetches the missing entries from the API via the food history store.
+ */
+async function buildFirstDateMap(
+  babyProfileId: string,
+  logs: MealLog[],
+): Promise<Record<string, string | null>> {
+  const foodHistoryStore = useFoodHistoryStore()
+  const ids = Array.from(
+    new Set(logs.map((l) => l.foodId).filter((id): id is string => !!id)),
+  )
+  if (ids.length === 0) return {}
+  await foodHistoryStore.fetchForFoods(babyProfileId, ids)
+  const map: Record<string, string | null> = {}
+  for (const id of ids) {
+    map[id] = foodHistoryStore.historyForFood(babyProfileId, id)?.firstDate ?? null
+  }
+  return map
+}
 
 // ── Helper: offset a YYYY-MM-DD date by N days ─────────────────────────────
 
@@ -66,8 +89,10 @@ export function useDiaryExport() {
 
       const observation = diaryStore.observationForDate(date)
 
+      const firstDateByFoodId = await buildFirstDateMap(babyProfileId, logs)
+
       const { exportDayPdf } = await import('./exportDayPdf.js')
-      await exportDayPdf({ logs, observation, babyProfile, date })
+      await exportDayPdf({ logs, observation, babyProfile, date, firstDateByFoodId })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al generar el PDF del día'
       exportError.value = msg
@@ -106,8 +131,12 @@ export function useDiaryExport() {
         return { date, logs, observation }
       })
 
+      // Single fetch covering every food in the week, then per-day badges share the same map
+      const allLogs = days.flatMap((d) => d.logs)
+      const firstDateByFoodId = await buildFirstDateMap(babyProfileId, allLogs)
+
       const { exportWeekPdf } = await import('./exportWeekPdf.js')
-      await exportWeekPdf({ days, babyProfile, from, to })
+      await exportWeekPdf({ days, babyProfile, from, to, firstDateByFoodId })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al generar el PDF de la semana'
       exportError.value = msg

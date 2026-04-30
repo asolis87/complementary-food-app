@@ -25,6 +25,7 @@ export interface ExportDayPdfOptions {
   observation: DayObservation | null
   babyProfile: BabyProfile
   date: string // YYYY-MM-DD
+  firstDateByFoodId?: Record<string, string | null>
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ export async function exportDayPdf({
   observation,
   babyProfile,
   date,
+  firstDateByFoodId,
 }: ExportDayPdfOptions): Promise<void> {
   // Off-screen container — position: absolute on the WRAPPER is acceptable;
   // the hard constraint forbids fixed/sticky INSIDE the template component.
@@ -60,6 +62,7 @@ export async function exportDayPdf({
     observation,
     babyProfile,
     date,
+    firstDateByFoodId,
   })
 
   try {
