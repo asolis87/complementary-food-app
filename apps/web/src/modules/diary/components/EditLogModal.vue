@@ -171,9 +171,7 @@ const reactions: { value: ReactionType; emoji: string; label: string }[] = [
   { value: ReactionType.LIKED,    emoji: '😊', label: 'Le gustó' },
   { value: ReactionType.DISLIKED, emoji: '😣', label: 'No le gustó' },
   { value: ReactionType.NEUTRAL,  emoji: '😐', label: 'Neutral' },
-  { value: ReactionType.ALLERGIC, emoji: '🤧', label: 'Alergia' },
-  { value: ReactionType.GAS,      emoji: '💨', label: 'Gases' },
-  { value: ReactionType.RASH,     emoji: '🔴', label: 'Sarpullido' },
+  { value: ReactionType.REJECTED, emoji: '🙅', label: 'Lo rechazó' },
 ]
 
 // ── Init local state from entry when modal opens ──────────────────────────
@@ -461,7 +459,7 @@ async function save() {
 /* ─── Reaction grid ─────────────────────────────────────────────── */
 .reaction-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--md3-space-2);
 }
 

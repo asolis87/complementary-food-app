@@ -96,10 +96,11 @@ model BabyProfile {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft delete
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plates      Plate[]
-  foodLogs    FoodLog[]
-  weeklyMenus WeeklyMenu[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plates           Plate[]
+  foodLogs         FoodLog[]
+  weeklyMenus      WeeklyMenu[]
+  dayObservations  DayObservation[]
 
   @@index([userId])
 }
@@ -195,9 +196,23 @@ enum ReactionType {
   LIKED
   DISLIKED
   NEUTRAL
-  ALLERGIC
-  GAS
+  REJECTED
+  // REMOVED: ALLERGIC, GAS, RASH
+}
+
+enum StoolType {
+  NORMAL
+  LOOSE
+  HARD
+  NONE
+}
+
+enum SymptomType {
+  ALLERGY_SUSPECT
   RASH
+  GAS
+  VOMITING
+  FEVER
 }
 
 model FoodLog {
@@ -226,7 +241,21 @@ model FoodLog {
   @@index([foodId])
 }
 
+model DayObservation {
+  id            String        @id @default(cuid())
+  babyProfileId String
+  date          DateTime      @db.Date
+  stool         StoolType?
+  symptoms      SymptomType[]
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
+  babyProfile BabyProfile @relation(fields: [babyProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([babyProfileId, date])
+  @@index([babyProfileId, date])
+}
 
 // ==========================================
 // DOMAIN: Weekly Menu Planner
