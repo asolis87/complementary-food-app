@@ -59,27 +59,31 @@
     <ul v-else class="plate-grid" role="list" aria-label="Mis platos guardados">
       <li v-for="plate in plateStore.savedPlates" :key="plate.id" class="plate-item" role="listitem">
         <RouterLink :to="`/plates/${plate.id}`" class="plate-card">
-          <!-- Desktop: Plate Visual -->
-          <div class="plate-visual desktop-only">
-            <div class="plate-circle">
-              <div class="plate-inner"></div>
-            </div>
+          <!-- Desktop: Plate Hero Banner -->
+          <div class="plate-hero desktop-only">
+            <img
+              src="/images/Plate_Img.jpeg"
+              alt=""
+              aria-hidden="true"
+              class="plate-photo plate-photo--desktop"
+            />
+            <span
+              class="balance-badge"
+              :class="balanceBadgeClass(plate.balanceScore)"
+            >
+              {{ balanceLabelEs(plate.balanceScore) }}
+            </span>
           </div>
 
           <!-- Mobile: Plate Image -->
           <div class="plate-image mobile-only">
-            <div class="image-placeholder">
-              <span class="material-symbols-outlined">restaurant</span>
-            </div>
+            <img
+              src="/images/Plate_Img.jpeg"
+              alt=""
+              aria-hidden="true"
+              class="plate-photo plate-photo--mobile"
+            />
           </div>
-
-          <!-- Balance Badge - Desktop -->
-          <span
-            class="balance-badge desktop-only"
-            :class="balanceBadgeClass(plate.balanceScore)"
-          >
-            {{ balanceLabelEs(plate.balanceScore) }}
-          </span>
 
           <!-- Card Content -->
           <div class="card-content">
@@ -584,9 +588,9 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 @media (min-width: 768px) {
   .plate-card {
     flex-direction: column;
-    align-items: flex-start;
-    padding: var(--md3-space-6);
-    gap: var(--md3-space-4);
+    align-items: stretch;
+    padding: 0;
+    gap: 0;
   }
 }
 
@@ -595,55 +599,66 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   flex-shrink: 0;
 }
 
-.image-placeholder {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--md3-surface-container);
+/* ─── Desktop: Plate Hero Banner ─── */
+.plate-hero {
+  position: relative;
+  width: 100%;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--md3-primary-container) 55%, var(--md3-surface-container-lowest)) 0%,
+    color-mix(in srgb, var(--md3-primary-container) 25%, var(--md3-surface-container-lowest)) 100%
+  );
   overflow: hidden;
 }
 
-.image-placeholder .material-symbols-outlined {
-  font-size: 2rem;
-  color: var(--md3-outline);
+.plate-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
 }
 
-/* ─── Desktop: Plate Visual ─── */
-.plate-visual {
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.plate-circle {
-  width: 80px;
-  height: 80px;
+.plate-photo {
+  display: block;
+  object-fit: cover;
   border-radius: 50%;
   background: var(--md3-surface-container-low);
-  border: 4px solid var(--md3-surface-container);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
 }
 
-.plate-inner {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: white;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+.plate-photo--mobile {
+  width: 80px;
+  height: 80px;
+}
+
+.plate-photo--desktop {
+  width: 140px;
+  height: 140px;
+  border: 4px solid var(--md3-surface-container-lowest);
+  box-shadow: 0 12px 32px -8px rgba(0, 105, 75, 0.25);
+  position: relative;
+  z-index: 1;
+  transition: transform var(--md3-transition-fast);
+}
+
+.plate-card:hover .plate-photo--desktop {
+  transform: scale(1.04);
 }
 
 /* ─── Balance Badge ─── */
 .balance-badge {
   position: absolute;
-  top: var(--md3-space-6);
-  right: var(--md3-space-6);
+  top: var(--md3-space-3);
+  right: var(--md3-space-3);
+  z-index: 2;
   padding: 0.375rem var(--md3-space-3);
   border-radius: var(--md3-rounded-full);
   font-family: var(--md3-font-label);
@@ -651,6 +666,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   font-weight: var(--md3-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
 }
 
 .balance-badge-mobile {
@@ -703,6 +719,7 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   .card-content {
     gap: var(--md3-space-2);
     width: 100%;
+    padding: var(--md3-space-5) var(--md3-space-6) var(--md3-space-6);
   }
 }
 
