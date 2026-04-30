@@ -9,6 +9,7 @@
 import { ref } from 'vue'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useProfileStore } from '../../../shared/stores/profileStore.js'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Helper: offset a YYYY-MM-DD date by N days ─────────────────────────────
 
@@ -61,10 +62,7 @@ export function useDiaryExport() {
       ])
 
       // Filter entries for this specific date (fetchEntries may have updated selectedDate)
-      const logs = diaryStore.entries.filter((e) => {
-        const entryDate = typeof e.date === 'string' ? e.date.split('T')[0] : ''
-        return entryDate === date
-      })
+      const logs = diaryStore.entries.filter((e) => toDateOnlyString(e.date) === date)
 
       const observation = diaryStore.observationForDate(date)
 
@@ -103,10 +101,7 @@ export function useDiaryExport() {
       const allDates = dateRange(from, to)
 
       const days = allDates.map((date) => {
-        const logs = diaryStore.entries.filter((e) => {
-          const entryDate = typeof e.date === 'string' ? e.date.split('T')[0] : ''
-          return entryDate === date
-        })
+        const logs = diaryStore.entries.filter((e) => toDateOnlyString(e.date) === date)
         const observation = diaryStore.observationForDate(date)
         return { date, logs, observation }
       })

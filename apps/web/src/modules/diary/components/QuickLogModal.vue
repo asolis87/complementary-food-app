@@ -75,6 +75,7 @@ import { MealType, derivePlateBalanceLabel } from '@pakulab/shared'
 import type { CreateMealLogPayload, Plate } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -146,7 +147,7 @@ function close() {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateOnlyString(new Date())
 }
 
 function currentTime(): string {

@@ -9,8 +9,15 @@
  * subtraction (e.g. age in days) is safe.
  */
 
-/** Extract the YYYY-MM-DD portion from a date or ISO datetime string. */
-export function toDateOnlyString(value: string): string {
+/**
+ * Extract the YYYY-MM-DD portion from either a string ("YYYY-MM-DD" or ISO
+ * datetime) or a Date instance. Date inputs are formatted in UTC, matching
+ * the legacy `.toISOString().split('T')[0]` pattern that this helper replaces.
+ */
+export function toDateOnlyString(value: string | Date): string {
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0] as string
+  }
   return value.split('T')[0] ?? value
 }
 

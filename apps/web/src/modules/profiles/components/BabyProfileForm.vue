@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import type { BabyProfile } from '@pakulab/shared'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ─── Props & Emits ────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -116,16 +117,12 @@ const emit = defineEmits<{
 
 // ─── State ────────────────────────────────────────────────────────────────
 const isEditing = computed(() => !!props.profile)
-const today = new Date().toISOString().split('T')[0] as string
+const today = toDateOnlyString(new Date())
 
 const fields = reactive({
   name: props.profile?.name ?? '',
-  birthDate: props.profile?.birthDate
-    ? new Date(props.profile.birthDate).toISOString().split('T')[0]
-    : '',
-  acStartDate: props.profile?.acStartDate
-    ? new Date(props.profile.acStartDate).toISOString().split('T')[0]
-    : '',
+  birthDate: props.profile?.birthDate ? toDateOnlyString(props.profile.birthDate) : '',
+  acStartDate: props.profile?.acStartDate ? toDateOnlyString(props.profile.acStartDate) : '',
   notes: props.profile?.notes ?? '',
 })
 
