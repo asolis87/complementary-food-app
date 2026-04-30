@@ -11,7 +11,14 @@ export default defineConfig({
     // Design Decision AD7: generateSW + IndexedDB for food catalog cache
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-192x192.svg', 'icons/icon-512x512.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon-32.png',
+        'icons/icon-192x192.png',
+        'icons/icon-512x512.png',
+        'icons/icon-maskable-512.png',
+        'icons/apple-touch-icon.png',
+      ],
 
       manifest: {
         name: 'Pakulab - Alimentación Complementaria',
@@ -27,20 +34,22 @@ export default defineConfig({
         categories: ['health', 'food', 'lifestyle'],
         icons: [
           {
-            src: 'icons/icon-192x192.svg',
+            src: 'icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: 'icons/icon-512x512.svg',
+            src: 'icons/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: 'icons/icon-512x512.svg',
+            src: 'icons/icon-maskable-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

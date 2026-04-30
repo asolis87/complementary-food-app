@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pakulab">
+  <title>Pakulab</title>
+  <!-- Outer plate ring (brand green) -->
+  <circle cx="32" cy="32" r="31" fill="#00694b"/>
+  <!-- Inner plate area -->
+  <circle cx="32" cy="32" r="28" fill="#ffffff"/>
+  <!-- Quadrants clipped to inner circle -->
+  <g>
+    <clipPath id="plate">
+      <circle cx="32" cy="32" r="26"/>
+    </clipPath>
+    <g clip-path="url(#plate)">
+      <!-- Top-left: Fruits (peach) -->
+      <rect x="0" y="0" width="32" height="32" fill="#ffc5a7"/>
+      <!-- Top-right: Vegetables (mint) -->
+      <rect x="32" y="0" width="32" height="32" fill="#7eefc0"/>
+      <!-- Bottom-left: Cereals (light green) -->
+      <rect x="0" y="32" width="32" height="32" fill="#8cfece"/>
+      <!-- Bottom-right: Proteins (orange) -->
+      <rect x="32" y="32" width="32" height="32" fill="#feb289"/>
+    </g>
+  </g>
+  <!-- Quadrant divider lines (white) -->
+  <line x1="32" y1="6" x2="32" y2="58" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="6" y1="32" x2="58" y2="32" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Center plate "well" -->
+  <circle cx="32" cy="32" r="7" fill="#ffffff" stroke="#00694b" stroke-width="2"/>
+</svg>
