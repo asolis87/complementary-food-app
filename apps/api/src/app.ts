@@ -22,6 +22,8 @@ import { foodsRoutes } from './modules/foods/foods.routes.js'
 import { platesRoutes } from './modules/plates/plates.routes.js'
 import { profilesRoutes } from './modules/profiles/profiles.routes.js'
 import { diaryRoutes } from './modules/diary/diary.routes.js'
+import { dayObservationRoutes } from './modules/diary/dayObservation.routes.js'
+import { rangeRoutes } from './modules/diary/range.routes.js'
 import { menusRoutes } from './modules/menus/menus.routes.js'
 import { allergensRoutes } from './modules/allergens/allergens.routes.js'
 import { billingRoutes } from './modules/billing/billing.routes.js'
@@ -115,6 +117,8 @@ export async function buildApp() {
   await app.register(platesRoutes, { prefix: '/api/plates' })
   await app.register(profilesRoutes, { prefix: '/api/profiles' })
   await app.register(diaryRoutes, { prefix: '/api/diary' })
+  await app.register(dayObservationRoutes, { prefix: '/api' })
+  await app.register(rangeRoutes, { prefix: '/api/diary' })
   await app.register(menusRoutes, { prefix: '/api/menus' })
   await app.register(allergensRoutes, { prefix: '/api/allergens' })
   await app.register(billingRoutes, { prefix: '/api/billing' })

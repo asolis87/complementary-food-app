@@ -3,6 +3,7 @@
  * Extracted for testability — no I/O, no side effects.
  *
  * Spec: Plato↔Bitácora Connection — AD-1 (findMany + JS reduce)
+ * Spec: REQ-D1, REQ-D2 — hasSuspectedReaction derived from DayObservation symptoms
  */
 
 import type { FoodHistory, ReactionType as SharedReactionType } from '@pakulab/shared'
@@ -14,25 +15,52 @@ export interface FoodLogEntry {
   date: Date
 }
 
+/** Minimal shape needed from a DayObservation to compute the suspected food signal */
+export interface DayObservationEntry {
+  date: Date
+  symptoms: string[]
+}
+
+/**
+ * Symptoms that trigger the "suspected food reaction" signal (REQ-D1).
+ * GAS, VOMITING, FEVER do NOT trigger it — only ALLERGY_SUSPECT and RASH do.
+ */
+const SUSPECT_SYMPTOMS = new Set(['ALLERGY_SUSPECT', 'RASH'])
+
+/** Convert a Date to a YYYY-MM-DD key using UTC. */
+function toDateKey(date: Date): string {
+  return date.toISOString().split('T')[0] as string
+}
+
 /**
  * Aggregates raw FoodLog entries into a FoodHistory map.
  *
  * Design: AD-1 — findMany + JS reduce pattern.
+ * Design § 4 — hasSuspectedReaction derived from DayObservation.symptoms, not FoodLog.reaction.
  *
  * - timesOffered: count of entries per food
  * - reactions: deduplicated non-null reactions
  * - lastReaction: most recent entry WHERE reaction IS NOT NULL
  * - lastDate: date of the most recent entry (regardless of reaction)
- * - hasAllergyReaction: true when ALLERGIC or RASH is present
+ * - hasSuspectedReaction: true when any day on which this food was introduced has
+ *   a DayObservation whose symptoms array contains ALLERGY_SUSPECT or RASH
  *
  * @param entries  FoodLog rows from Prisma (ordered by date DESC)
+ * @param observations  DayObservation rows for the same (babyProfileId, window) context
  * @param requestedFoodIds  All food IDs requested — ensures every ID gets an entry even if never offered
  * @returns Record<foodId, FoodHistory>
  */
 export function aggregateFoodHistory(
   entries: FoodLogEntry[],
+  observations: DayObservationEntry[],
   requestedFoodIds: string[],
 ): Record<string, FoodHistory> {
+  // Build a symptom map keyed by ISO date (YYYY-MM-DD) for O(1) lookup
+  const symptomMap = new Map<string, Set<string>>()
+  for (const obs of observations) {
+    symptomMap.set(toDateKey(obs.date), new Set(obs.symptoms))
+  }
+
   const initial: Record<string, FoodHistory> = {}
 
   // Seed with zeroed-out entries for every requested food
@@ -43,7 +71,7 @@ export function aggregateFoodHistory(
       reactions: [],
       lastReaction: null,
       lastDate: null,
-      hasAllergyReaction: false,
+      hasSuspectedReaction: false,
     }
   }
 
@@ -54,14 +82,14 @@ export function aggregateFoodHistory(
     // Skip entries for food IDs not in the requested set
     if (!history) return acc
 
-    const dateStr = entry.date.toISOString().split('T')[0] ?? null
+    const dateKey = toDateKey(entry.date)
 
     // ── timesOffered
     history.timesOffered += 1
 
     // ── lastDate: first time we see a food (earliest by reduce order = most recent date)
     if (history.lastDate === null) {
-      history.lastDate = dateStr
+      history.lastDate = dateKey
     }
 
     // ── lastReaction: first non-null reaction we encounter (most recent by date DESC ordering)
@@ -77,9 +105,18 @@ export function aggregateFoodHistory(
       }
     }
 
-    // ── hasAllergyReaction
-    if (entry.reaction === 'ALLERGIC' || entry.reaction === 'RASH') {
-      history.hasAllergyReaction = true
+    // ── hasSuspectedReaction: derived from DayObservation symptoms (REQ-D1, REQ-D2)
+    // Once set to true it stays true (any single offering on a suspect day is enough)
+    if (!history.hasSuspectedReaction) {
+      const daySymptoms = symptomMap.get(dateKey)
+      if (daySymptoms) {
+        for (const suspect of SUSPECT_SYMPTOMS) {
+          if (daySymptoms.has(suspect)) {
+            history.hasSuspectedReaction = true
+            break
+          }
+        }
+      }
     }
 
     return acc
