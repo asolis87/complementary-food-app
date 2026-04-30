@@ -20,6 +20,7 @@ import type {
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient } from '../api/client.js'
+import { toDateOnlyString } from '../utils/date.js'
 
 export const useDiaryStore = defineStore('diary', () => {
   // ─── State ────────────────────────────────────────────────────────────────
@@ -44,12 +45,7 @@ export const useDiaryStore = defineStore('diary', () => {
 
   /** Entries filtered to the currently selected date */
   const entriesForDate = computed<MealLog[]>(() =>
-    entries.value.filter((e) => {
-      // Prisma returns date as ISO string "2026-04-01T00:00:00.000Z"
-      // selectedDate is "2026-04-01" — normalize both to YYYY-MM-DD
-      const entryDate = typeof e.date === 'string' ? e.date.split('T')[0] : ''
-      return entryDate === selectedDate.value
-    }),
+    entries.value.filter((e) => toDateOnlyString(e.date) === selectedDate.value),
   )
 
   /** Entries grouped by meal type for the selected date */
@@ -201,10 +197,7 @@ export const useDiaryStore = defineStore('diary', () => {
       observationsByDate.value.set(key, null)
     }
     for (const obs of payload.observations) {
-      // Normalize the date key: dates are already YYYY-MM-DD strings from the DTO,
-      // but defensively split to handle any ISO datetime stragglers.
-      const dateKey = obs.date.split('T')[0] ?? obs.date
-      observationsByDate.value.set(dateKey, obs)
+      observationsByDate.value.set(toDateOnlyString(obs.date), obs)
     }
 
     return payload

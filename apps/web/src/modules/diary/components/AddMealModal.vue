@@ -184,6 +184,7 @@ import { MealType, ReactionType } from '@pakulab/shared'
 import type { Food, CreateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -266,7 +267,7 @@ function currentTime(): string {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateOnlyString(new Date())
 }
 
 function onSearchInput() {
