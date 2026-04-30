@@ -13,14 +13,54 @@ export enum MealType {
   SNACK = 'SNACK',
 }
 
-/** Reaction type — maps to the ReactionType Prisma enum */
+/** Reaction type — maps to the ReactionType Prisma enum (trimmed: ALLERGIC, GAS, RASH removed) */
 export enum ReactionType {
   LIKED = 'LIKED',
   DISLIKED = 'DISLIKED',
   NEUTRAL = 'NEUTRAL',
-  ALLERGIC = 'ALLERGIC',
-  GAS = 'GAS',
+  REJECTED = 'REJECTED',
+}
+
+/** Human-readable Spanish labels for ReactionType */
+export const REACTION_TYPE_LABELS: Record<ReactionType, string> = {
+  [ReactionType.LIKED]: 'Le gustó',
+  [ReactionType.DISLIKED]: 'No le gustó',
+  [ReactionType.NEUTRAL]: 'Sin reacción',
+  [ReactionType.REJECTED]: 'Lo rechazó',
+}
+
+/** Stool type — maps to the StoolType Prisma enum */
+export enum StoolType {
+  NORMAL = 'NORMAL',
+  LOOSE = 'LOOSE',
+  HARD = 'HARD',
+  NONE = 'NONE',
+}
+
+/** Human-readable Spanish labels for StoolType */
+export const STOOL_LABELS: Record<StoolType, string> = {
+  [StoolType.NORMAL]: 'Normal',
+  [StoolType.LOOSE]: 'Laxa (diarrea)',
+  [StoolType.HARD]: 'Astringida (le costó)',
+  [StoolType.NONE]: 'No hubo',
+}
+
+/** Symptom type — maps to the SymptomType Prisma enum */
+export enum SymptomType {
+  ALLERGY_SUSPECT = 'ALLERGY_SUSPECT',
   RASH = 'RASH',
+  GAS = 'GAS',
+  VOMITING = 'VOMITING',
+  FEVER = 'FEVER',
+}
+
+/** Human-readable Spanish labels for SymptomType */
+export const SYMPTOM_LABELS: Record<SymptomType, string> = {
+  [SymptomType.ALLERGY_SUSPECT]: 'Sospecha alérgica',
+  [SymptomType.RASH]: 'Sarpullido',
+  [SymptomType.GAS]: 'Gases',
+  [SymptomType.VOMITING]: 'Vómito',
+  [SymptomType.FEVER]: 'Fiebre',
 }
 
 /** Food data included in a meal log entry */
@@ -98,9 +138,39 @@ export interface FoodHistory {
   lastReaction: ReactionType | null
   /** Date of last offering (YYYY-MM-DD), or null if never offered */
   lastDate: string | null
-  /** Convenience flag: true if ALLERGIC or RASH is in reactions */
-  hasAllergyReaction: boolean
+  /** Convenience flag: true if ALLERGY_SUSPECT or RASH symptom was observed on any day this food was introduced */
+  hasSuspectedReaction: boolean
 }
 
 /** Map of foodId → FoodHistory, used for bulk lookup */
 export type FoodHistoryMap = Record<string, FoodHistory>
+
+/** Day-level observation — one per (babyProfileId, date), maps to the DayObservation Prisma model */
+export interface DayObservation {
+  id: string
+  babyProfileId: string
+  /** ISO date string (YYYY-MM-DD) */
+  date: string
+  stool: StoolType | null
+  symptoms: SymptomType[]
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Input for creating or updating a DayObservation (PUT /api/day-observation — idempotent upsert) */
+export interface DayObservationUpsertInput {
+  babyProfileId: string
+  /** ISO date string (YYYY-MM-DD) */
+  date: string
+  stool?: StoolType | null
+  symptoms?: SymptomType[]
+  notes?: string | null
+}
+
+/** Input for deleting a DayObservation (DELETE /api/day-observation) */
+export interface DayObservationDeleteInput {
+  babyProfileId: string
+  /** ISO date string (YYYY-MM-DD) */
+  date: string
+}

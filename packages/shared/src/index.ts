@@ -9,7 +9,7 @@
 export type { ALClassification, FoodGroup, Food, FoodSummary } from './types/food.js'
 export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from './types/food.js'
 
-export { MealType, ReactionType } from './types/diary.js'
+export { MealType, ReactionType, StoolType, SymptomType, REACTION_TYPE_LABELS, STOOL_LABELS, SYMPTOM_LABELS } from './types/diary.js'
 export type {
   MealLogFood,
   MealLog,
@@ -18,6 +18,9 @@ export type {
   UpdateMealLogPayload,
   FoodHistory,
   FoodHistoryMap,
+  DayObservation,
+  DayObservationUpsertInput,
+  DayObservationDeleteInput,
 } from './types/diary.js'
 
 export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput } from './types/plate.js'
@@ -32,8 +35,7 @@ export type {
   ServeMealResponse,
 } from './types/menu.js'
 
-export type { UserTier, SubscriptionStatus, BabyProfile, AuthUser, Reaction } from './types/user.js'
-export { REACTION_LABELS } from './types/user.js'
+export type { UserTier, SubscriptionStatus, BabyProfile, AuthUser } from './types/user.js'
 
 export type { BalanceLabel, BalanceResult } from './types/balance.js'
 
