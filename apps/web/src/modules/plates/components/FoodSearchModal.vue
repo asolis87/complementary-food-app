@@ -353,13 +353,12 @@ interface PillInfo {
 
 /**
  * Returns the Spanish label for the most severe reaction present.
- * Severity order: ALLERGIC > RASH > GAS > DISLIKED
+ * Severity order (new model): DISLIKED > REJECTED — day observations carry clinical signals
  */
 function mostSevereReactionLabel(h: FoodHistory): string {
-  if (h.reactions.includes(ReactionType.ALLERGIC)) return 'tuvo reacción alérgica'
-  if (h.reactions.includes(ReactionType.RASH)) return 'tuvo sarpullido'
-  if (h.reactions.includes(ReactionType.GAS)) return 'gases'
+  if (h.hasSuspectedReaction) return 'sospecha de reacción'
   if (h.reactions.includes(ReactionType.DISLIKED)) return 'no le gustó'
+  if (h.reactions.includes(ReactionType.REJECTED)) return 'lo rechazó'
   return ''
 }
 
@@ -383,7 +382,7 @@ function pillInfo(foodId: string): PillInfo | null {
 
   const t = timesLabel(h.timesOffered)
 
-  if (h.hasAllergyReaction) {
+  if (h.hasSuspectedReaction) {
     return { text: `${t} · ${mostSevereReactionLabel(h)}`, cssClass: 'history-pill-red' }
   }
 
@@ -391,8 +390,8 @@ function pillInfo(foodId: string): PillInfo | null {
     return { text: `${t} · sin reacciones`, cssClass: 'history-pill-clean' }
   }
 
-  // DISLIKED / GAS → amber; LIKED / NEUTRAL only → green
-  if (h.reactions.some((r) => r === ReactionType.GAS || r === ReactionType.DISLIKED)) {
+  // DISLIKED / REJECTED → amber; LIKED / NEUTRAL only → green
+  if (h.reactions.some((r) => r === ReactionType.DISLIKED || r === ReactionType.REJECTED)) {
     return { text: `${t} · ${mostSevereReactionLabel(h)}`, cssClass: 'history-pill-amber' }
   }
 
@@ -401,12 +400,12 @@ function pillInfo(foodId: string): PillInfo | null {
 
 /**
  * True when food row should display a prominent allergen+reaction warning border.
- * Condition: food.isAllergen AND history.hasAllergyReaction (AC: A5)
+ * Condition: food.isAllergen AND history.hasSuspectedReaction (AC: A5)
  */
 function hasAllergenReactionWarning(food: Food): boolean {
   if (!food.isAllergen) return false
   const h = props.foodHistories?.[food.id]
-  return !!(h && h.hasAllergyReaction)
+  return !!(h && h.hasSuspectedReaction)
 }
 </script>
 
