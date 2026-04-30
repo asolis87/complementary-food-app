@@ -103,6 +103,7 @@ import { computed } from 'vue'
 import type { MealLog, DayObservation, StoolType, SymptomType } from '@pakulab/shared'
 import { MealType, ReactionType, STOOL_LABELS, SYMPTOM_LABELS } from '@pakulab/shared'
 import type { BabyProfile } from '@pakulab/shared'
+import { parseDateOnly } from '../../../shared/utils/date.js'
 
 // ── Props ─────────────────────────────────────────────────────────────────
 
@@ -171,9 +172,9 @@ const formattedDate = computed<string>(() => {
 })
 
 const ageLabel = computed<string>(() => {
-  if (!props.babyProfile.birthDate) return ''
-  const birth = new Date(props.babyProfile.birthDate + 'T00:00:00')
-  const ref = new Date(props.date + 'T00:00:00')
+  const birth = parseDateOnly(props.babyProfile.birthDate)
+  const ref = parseDateOnly(props.date)
+  if (!birth || !ref) return ''
   const diffMs = ref.getTime() - birth.getTime()
   const diffDays = Math.floor(diffMs / 86400000)
   const months = Math.floor(diffDays / 30.44)
