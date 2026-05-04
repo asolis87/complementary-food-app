@@ -21,6 +21,7 @@
         </RouterLink>
 
         <nav class="header-nav">
+          <RouterLink v-if="authStore.isAuthenticated" to="/dashboard">Inicio</RouterLink>
           <RouterLink to="/foods">Alimentos</RouterLink>
           <RouterLink v-if="authStore.isAuthenticated" to="/plates">Mis platos</RouterLink>
           <RouterLink v-if="authStore.isAuthenticated" to="/diary">Bitácora</RouterLink>
@@ -96,6 +97,10 @@
 
     <!-- Bottom navigation (mobile) -->
     <nav class="bottom-nav" aria-label="Navegación principal">
+      <RouterLink v-if="authStore.isAuthenticated" to="/dashboard" class="bottom-nav-item" active-class="active">
+        <span class="material-symbols-outlined bottom-nav-icon">home</span>
+        <span class="bottom-nav-label">Inicio</span>
+      </RouterLink>
       <RouterLink to="/plates" class="bottom-nav-item" active-class="active">
         <span class="material-symbols-outlined bottom-nav-icon">restaurant</span>
         <span class="bottom-nav-label">Plato</span>
