@@ -62,14 +62,14 @@ Chain strategy: stacked-to-staging
 
 ## Phase 5: Integration — Loading, Error & Offline
 
-- [ ] 5.1 Create `apps/web/src/modules/dashboard/components/DashboardSkeleton.vue` — skeleton loading state matching the Bento Grid layout for perceived performance (<2s spec)
-- [ ] 5.2 Add stale-while-revalidate caching to `dashboardStore.ts` — cache responses in memory with TTL per section; return cached data immediately, refresh in background; offline fallback shows cached data + `OfflineIndicator`
-- [ ] 5.3 Add error boundary handling in `DashboardPage.vue` — catch API errors, show retry button; handle 403 (wrong profile ownership) and 401 (session expired) gracefully
+- [x] 5.1 Create `apps/web/src/modules/dashboard/components/DashboardSkeleton.vue` — skeleton loading state matching the Bento Grid layout for perceived performance (<2s spec)
+- [x] 5.2 Add stale-while-revalidate caching to `dashboardStore.ts` — cache responses in memory with TTL per section; return cached data immediately, refresh in background; offline fallback shows cached data + `OfflineIndicator`
+- [x] 5.3 Add error boundary handling in `DashboardPage.vue` — catch API errors, show retry button; handle 403 (wrong profile ownership) and 401 (session expired) gracefully
 
 ## Phase 6: Responsive & Accessibility
 
-- [ ] 6.1 Responsive mobile layout — stack vertical (320-767px); hide bottom nav correctly; horizontal scroll for suggested foods; full-width balance insight
-- [ ] 6.2 Responsive tablet layout — 2-column grid (768-1023px); allergens beneath suggestions
-- [ ] 6.3 Responsive desktop layout — Bento Grid 3-column (1024px+); col1=TodayLogs, col2=Suggestions+Allergens, col3=Roadmap; BalanceInsight full-width bottom row
-- [ ] 6.4 A11y — keyboard navigation through all interactive cards; ARIA labels on meal slot buttons, suggestion actions, allergen links; focus-visible states on all focusable elements
-- [ ] 6.5 A11y — skip-to-content link; semantic landmarks (role="main", nav, section with aria-label per card); screen reader announcements for loading/error states
+- [x] 6.1 Responsive mobile layout — stack vertical (320-767px); hide bottom nav correctly; horizontal scroll for suggested foods; full-width balance insight
+- [x] 6.2 Responsive tablet layout — 2-column grid (768-1023px); allergens beneath suggestions
+- [x] 6.3 Responsive desktop layout — Bento Grid 3-column (1024px+); col1=TodayLogs, col2=Suggestions+Allergens, col3=Roadmap; BalanceInsight full-width bottom row
+- [x] 6.4 A11y — keyboard navigation through all interactive cards; ARIA labels on meal slot buttons, suggestion actions, allergen links; focus-visible states on all focusable elements
+- [x] 6.5 A11y — skip-to-content link; semantic landmarks (role="main", nav, section with aria-label per card); screen reader announcements for loading/error states

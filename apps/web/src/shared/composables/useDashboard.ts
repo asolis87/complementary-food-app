@@ -50,6 +50,10 @@ export function useDashboardActions() {
     refreshDashboard: (babyProfileId: string) => store.refreshDashboard(babyProfileId),
     /** Clear all cached dashboard state */
     clearCache: () => store.clearCache(),
+    /** Invalidate cache without clearing current data (forces refetch on next visit) */
+    invalidate: () => store.invalidate(),
+    /** Invalidate a specific section cache */
+    invalidateSection: (section: string) => store.invalidateSection(section),
     /** Fetch food suggestions (cached 24h) */
     fetchSuggestions: (babyProfileId: string, limit?: number) =>
       store.fetchSuggestions(babyProfileId, limit),

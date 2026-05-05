@@ -1,45 +1,37 @@
 <template>
   <div class="dashboard-page">
-    <!-- Error state -->
-    <ErrorBoundary v-if="hasError && !loading">
-      <div class="error-view">
-        <div class="error-card">
-          <span class="material-symbols-outlined error-icon" aria-hidden="true">error_outline</span>
-          <h2 class="error-title">No se pudo cargar el dashboard</h2>
-          <p class="error-message">{{ storeError }}</p>
-          <button class="retry-btn" @click="handleRetry">
-            <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
-            Reintentar
-          </button>
-        </div>
-      </div>
-    </ErrorBoundary>
+    <!-- Screen reader announcements (not visible) -->
+    <div
+      class="sr-only"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {{ srAnnouncement }}
+    </div>
+
+    <!-- Error state — DashboardErrorBoundary handles status codes -->
+    <DashboardErrorBoundary
+      v-if="hasError && !loading"
+      :status-code="errorStatusCode"
+      :message="storeError"
+      :show-go-home="errorStatusCode === 401 || errorStatusCode === 403"
+      @retry="handleRetry"
+    />
 
     <!-- Offline + stale data indicator -->
-    <div v-if="!isOnline && !isEmpty" class="offline-stale-banner" role="status" aria-live="polite">
+    <div
+      v-if="!isOnline && !isEmpty && !hasError"
+      class="offline-stale-banner"
+      role="status"
+      aria-live="polite"
+    >
       <span class="material-symbols-outlined" aria-hidden="true">wifi_off</span>
       Mostrando datos guardados · Sin conexión
     </div>
 
-    <!-- Loading state (first load, no data yet) -->
-    <template v-if="loading && isEmpty">
-      <div class="dashboard-skeleton">
-        <!-- Header skeleton -->
-        <div class="skeleton-header">
-          <div class="skeleton-line skeleton-line-short" />
-          <div class="skeleton-line skeleton-line-medium" />
-        </div>
-
-        <!-- Grid skeleton -->
-        <div class="skeleton-grid">
-          <div v-for="n in 5" :key="n" class="skeleton-card-item">
-            <div class="skeleton-line skeleton-line-short" />
-            <div class="skeleton-line skeleton-line-medium" />
-            <div class="skeleton-line skeleton-line-long" />
-          </div>
-        </div>
-      </div>
-    </template>
+    <!-- Loading state (first load, no data yet) — uses specific skeleton -->
+    <DashboardSkeleton v-if="loading && isEmpty && !hasError" />
 
     <!-- Dashboard content -->
     <template v-if="!isEmpty || loading">
@@ -54,8 +46,8 @@
       />
 
       <!-- Bento Grid -->
-      <div class="bento-grid">
-        <!-- Col 1: Today's logs -->
+      <div class="bento-grid" id="main-content">
+        <!-- Col 1: Today's logs (full width on mobile, col-1 on desktop) -->
         <TodayLogsCard
           class="bento-col-1"
           :meal-slots="todayMealSlots"
@@ -64,9 +56,9 @@
           @edit="handleEdit"
         />
 
-        <!-- Col 2: Suggestions + Allergens -->
+        <!-- Col 2: Suggestions + Allergens (stacked on mobile, col-2 on desktop) -->
         <div class="bento-col-2">
-          <SuggestedFoodsCard
+          <LazySuggestedFoodsCard
             :suggestions="dashboardData?.suggestedFoods ?? []"
             :loading="loading"
             @view-food="handleViewFood"
@@ -80,8 +72,8 @@
           />
         </div>
 
-        <!-- Col 3: Roadmap -->
-        <FoodRoadmapCard
+        <!-- Col 3: Roadmap (full width on mobile/tablet, col-3 on desktop) -->
+        <LazyFoodRoadmapCard
           class="bento-col-3"
           :progress="dashboardData?.roadmapProgress ?? []"
           :loading="loading"
@@ -101,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MealType } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
@@ -110,10 +102,46 @@ import { useDashboardData, useDashboardActions } from '@/shared/composables/useD
 import { useOnlineStatus } from '@/shared/composables/useOnlineStatus.js'
 import DashboardHeader from './components/DashboardHeader.vue'
 import TodayLogsCard from './components/TodayLogsCard.vue'
-import SuggestedFoodsCard from './components/SuggestedFoodsCard.vue'
 import AllergenAlertsCard from './components/AllergenAlertsCard.vue'
-import FoodRoadmapCard from './components/FoodRoadmapCard.vue'
 import BalanceInsightCard from './components/BalanceInsightCard.vue'
+import DashboardSkeleton from './components/DashboardSkeleton.vue'
+import DashboardErrorBoundary from './components/DashboardErrorBoundary.vue'
+
+// ── Lazy-loaded heavy components (improves LCP) ──────────────────────────
+
+const LazySuggestedFoodsCard = defineAsyncComponent({
+  loader: () => import('./components/SuggestedFoodsCard.vue'),
+  // Show skeleton while loading the lazy component
+  loadingComponent: {
+    template: `<div class="dashboard-card" style="min-height: 220px;">
+      <div class="skeleton-line skeleton-line-short" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;margin-bottom:12px;" />
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div v-for="n in 3" :key="n" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--md3-surface-container);border-radius:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--md3-surface-container-high);" />
+          <div style="height:14px;width:65%;background:var(--md3-surface-container-high);border-radius:4px;" />
+        </div>
+      </div>
+    </div>`,
+  },
+})
+
+const LazyFoodRoadmapCard = defineAsyncComponent({
+  loader: () => import('./components/FoodRoadmapCard.vue'),
+  // Show skeleton while loading the lazy component
+  loadingComponent: {
+    template: `<div class="dashboard-card" style="min-height: 300px;">
+      <div class="skeleton-line skeleton-line-short" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;margin-bottom:12px;" />
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div v-for="n in 5" :key="n" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--md3-surface-container);border-radius:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--md3-surface-container-high);" />
+          <div style="flex:1;height:14px;background:var(--md3-surface-container-high);border-radius:4px;" />
+        </div>
+      </div>
+    </div>`,
+  },
+})
+
+// ── Stores & composables ─────────────────────────────────────────────────
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -122,12 +150,54 @@ const { dashboardData, loading, error: storeError, hasError, isEmpty } = useDash
 const { fetchDashboard, refreshDashboard } = useDashboardActions()
 const { isOnline } = useOnlineStatus()
 
-// ── Local state ──────────────────────────────────────────────────────────────
+// ── Local state ──────────────────────────────────────────────────────────
+
 const dataLoaded = ref(false)
 
-// ── Computed ─────────────────────────────────────────────────────────────────
+// ── Screen reader announcements ──────────────────────────────────────────
+
+const srAnnouncement = ref('')
+
+function announce(message: string): void {
+  srAnnouncement.value = message
+}
+
+// Watch loading state for screen reader
+watch(
+  () => loading.value,
+  (isLoading) => {
+    if (isLoading) {
+      announce('Cargando dashboard...')
+    }
+  },
+)
+
+// Watch error state for screen reader
+watch(
+  () => hasError.value,
+  (hasErr) => {
+    if (hasErr) {
+      announce(`Error al cargar el dashboard. ${storeError.value ?? ''}`)
+    }
+  },
+)
+
+// ── Computed ─────────────────────────────────────────────────────────────
 
 const userName = computed(() => authStore.displayName)
+
+/** Derive HTTP status code from error message pattern */
+const errorStatusCode = computed(() => {
+  const err = storeError.value
+  if (!err) return 0
+
+  if (err.includes('401') || err.includes('Unauthorized') || err.includes('no autorizado')) return 401
+  if (err.includes('403') || err.includes('Forbidden') || err.includes('permiso')) return 403
+  if (err.includes('404') || err.includes('not found') || err.includes('encontrado')) return 404
+  if (err.includes('500') || err.includes('Internal') || err.includes('servidor')) return 500
+
+  return 0
+})
 
 const todayMealSlots = computed(() => {
   // For now, meal slots are part of the consolidated response.
@@ -137,9 +207,12 @@ const todayMealSlots = computed(() => {
   return []
 })
 
-// ── Lifecycle ────────────────────────────────────────────────────────────────
+// ── Lifecycle ────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+  // Announce loading
+  announce('Cargando dashboard...')
+
   // Ensure profiles are loaded
   if (!profileStore.activeProfile && authStore.isAuthenticated) {
     await profileStore.fetchProfiles()
@@ -147,12 +220,19 @@ onMounted(async () => {
 
   const babyProfileId = profileStore.activeProfile?.id
   if (babyProfileId) {
-    await fetchDashboard(babyProfileId)
-    dataLoaded.value = true
+    try {
+      await fetchDashboard(babyProfileId)
+      dataLoaded.value = true
+      announce('Dashboard cargado correctamente.')
+    } catch {
+      announce('Error al cargar el dashboard.')
+    }
+  } else {
+    announce('Selecciona un perfil de bebé para ver el dashboard.')
   }
 })
 
-// ── Event handlers ───────────────────────────────────────────────────────────
+// ── Event handlers ───────────────────────────────────────────────────────
 
 function handleRetry(): void {
   const babyProfileId = profileStore.activeProfile?.id
@@ -163,7 +243,6 @@ function handleRetry(): void {
 
 function handleRegister(mealType: MealType): void {
   // Navigate to diary with pre-selected meal type
-  // This opens the existing QuickLogModal / AddMealModal pattern
   void router.push({ name: 'diary', query: { mealType: mealType as string } })
 }
 
@@ -181,8 +260,6 @@ function handleViewAllFoods(): void {
 }
 
 function handleViewAllergenGuide(allergenKey: string): void {
-  // Open a modal or navigate to a guide page
-  // For now, navigate to the foods page filtered by allergen
   void router.push({ name: 'foods', query: { allergen: allergenKey } })
 }
 
@@ -191,12 +268,16 @@ function handleViewFullRoadmap(): void {
 }
 
 function handleViewWeeklyDetail(): void {
-  // Navigate to diary for weekly detail view
   void router.push({ name: 'diary' })
 }
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════════════════
+   DashboardPage — Bento Grid orchestrator with responsive layout.
+   Mobile: 1-col stack, Tablet: 2-col, Desktop: 3-col Bento Grid.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .dashboard-page {
   display: flex;
   flex-direction: column;
@@ -206,67 +287,17 @@ function handleViewWeeklyDetail(): void {
   width: 100%;
 }
 
-/* ─── Error view ───────────────────────────────────────────── */
-.error-view {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--md3-space-12) var(--md3-space-3);
-  min-height: 200px;
-}
-
-.error-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--md3-space-3);
-  text-align: center;
-  background: var(--md3-surface-container-lowest);
-  border-radius: var(--md3-rounded-lg);
-  padding: var(--md3-space-8) var(--md3-space-6);
-  max-width: 380px;
-  width: 100%;
-  box-shadow: var(--md3-shadow-ambient);
-}
-
-.error-icon {
-  font-size: 3.5rem;
-  color: var(--md3-error);
-  font-variation-settings: 'FILL' 0, 'wght' 300;
-}
-
-.error-title {
-  margin: 0;
-  font-family: var(--md3-font-headline);
-  font-size: var(--md3-headline-sm);
-  font-weight: var(--md3-weight-semibold);
-  color: var(--md3-on-surface);
-}
-
-.error-message {
-  margin: 0;
-  color: var(--md3-on-surface-variant);
-}
-
-.retry-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--md3-space-2);
-  padding: 0.75rem 1.75rem;
-  background: var(--md3-gradient-cta);
-  color: var(--md3-on-primary);
-  border: none;
-  border-radius: var(--md3-rounded-full);
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
-  font-weight: var(--md3-weight-semibold);
-  cursor: pointer;
-  transition: background var(--md3-transition-fast);
-  margin-top: var(--md3-space-1);
-}
-
-.retry-btn:hover {
-  background: var(--md3-gradient-cta-hover);
+/* ─── Screen reader only ────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ─── Offline stale data banner ────────────────────────────── */
@@ -288,7 +319,7 @@ function handleViewWeeklyDetail(): void {
 .bento-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--md3-space-4);
+  gap: var(--md3-space-3);
 }
 
 /* Desktop: 3-column Bento Grid */
@@ -318,6 +349,7 @@ function handleViewWeeklyDetail(): void {
 @media (min-width: 768px) and (max-width: 1023px) {
   .bento-grid {
     grid-template-columns: 1fr 1fr;
+    gap: var(--md3-space-4);
   }
 
   .bento-col-1 {
@@ -350,73 +382,19 @@ function handleViewWeeklyDetail(): void {
   box-shadow: var(--md3-shadow-card);
 }
 
-/* ─── Dashboard skeleton (first load) ─────────────────────── */
-.dashboard-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-4);
-}
-
-.skeleton-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-2);
-  padding: var(--md3-space-3) 0;
-}
-
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--md3-space-3);
-}
-
-@media (min-width: 768px) {
-  .skeleton-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 1024px) {
-  .skeleton-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-}
-
-.skeleton-card-item {
-  background: var(--md3-surface-container-low);
-  border-radius: var(--md3-rounded-lg);
-  padding: var(--md3-space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-2);
-}
-
-.skeleton-line {
-  height: 14px;
-  border-radius: var(--md3-rounded-sm);
-  background: linear-gradient(
-    90deg,
-    var(--md3-surface-container) 25%,
-    var(--md3-surface-container-high) 50%,
-    var(--md3-surface-container) 75%
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s infinite linear;
-}
-
-.skeleton-line-short { width: 40%; }
-.skeleton-line-medium { width: 65%; }
-.skeleton-line-long { width: 90%; }
-
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
 /* ─── Responsive spacing ──────────────────────────────────── */
 @media (max-width: 767px) {
   .dashboard-page {
     gap: var(--md3-space-3);
+    padding: 0;
+  }
+
+  .bento-grid {
+    gap: var(--md3-space-3);
+  }
+
+  :deep(.dashboard-card) {
+    padding: var(--md3-space-3);
   }
 }
 </style>

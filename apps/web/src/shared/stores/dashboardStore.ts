@@ -207,6 +207,38 @@ export const useDashboardStore = defineStore('dashboard', () => {
     _sectionCache.value = new Map()
   }
 
+  /**
+   * Invalidate dashboard cache without clearing current data.
+   * Keeps showing the old (stale) data while forcing the next fetchDashboard()
+   * call to go to the network. Use this after registering or editing a meal.
+   *
+   * Consider: invalidate() does NOT nuke dashboardData — the user still sees
+   * the previous dashboard until the refetch completes. This prevents layout
+   * jumps and keeps the UX smooth.
+   */
+  function invalidate(): void {
+    lastFetched.value = null
+    _sectionCache.value = new Map()
+    // Keep dashboardData — next fetchDashboard() will update it
+  }
+
+  /**
+   * Invalidate a specific section cache (for targeted invalidation).
+   * Useful when only certain data changed (e.g., today's logs).
+   */
+  function invalidateSection(section: string): void {
+    // Clear all section caches whose keys start with the section name
+    const newCache = new Map<string, CachedResponse<unknown>>()
+    for (const [key, entry] of _sectionCache.value.entries()) {
+      if (!key.startsWith(`${section}:`)) {
+        newCache.set(key, entry)
+      }
+    }
+    _sectionCache.value = newCache
+    // Also mark as stale so fetchDashboard refreshes
+    lastFetched.value = null
+  }
+
   // ─── Internal cache helpers ────────────────────────────────────────────────
 
   function _getCached<T>(key: string, ttlMs: number): T | null {
@@ -244,5 +276,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     fetchToday,
     fetchBalance,
     clearCache,
+    invalidate,
+    invalidateSection,
   }
 })

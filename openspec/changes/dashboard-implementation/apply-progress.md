@@ -1,8 +1,8 @@
 # Apply Progress: dashboard-implementation
 
-**Batch**: PR 2 — Frontend (Phase 3 + Phase 4)
+**Batch**: PR 3 — Polish (Phase 5 + Phase 6)
 **Date**: 2026-05-04
-**Branch**: `feature/dashboard-frontend` → `feature/dashboard-backend`
+**Branch**: `feature/dashboard-polish` → `feature/dashboard-frontend`
 
 ## TDD Cycle Evidence (Backend — PR 1)
 
@@ -22,7 +22,7 @@
 - **Total tests passing**: 168
 - **Layers used**: Unit (149), Integration (19)
 
-## Frontend Implementation (PR 2 — Standard Mode)
+## Frontend Implementation (PR 2 + PR 3 — Standard Mode)
 
 > `runner_command_web: NOT CONFIGURED` in openspec/config.yaml → web app has no test runner configured.
 > Resolved to STANDARD MODE (no strict TDD). Tests written alongside code, following existing patterns (vitest + @vue/test-utils).
@@ -39,7 +39,7 @@
 - [x] 2.8 Module registration in app.ts
 - [x] 2.9 Service tests (36 tests)
 
-### PR 2 (Frontend — this batch)
+### PR 2 (Frontend — previously completed)
 - [x] 3.1 Pinia dashboardStore with SWR caching
 - [x] 3.2 useDashboard composable (data + actions)
 - [x] 3.3 useDashboardTips composable (random tip rotation)
@@ -52,6 +52,19 @@
 - [x] 4.7 BalanceInsightCard.vue component
 - [x] 4.8 /dashboard route in router
 - [x] 4.9 Navigation update (bottom nav + top nav)
+
+### PR 3 (Polish — this batch)
+- [x] 5.1 DashboardSkeleton.vue — separate component with Bento Grid skeleton + shimmer animation
+- [x] 5.2 SWR caching (completed in PR 2 — store-level SWR with per-section TTLs)
+- [x] 5.3 DashboardErrorBoundary.vue — handles 401/403/404/500 with specific messages + retry + go-home
+- [x] Cache invalidation — invalidate() added to dashboardStore; wired in QuickLogModal + EditLogModal
+- [x] 6.1 Responsive mobile — 1-col stack (<768px), refined spacing, bottom nav
+- [x] 6.2 Responsive tablet — 2-col grid (768-1023px), Roadmap full-width below
+- [x] 6.3 Responsive desktop — Bento Grid 3-col (≥1024px), Insights full-width bottom row
+- [x] 6.4 A11y keyboard + ARIA — skip-to-nav link, role landmarks, aria-labels, focus-visible
+- [x] 6.5 A11y screen reader — aria-live="polite" announcements for loading/error/success
+- [x] Lazy loading — defineAsyncComponent for SuggestedFoodsCard + FoodRoadmapCard
+- [x] Prefetching — background dashboard data prefetch on auth (non-blocking, 5-min TTL)
 
 ## Files Changed
 
@@ -74,7 +87,7 @@
 | `apps/api/src/modules/dashboard/dashboard.routes.test.ts` | Created | 19 route structure + behavior tests |
 | `apps/api/src/app.ts` | Modified | Registered dashboardRoutes with `/api/dashboard` prefix |
 
-### Frontend (PR 2 — this batch)
+### Frontend (PR 2 — previously completed)
 | File | Action | Details |
 |------|--------|---------|
 | `apps/web/src/shared/stores/dashboardStore.ts` | Created | Pinia store: SWR caching, 6 fetch methods, OfflineError handling |
@@ -98,33 +111,44 @@
 | `apps/web/src/router/index.ts` | Modified | Added `/dashboard` route (requiresAuth) |
 | `apps/web/src/shared/layouts/AppLayout.vue` | Modified | Added Dashboard to top nav + bottom nav ("Inicio") |
 
+### Frontend (PR 3 — this batch)
+| File | Action | Details |
+|------|--------|---------|
+| `apps/web/src/modules/dashboard/components/DashboardSkeleton.vue` | Created | Bento Grid skeleton with 6 sections + shimmer animation + aria-busy |
+| `apps/web/src/modules/dashboard/components/DashboardSkeleton.test.ts` | Created | 10 tests (render, a11y, section count, slot count) |
+| `apps/web/src/modules/dashboard/components/DashboardErrorBoundary.vue` | Created | Error handling for 401/403/404/500 with icons, messages, retry + go-home |
+| `apps/web/src/modules/dashboard/components/DashboardErrorBoundary.test.ts` | Created | 14 tests (all status codes, messages, a11y, retry emit, navigation) |
+| `apps/web/src/modules/dashboard/DashboardPage.vue` | Modified | Uses DashboardSkeleton + DashboardErrorBoundary; lazy loading for heavy cards; aria-live announcements; refines responsive breakpoints |
+| `apps/web/src/shared/stores/dashboardStore.ts` | Modified | Added invalidate() + invalidateSection() methods for cache invalidation |
+| `apps/web/src/shared/composables/useDashboard.ts` | Modified | Exposed invalidate() + invalidateSection() in useDashboardActions() |
+| `apps/web/src/shared/layouts/AppLayout.vue` | Modified | Added skip-to-nav link, background dashboard prefetch on auth mount |
+| `apps/web/src/modules/diary/components/QuickLogModal.vue` | Modified | Invalidates dashboard cache after successful meal registration |
+| `apps/web/src/modules/diary/components/EditLogModal.vue` | Modified | Invalidates dashboard cache after successful meal edit |
+
 ## Deviations from Design
 
 None — implementation matches the spec and design documents:
-- All 6 dashboard cards match the design from `docs/dashboard.md`
-- Bento Grid layout: 3-col desktop, 2-col tablet, stack mobile
-- Time greeting logic inlined in DashboardHeader (no separate composable needed for simple hour-check)
-- Baby context comes from API response (backend computes ageInMonths + daysInAC)
-- TierGate used for AllergenAlertsCard (PRO-only feature per spec)
-- All components have ARIA labels, keyboard navigation, focus-visible states
-- Loading skeletons, error states, empty states in all components
-- Stale-while-revalidate caching in dashboardStore (5-min TTL consolidated, section-level TTLs per spec)
-- Tips use BALANCE_TIPS from @pakulab/shared (never generated dynamically)
+- DashboardSkeleton mirrors the exact Bento Grid layout from `docs/dashboard.md`
+- DashboardErrorBoundary handles all HTTP error states (401/403/404/500) per the user prompt
+- Cache invalidation uses `invalidate()` which clears section caches + marks stale without nuking displayed data (keeps last good state visible)
+- Lazy loading uses Vue's `defineAsyncComponent` with skeleton fallback for SuggestedFoodsCard + FoodRoadmapCard (the heaviest components by render cost)
+- Prefetch runs in background on auth mount, non-blocking, with 5-min TTL
+- Responsive breakpoints: mobile <768px (stack), tablet 768-1023px (2-col), desktop ≥1024px (3-col Bento)
+- Skip links: both "Ir al contenido principal" (#main-content) and "Ir a navegación" (#main-nav)
+- Screen reader announcements use dedicated `aria-live="polite"` region, updated reactively via watchers
 
 ## Issues Found
 
 - **Web test runner not configured**: `runner_command_web: NOT CONFIGURED` in `openspec/config.yaml`. The web app has no vitest configuration. Tests are written following existing patterns but cannot be executed until vitest is configured for the web app.
 - **@vue/test-utils not installed**: The web app needs `@vue/test-utils` as a devDependency for component testing.
-- **Meal slot integration note**: TodayLogsCard generates slots from DASHBOARD_MEAL_SLOTS constants. When the `/api/dashboard/today` endpoint provides real meal slot data, they'll merge seamlessly via the computed property.
 
 ## Remaining Tasks
 
-### PR 3: Polish (Phase 5 + 6)
-- [ ] 5.1 DashboardSkeleton (separate component — currently inline in DashboardPage)
-- [ ] 5.2 Stale-while-revalidate caching (done in PR 2 — store-level SWR with TTL)
-- [ ] 5.3 Error boundary handling for 403/401
-- [ ] 6.1-6.5 Responsive + A11y (mostly done in PR 2 — refined in PR 3)
+None — all 28 tasks complete across all 3 PRs.
 
 ## Status
 
-**21/28 tasks complete (Phase 1 + Phase 2 + Phase 3 + Phase 4 done). Ready for next batch (Phase 5 + 6 — Polish).**
+**28/28 tasks complete (Phase 1 through Phase 6 done). Change complete.**
+- PR 1 (Backend): ✅ merged to `feature/dashboard-backend`
+- PR 2 (Frontend): ✅ merged to `feature/dashboard-frontend`
+- PR 3 (Polish): 🔲 ready for review (base: `feature/dashboard-frontend`, branch: `feature/dashboard-polish`)
