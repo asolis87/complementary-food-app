@@ -96,6 +96,7 @@
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MealType } from '@pakulab/shared'
+import { DASHBOARD_MEAL_SLOTS } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useDashboardData, useDashboardActions } from '@/shared/composables/useDashboard.js'
@@ -146,7 +147,7 @@ const LazyFoodRoadmapCard = defineAsyncComponent({
 const router = useRouter()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
-const { dashboardData, loading, error: storeError, hasError, isEmpty } = useDashboardData()
+const { dashboardData, loading, error: storeError, hasError, isEmpty, lastFetched } = useDashboardData()
 const { fetchDashboard, refreshDashboard } = useDashboardActions()
 const { isOnline } = useOnlineStatus()
 
@@ -182,6 +183,20 @@ watch(
   },
 )
 
+// Watch for route changes - refresh data when returning from diary
+watch(
+  () => router.currentRoute.value.name,
+  (newRoute, oldRoute) => {
+    // If returning from diary, refresh dashboard data
+    if (oldRoute === 'diary' && newRoute === 'dashboard') {
+      const babyProfileId = profileStore.activeProfile?.id
+      if (babyProfileId) {
+        void refreshDashboard(babyProfileId)
+      }
+    }
+  },
+)
+
 // ── Computed ─────────────────────────────────────────────────────────────
 
 const userName = computed(() => authStore.displayName)
@@ -200,11 +215,23 @@ const errorStatusCode = computed(() => {
 })
 
 const todayMealSlots = computed(() => {
-  // For now, meal slots are part of the consolidated response.
-  // The spec defines them in the TodayLog response, but we also get todayLogs directly.
-  // We extract slots from the consolidated data's todayLogs.
-  // Return empty array until we have the separate today endpoint data.
-  return []
+  // Convert todayLogs into meal slots by merging with DASHBOARD_MEAL_SLOTS
+  const logs = dashboardData.value?.todayLogs ?? []
+  
+  return DASHBOARD_MEAL_SLOTS.map((def) => {
+    // Find logs for this meal type
+    const mealLogs = logs.filter(log => log.mealType === def.mealType)
+    const isRegistered = mealLogs.length > 0
+    
+    return {
+      mealType: def.mealType,
+      label: def.label,
+      icon: def.icon,
+      isRegistered,
+      registeredTime: isRegistered ? mealLogs[0]?.time : null,
+      foodCount: mealLogs.length,
+    }
+  })
 })
 
 // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -221,7 +248,13 @@ onMounted(async () => {
   const babyProfileId = profileStore.activeProfile?.id
   if (babyProfileId) {
     try {
-      await fetchDashboard(babyProfileId)
+      // Force refresh if data is stale (>5 min old)
+      const isStale = dashboardData.value === null || (lastFetched.value && Date.now() - lastFetched.value > 5 * 60 * 1000)
+      
+      if (isStale) {
+        await fetchDashboard(babyProfileId)
+      }
+      
       dataLoaded.value = true
       announce('Dashboard cargado correctamente.')
     } catch {
@@ -285,6 +318,7 @@ function handleViewWeeklyDetail(): void {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scroll on mobile */
 }
 
 /* ─── Screen reader only ────────────────────────────────────── */
@@ -319,7 +353,43 @@ function handleViewWeeklyDetail(): void {
 .bento-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--md3-space-3);
+  gap: var(--md3-space-4); /* Increased from space-3 for more breathing room */
+  min-width: 0; /* Prevent grid from overflowing container */
+  width: 100%; /* Ensure grid takes full container width */
+  max-width: 100%; /* Prevent grid from exceeding container */
+  box-sizing: border-box; /* Include padding in width */
+}
+
+/* Stack suggestions + allergens with gap on all breakpoints (mobile had no gap before). */
+.bento-col-2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-5); /* 26px gap between suggestions and allergens */
+  min-width: 0;
+}
+
+/* Mobile: Explicit 1-column layout */
+@media (max-width: 767px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .bento-col-1,
+  .bento-col-2,
+  .bento-col-3 {
+    grid-column: auto;
+    width: 100% !important; /* Force full width on mobile */
+    max-width: 100% !important; /* Prevent overflow */
+    min-width: 0 !important; /* CRITICAL: Allow grid items to shrink below min-content size */
+    box-sizing: border-box;
+  }
+  
+  /* CRITICAL: Keep gap between suggestions and allergens on mobile */
+  .bento-col-2 {
+    gap: var(--md3-space-5); /* 26px - same as desktop */
+  }
 }
 
 /* Desktop: 3-column Bento Grid */
@@ -335,9 +405,6 @@ function handleViewWeeklyDetail(): void {
 
   .bento-col-2 {
     grid-column: 2;
-    display: flex;
-    flex-direction: column;
-    gap: var(--md3-space-4);
   }
 
   .bento-col-3 {
@@ -358,9 +425,6 @@ function handleViewWeeklyDetail(): void {
 
   .bento-col-2 {
     grid-column: 2;
-    display: flex;
-    flex-direction: column;
-    gap: var(--md3-space-4);
   }
 
   .bento-col-3 {
@@ -372,10 +436,25 @@ function handleViewWeeklyDetail(): void {
 :deep(.dashboard-card) {
   background: var(--md3-surface-container-lowest);
   border-radius: var(--md3-rounded-lg);
-  padding: var(--md3-space-4);
+  padding: var(--md3-space-5); /* Increased from space-4 for more breathing room */
   box-shadow: var(--md3-shadow-ambient);
   border: 1px solid var(--md3-outline-variant);
   transition: box-shadow var(--md3-transition-fast);
+  min-width: 0; /* Prevent flex overflow */
+  max-width: 100%; /* Ensure card doesn't exceed container */
+  box-sizing: border-box; /* Include padding in width calculation */
+  width: 100%; /* Force card to take available width */
+}
+
+/* Mobile: Force cards to fit within viewport */
+@media (max-width: 767px) {
+  :deep(.dashboard-card),
+  :deep(.bento-col-1),
+  :deep(.bento-col-2),
+  :deep(.bento-col-3) {
+    width: 100% !important; /* Override any inline or conflicting widths */
+    max-width: 100% !important;
+  }
 }
 
 :deep(.dashboard-card:hover) {
@@ -385,16 +464,17 @@ function handleViewWeeklyDetail(): void {
 /* ─── Responsive spacing ──────────────────────────────────── */
 @media (max-width: 767px) {
   .dashboard-page {
-    gap: var(--md3-space-3);
+    gap: var(--md3-space-4); /* Keep increased spacing on mobile */
     padding: 0;
+    overflow-x: hidden; /* Extra protection for mobile */
   }
 
   .bento-grid {
-    gap: var(--md3-space-3);
+    gap: var(--md3-space-4); /* Keep increased spacing on mobile */
   }
 
   :deep(.dashboard-card) {
-    padding: var(--md3-space-3);
+    padding: var(--md3-space-4); /* Slightly less than desktop (space-5) but still increased from space-3 */
   }
 }
 </style>

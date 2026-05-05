@@ -305,6 +305,7 @@ export async function getRoadmapProgress(
       groupFoods.length,
       foodReactionMap,
       FOOD_GROUP_LABELS_DASHBOARD[group],
+      groupFoods, // Pass all foods in this group
     )
   })
 }
@@ -459,26 +460,39 @@ export function computeRoadmapProgress(
   totalFoodsAvailable: number,
   foodReactionMap: Map<string, FoodWithReaction>,
   labelEs: string,
+  allFoodsInGroup: Array<{ id: string; name: string }> = [], // NEW: all foods in this group
 ): RoadmapProgress {
   const percentage =
     groupStats.totalCount > 0
       ? Math.round((groupStats.triedCount / groupStats.totalCount) * 100)
       : 0
 
-  // Build foods array: pending first, then tried by recency
+  // Build foods array with ALL foods (tried + pending)
   const foods: RoadmapProgress['foods'] = []
-  const triedFoods: RoadmapProgress['foods'] = []
 
-  for (const [foodId, info] of foodReactionMap) {
-    const status = info.reaction === 'REJECTED' ? 'rejected' as const : 'tried' as const
-    triedFoods.push({ foodId, name: info.name, status })
+  // If allFoodsInGroup is provided, use it to show ALL foods
+  if (allFoodsInGroup.length > 0) {
+    for (const food of allFoodsInGroup) {
+      const reaction = foodReactionMap.get(food.id)
+      const status: RoadmapProgress['foods'][number]['status'] = 
+        reaction?.reaction === 'REJECTED' ? 'rejected' :
+        reaction ? 'tried' : 'pending'
+      
+      foods.push({
+        foodId: food.id,
+        name: food.name,
+        status,
+      })
+    }
+  } else {
+    // Fallback: only show tried foods (legacy behavior)
+    const triedFoods: RoadmapProgress['foods'] = []
+    for (const [foodId, info] of foodReactionMap) {
+      const status = info.reaction === 'REJECTED' ? 'rejected' as const : 'tried' as const
+      triedFoods.push({ foodId, name: info.name, status })
+    }
+    foods.push(...triedFoods.slice(0, 5))
   }
-
-  // Sort tried foods by date descending
-  triedFoods.sort(() => 0) // Keep insertion order (already sorted by date DESC)
-
-  // Take top 5
-  foods.push(...triedFoods.slice(0, 5))
 
   return {
     group: groupStats.group,

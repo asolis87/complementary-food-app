@@ -68,6 +68,7 @@ const isPro = computed(() => props.userTier === 'PRO')
   display: flex;
   align-items: baseline;
   gap: var(--md3-space-2);
+  min-width: 0; /* Allow flex shrinking */
 }
 
 .greeting-emoji {
@@ -83,6 +84,8 @@ const isPro = computed(() => props.userTier === 'PRO')
   letter-spacing: var(--md3-headline-tracking);
   line-height: var(--md3-headline-line-height);
   color: var(--md3-on-surface);
+  word-wrap: break-word; /* Prevent long names from overflowing */
+  overflow-wrap: break-word;
 }
 
 .greeting-text strong {
@@ -98,6 +101,7 @@ const isPro = computed(() => props.userTier === 'PRO')
   font-size: var(--md3-body-md);
   line-height: var(--md3-body-line-height);
   color: var(--md3-on-surface-variant);
+  min-width: 0; /* Allow flex shrinking */
 }
 
 .baby-icon {

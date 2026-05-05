@@ -35,8 +35,13 @@
         :key="group.group"
         class="progress-group"
       >
-        <!-- Group header -->
-        <div class="group-header">
+        <!-- Group header (clickable to expand/collapse) -->
+        <button
+          class="group-header"
+          :aria-expanded="isGroupExpanded(group.group)"
+          :aria-controls="`foods-${group.group}`"
+          @click="toggleGroup(group.group)"
+        >
           <span class="group-label">
             <span class="group-emoji" aria-hidden="true">{{ groupEmoji(group.group) }}</span>
             {{ group.labelEs }}
@@ -44,7 +49,10 @@
           <span class="group-fraction">
             <strong>{{ group.triedCount }}</strong>/{{ group.totalCount }}
           </span>
-        </div>
+          <span class="expand-icon" aria-hidden="true">
+            {{ isGroupExpanded(group.group) ? 'expand_less' : 'expand_more' }}
+          </span>
+        </button>
 
         <!-- Progress bar -->
         <div
@@ -61,8 +69,14 @@
           />
         </div>
 
-        <!-- Food chips -->
-        <div class="food-chips" role="list" :aria-label="`Alimentos de ${group.labelEs}`">
+        <!-- Food chips (collapsible) -->
+        <div
+          v-show="isGroupExpanded(group.group)"
+          :id="`foods-${group.group}`"
+          class="food-chips"
+          role="list"
+          :aria-label="`Alimentos de ${group.labelEs}`"
+        >
           <span
             v-for="food in group.foods"
             :key="food.foodId"
@@ -85,9 +99,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { FoodGroup, RoadmapProgress, RoadmapFood } from '@pakulab/shared'
 
-defineProps<{
+const props = defineProps<{
   progress: RoadmapProgress[]
   loading?: boolean
 }>()
@@ -95,6 +110,23 @@ defineProps<{
 defineEmits<{
   viewFullRoadmap: []
 }>()
+
+// Track expanded groups (by group key)
+const expandedGroups = ref<Set<string>>(new Set())
+
+/** Check if a group is expanded */
+function isGroupExpanded(group: FoodGroup): boolean {
+  return expandedGroups.value.has(group)
+}
+
+/** Toggle group expand/collapse */
+function toggleGroup(group: FoodGroup): void {
+  if (expandedGroups.value.has(group)) {
+    expandedGroups.value.delete(group)
+  } else {
+    expandedGroups.value.add(group)
+  }
+}
 
 /** Emoji per food group for display */
 function groupEmoji(group: FoodGroup): string {
@@ -187,6 +219,35 @@ function chipStatusLabel(status: RoadmapFood['status']): string {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: var(--md3-space-2);
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: opacity var(--md3-transition-fast);
+}
+
+.group-header:hover {
+  opacity: 0.8;
+}
+
+.group-header:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
+  border-radius: var(--md3-rounded-sm);
+}
+
+.expand-icon {
+  font-family: 'Material Symbols Outlined';
+  font-size: 1.2rem;
+  color: var(--md3-on-surface-variant);
+  flex-shrink: 0;
+  transition: transform var(--md3-transition-fast);
 }
 
 .group-label {
@@ -197,6 +258,8 @@ function chipStatusLabel(status: RoadmapFood['status']): string {
   display: flex;
   align-items: center;
   gap: var(--md3-space-1);
+  flex-shrink: 1; /* Allow label to shrink if needed */
+  min-width: 0;
 }
 
 .group-emoji {
@@ -234,7 +297,19 @@ function chipStatusLabel(status: RoadmapFood['status']): string {
   display: flex;
   flex-wrap: wrap;
   gap: var(--md3-space-1);
-  margin-top: var(--md3-space-1);
+  margin-top: var(--md3-space-2);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .food-chip {
@@ -251,11 +326,13 @@ function chipStatusLabel(status: RoadmapFood['status']): string {
 .food-chip--tried {
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
+  font-weight: var(--md3-weight-semibold);
 }
 
 .food-chip--pending {
   background: var(--md3-surface-container-high);
   color: var(--md3-on-surface-variant);
+  opacity: 0.6; /* Grayed out / muted appearance */
 }
 
 .food-chip--rejected {

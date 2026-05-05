@@ -143,11 +143,13 @@ function statusLabel(status: 'pending' | 'tried' | 'rejected'): string {
   display: flex;
   gap: var(--md3-space-3);
   overflow-x: auto;
+  overflow-y: hidden; /* Prevent vertical scroll */
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   padding-bottom: var(--md3-space-1);
   scrollbar-width: thin;
   scrollbar-color: var(--md3-outline-variant) transparent;
+  max-width: 100%; /* Ensure grid doesn't exceed card width */
 }
 
 @media (min-width: 1024px) {
@@ -159,7 +161,7 @@ function statusLabel(status: 'pending' | 'tried' | 'rejected'): string {
 }
 
 .suggestion-item {
-  flex: 0 0 240px;
+  flex: 0 0 min(240px, 85vw); /* Responsive width: 240px or 85% of viewport */
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
@@ -173,6 +175,7 @@ function statusLabel(status: 'pending' | 'tried' | 'rejected'): string {
   transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
   font-family: inherit;
   color: var(--md3-on-surface);
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .suggestion-item:hover {

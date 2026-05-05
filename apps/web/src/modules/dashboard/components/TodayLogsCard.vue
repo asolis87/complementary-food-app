@@ -102,7 +102,7 @@ const mealSlots = computed<MealSlot[]>(() => {
   })
 })
 
-const hasSlots = computed(() => props.mealSlots.length > 0)
+const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 </script>
 
 <style scoped>
@@ -119,21 +119,21 @@ const hasSlots = computed(() => props.mealSlots.length > 0)
   line-height: var(--md3-title-line-height);
 }
 
-/* ── Slots ──────────────────────────────────────────────── */
+/* ── Slots ─────────────────────────────────────────────── */
 .slot-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-3); /* Increased from space-2 for more breathing room */
 }
 
 .slot-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--md3-space-2) var(--md3-space-3);
+  padding: var(--md3-space-3) var(--md3-space-4); /* Increased padding */
   border-radius: var(--md3-rounded-md);
   transition: background var(--md3-transition-fast);
 }

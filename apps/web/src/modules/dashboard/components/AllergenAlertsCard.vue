@@ -1,51 +1,39 @@
 <template>
   <section
     v-if="hasContent"
-    class="dashboard-card allergen-card"
+    class="allergen-card"
     role="region"
     aria-label="Alérgenos pendientes"
   >
-    <h2 class="card-title">Alérgenos pendientes</h2>
-
     <!-- Tier gate — PRO only -->
     <TierGate required-tier="PRO" feature-name="Alertas de alérgenos">
       <!-- Loading -->
       <div v-if="loading" class="loading-skeleton">
-        <div v-for="n in 3" :key="n" class="skeleton-line skeleton-line-long" />
+        <div v-for="n in 2" :key="n" class="skeleton-line skeleton-line-long" />
       </div>
 
-      <!-- Allergen list -->
-      <ul v-if="!loading && allergens.length > 0" class="allergen-list" role="list">
-        <li
-          v-for="allergen in allergens"
-          :key="allergen.allergenKey"
-          class="allergen-item"
-          :class="{ 'allergen-item--urgent': allergen.urgency === 'closing_window' }"
-        >
-          <div class="allergen-info">
-            <span class="allergen-icon" aria-hidden="true">{{ allergen.icon }}</span>
-            <div class="allergen-details">
-              <span class="allergen-name">{{ allergen.nameEs }}</span>
-              <span class="allergen-age">Desde {{ allergen.minAgeMonths }} meses</span>
-            </div>
-            <span
-              v-if="allergen.urgency === 'closing_window'"
-              class="urgency-badge"
-              aria-label="Ventana cerrándose — prioridad alta"
-            >
-              ⚠️
-            </span>
+      <!-- Allergen content -->
+      <div v-if="!loading && allergens.length > 0" class="allergen-content">
+        <div class="allergen-header">
+          <span class="material-symbols-outlined allergen-warning" aria-hidden="true">warning</span>
+          <div class="allergen-text">
+            <h3 class="allergen-title">Alérgenos Pendientes</h3>
+            <p class="allergen-description">
+              Por edad (<span class="font-bold">{{ babyAgeMonths }}+ meses</span>):
+              <span class="allergen-list-inline">
+                {{ allergenSummary }}
+              </span>
+            </p>
           </div>
-
-          <button
-            class="btn-guide"
-            :aria-label="`Ver cómo introducir ${allergen.nameEs}`"
-            @click="$emit('viewGuide', allergen.allergenKey)"
-          >
-            Ver cómo introducir →
-          </button>
-        </li>
-      </ul>
+        </div>
+        
+        <button
+          class="btn-intro"
+          @click="$emit('viewGuide', topAllergens[0]?.allergenKey ?? '')"
+        >
+          Ver cómo introducir →
+        </button>
+      </div>
 
       <!-- All caught up -->
       <div v-if="!loading && allergens.length === 0" class="caught-up">
@@ -65,121 +53,113 @@ import TierGate from '@/shared/components/TierGate.vue'
 const props = defineProps<{
   allergens: AllergenAlert[]
   loading?: boolean
+  babyAgeMonths?: number
 }>()
 
 defineEmits<{
   viewGuide: [allergenKey: string]
 }>()
 
-/**
- * Show the card when there are allergens or when loading.
- * Hide completely when allergens array is confirmed empty and not loading.
- */
 const hasContent = computed(() => props.loading || props.allergens.length > 0)
+
+// Show top 3 allergens in the summary
+const topAllergens = computed(() => props.allergens.slice(0, 3))
+
+// Create summary text: "🥜 Maní, 🐟 Pescado, 🥛 Lácteos"
+const allergenSummary = computed(() => {
+  return topAllergens.value.map(a => `${a.icon} ${a.nameEs}`).join(', ')
+})
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════════════════
+   AllergenAlertsCard — Compact card matching Stitch design.
+   Single card with inline allergen list + one CTA button.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .allergen-card {
-  /* Card styling inherited */
-}
-
-.card-title {
-  margin: 0 0 var(--md3-space-3);
-  font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-sm);
-  font-weight: var(--md3-weight-semibold);
-  color: var(--md3-on-surface);
-  line-height: var(--md3-title-line-height);
-}
-
-/* ── Allergen list ────────────────────────────────────────── */
-.allergen-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-2);
-}
-
-.allergen-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--md3-space-2) var(--md3-space-3);
-  background: var(--md3-surface-container-low);
-  border-radius: var(--md3-rounded-md);
-  border: 1px solid var(--md3-outline-variant);
-}
-
-.allergen-item--urgent {
-  border-color: var(--md3-error);
   background: var(--md3-error-container);
+  background: color-mix(in srgb, var(--md3-error-container) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md3-error-container) 30%, transparent);
+  border-radius: 16px;
+  padding: 3rem 2rem; /* 48px vertical, 32px horizontal - MUCH more breathing room */
 }
 
-.allergen-info {
-  display: flex;
-  align-items: center;
-  gap: var(--md3-space-2);
-}
-
-.allergen-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.allergen-details {
+.allergen-content {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 2rem; /* 32px - Significant space between sections */
 }
 
-.allergen-name {
+.allergen-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.allergen-warning {
+  font-size: 1.5rem;
+  color: var(--md3-error);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.allergen-text {
+  flex: 1;
+}
+
+.allergen-title {
+  margin: 0 0 1rem 0; /* 16px below title - more space */
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-bold);
+  color: var(--md3-error);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+
+.allergen-description {
+  margin: 0 0 1.5rem 0; /* 24px below description - significant space */
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
-  font-weight: var(--md3-weight-medium);
-  color: var(--md3-on-surface);
-}
-
-.allergen-age {
-  font-size: var(--md3-body-sm);
   color: var(--md3-on-surface-variant);
+  line-height: 1.7; /* More line height for readability */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-.urgency-badge {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-/* ── Guide button ─────────────────────────────────────────── */
-.btn-guide {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.75rem;
-  border: none;
-  border-radius: var(--md3-rounded-full);
-  background: var(--md3-primary);
-  color: var(--md3-on-primary);
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
+.allergen-list-inline {
   font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface);
+  display: inline; /* Keep inline but allow wrapping */
+}
+
+.font-bold {
+  font-weight: var(--md3-weight-semibold);
+}
+
+/* ── Intro button ───────────────────────────────────────── */
+.btn-intro {
+  width: 100%;
+  padding: 1.25rem 2rem; /* 20px vertical, 32px horizontal - Much more breathing room */
+  border: 1px solid color-mix(in srgb, var(--md3-primary) 20%, transparent);
+  border-radius: 12px;
+  background: white;
+  color: var(--md3-primary);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-bold);
   cursor: pointer;
-  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
-  white-space: nowrap;
-  flex-shrink: 0;
+  transition: background var(--md3-transition-fast);
+  margin-top: 1rem; /* 16px extra space above button */
 }
 
-.btn-guide:hover {
-  opacity: 0.9;
+.btn-intro:hover {
+  background: color-mix(in srgb, var(--md3-primary-container) 5%, transparent);
 }
 
-.btn-guide:focus-visible {
+.btn-intro:focus-visible {
   outline: 2px solid var(--md3-primary);
   outline-offset: 2px;
 }
@@ -187,7 +167,7 @@ const hasContent = computed(() => props.loading || props.allergens.length > 0)
 /* ── Caught-up state ──────────────────────────────────────── */
 .caught-up {
   text-align: center;
-  padding: var(--md3-space-3) 0;
+  padding: var(--md3-space-2) 0;
 }
 
 .caught-up-text {

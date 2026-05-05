@@ -539,12 +539,21 @@ async function handleSignOut() {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  overflow-x: hidden; /* Prevent horizontal overflow on mobile */
 }
 
 @media (min-width: 768px) {
   .app-main {
     padding: var(--md3-space-4) var(--md3-space-6);
     padding-bottom: var(--md3-space-4);
+  }
+}
+
+/* Mobile: Reduce padding to prevent content clipping */
+@media (max-width: 767px) {
+  .app-main {
+    padding: var(--md3-space-2); /* Reduced from space-3 (12px) to space-2 (8px) */
+    overflow-x: hidden;
   }
 }
 

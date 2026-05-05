@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-pakulab}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pakulab_dev}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -29,7 +29,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-pakulab}:${POSTGRES_PASSWORD:-pakulab_dev}@db:5432/${POSTGRES_DB:-pakulab_dev}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pakulab}:${POSTGRES_PASSWORD:-pakulab_dev}@db:5433/${POSTGRES_DB:-pakulab_dev}
       PORT: "3000"
       CORS_ORIGIN: http://localhost:8080
     restart: unless-stopped
