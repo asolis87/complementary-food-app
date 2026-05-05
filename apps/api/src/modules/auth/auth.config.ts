@@ -45,14 +45,16 @@ export const auth = betterAuth({
   }),
 
   // Base URL for auth routes
-  baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3001',
+  baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3002',
   secret: process.env['BETTER_AUTH_SECRET'] ?? 'dev-secret-change-in-production-min-32-chars',
 
-  // Trusted origins for CORS (frontend URLs)
+  // Trusted origins for CORS (frontend URLs) - support both 5173 and 5174
   trustedOrigins: [
-    process.env['FRONTEND_URL'] ?? 'http://localhost:5174',
+    'http://localhost:5173',
+    'http://localhost:5174',
     process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
-  ],
+    process.env['FRONTEND_URL'] ?? 'http://localhost:5173',
+  ].filter((origin, idx, arr) => origin && arr.indexOf(origin) === idx), // dedupe
 
   // Session lifetime — explicit policy, audit H-06 (A07:2021)
   // expiresIn: 7 days; refreshed (rolling) every 24h of activity

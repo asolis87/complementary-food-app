@@ -14,9 +14,15 @@
     "db:push": "pnpm --filter api db:push",
     "db:migrate-free": "npx tsx prisma/scripts/migrate-free-to-expired.ts",
     "lint": "pnpm --recursive lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:mobile": "playwright test --project=Mobile",
+    "test:e2e:desktop": "playwright test --project=Desktop"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",

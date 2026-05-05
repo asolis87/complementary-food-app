@@ -29,6 +29,7 @@ import { allergensRoutes } from './modules/allergens/allergens.routes.js'
 import { billingRoutes } from './modules/billing/billing.routes.js'
 import { authRoutes } from './modules/auth/auth.routes.js'
 import { disclaimerRoutes } from './modules/disclaimer/disclaimer.routes.js'
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js'
 
 /**
  * Audit M-04 (A05:2021): explicit trust-proxy policy.
@@ -123,6 +124,7 @@ export async function buildApp() {
   await app.register(allergensRoutes, { prefix: '/api/allergens' })
   await app.register(billingRoutes, { prefix: '/api/billing' })
   await app.register(disclaimerRoutes, { prefix: '/api/disclaimer' })
+  await app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 
   // === Global Error Handler ===
   app.setErrorHandler<FastifyError>((error, _request, reply) => {

@@ -138,6 +138,7 @@ import { ref, computed, watch } from 'vue'
 import { ReactionType } from '@pakulab/shared'
 import type { MealLog, UpdateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
+import { useDashboardStore } from '../../../shared/stores/dashboardStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
@@ -155,6 +156,7 @@ const emit = defineEmits<{
 // ── Stores ────────────────────────────────────────────────────────────────
 
 const diaryStore = useDiaryStore()
+const dashboardStore = useDashboardStore()
 const uiStore = useUiStore()
 
 // ── Local state ───────────────────────────────────────────────────────────
@@ -241,6 +243,7 @@ async function save() {
       notes: localNotes.value.trim() || null,
     }
     await diaryStore.updateEntry(props.entry.id, payload)
+    dashboardStore.invalidate()
     uiStore.addToast('Registro actualizado', 'success')
     emit('updated')
     close()

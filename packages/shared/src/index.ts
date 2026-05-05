@@ -39,6 +39,18 @@ export type { UserTier, SubscriptionStatus, BabyProfile, AuthUser } from './type
 
 export type { BalanceLabel, BalanceResult } from './types/balance.js'
 
+export type {
+  DashboardData,
+  BabyContext,
+  TodayLog,
+  SuggestedFood,
+  AllergenAlert,
+  RoadmapProgress,
+  RoadmapFood,
+  BalanceInsight,
+  MealSlot,
+} from './types/dashboard.js'
+
 // Constants
 export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS } from './constants/allergens.js'
 export type { AllergenInfo } from './constants/allergens.js'
@@ -74,6 +86,26 @@ export {
   DAY_KEYS,
 } from './constants/mealType.js'
 export type { MealKey, DayKey } from './constants/mealType.js'
+
+// Dashboard constants
+export {
+  BALANCE_TIPS,
+  DASHBOARD_CACHE_TTL,
+  DASHBOARD_MEAL_SLOTS,
+  DEFAULT_SUGGESTIONS_LIMIT,
+  MAX_SUGGESTIONS_LIMIT,
+  SUGGESTION_LOOKBACK_DAYS,
+  MEAL_TYPES_FOR_SLOTS,
+  FOOD_GROUP_LABELS_DASHBOARD,
+} from './constants/dashboard.js'
+export type { MealSlotDef } from './constants/dashboard.js'
+
+export {
+  ALLERGEN_AGE_THRESHOLDS,
+  DEFAULT_ALLERGEN_MIN_AGE_MONTHS,
+  CLOSING_WINDOW_AGE_MONTHS,
+} from './constants/allergen-age-thresholds.js'
+export type { AllergenAgeThreshold } from './constants/allergen-age-thresholds.js'
 
 // Utils
 export { calculateBalance, getBalanceSeverity, derivePlateBalanceLabel } from './utils/balance.js'

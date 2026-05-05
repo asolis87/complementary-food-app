@@ -66,6 +66,12 @@ export const router = createRouter({
 
     // === Authenticated routes (FREE tier removed — all users are PRO during trial) ===
     {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('@/modules/dashboard/DashboardPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/plates',
       name: 'plates',
       component: () => import('@/modules/plates/PlateListPage.vue'),
