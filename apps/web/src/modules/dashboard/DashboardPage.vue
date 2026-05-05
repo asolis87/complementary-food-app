@@ -14,7 +14,7 @@
     <DashboardErrorBoundary
       v-if="hasError && !loading"
       :status-code="errorStatusCode"
-      :message="storeError"
+      :message="storeError ?? undefined"
       :show-go-home="errorStatusCode === 401 || errorStatusCode === 403"
       @retry="handleRetry"
     />
