@@ -109,7 +109,7 @@ export default defineConfig({
           {
             // Dashboard — NetworkOnly (must always reflect latest data after diary changes).
             // Mobile browsers aggressively cache API responses even without SW rules.
-            urlPattern: /\/api\/dashboard(?:\/|$)/,
+            urlPattern: /\/api\/dashboard(?:\/|\?|$)/,
             handler: 'NetworkOnly',
           },
           {
