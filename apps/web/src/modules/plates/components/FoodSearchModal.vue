@@ -278,9 +278,18 @@ function clearSearch() {
 }
 
 // Reset search when group changes or modal opens/closes
-watch([() => props.group, () => props.isOpen], () => {
+watch([() => props.group, () => props.isOpen], ([, isOpen]) => {
   rawQuery.value = ''
   debouncedQuery.value = ''
+  // Cancel any pending debounce so it doesn't fire stale queries
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  // Notify parent to clear its search filter when modal opens
+  if (isOpen) {
+    emit('search', '')
+  }
 })
 
 // Auto-focus when opened
