@@ -107,6 +107,12 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
+            // Dashboard — NetworkOnly (must always reflect latest data after diary changes).
+            // Mobile browsers aggressively cache API responses even without SW rules.
+            urlPattern: /\/api\/dashboard(?:\/|$)/,
+            handler: 'NetworkOnly',
+          },
+          {
             // User plates — NetworkFirst (user data should be fresh).
             // Kept cached for offline access to saved recipes; backend sets
             // Cache-Control: no-store, private as defense-in-depth for any
