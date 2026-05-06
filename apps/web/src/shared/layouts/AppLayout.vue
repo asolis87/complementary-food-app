@@ -18,7 +18,8 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-content">
-        <RouterLink to="/" class="logo">
+        <!-- Logo: goes to dashboard when authenticated, home when not -->
+        <RouterLink :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="logo">
           <span class="material-symbols-outlined logo-icon">eco</span>
           <span class="logo-text">Pakulab</span>
         </RouterLink>

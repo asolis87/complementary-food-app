@@ -212,14 +212,23 @@ export const useDashboardStore = defineStore('dashboard', () => {
    * Keeps showing the old (stale) data while forcing the next fetchDashboard()
    * call to go to the network. Use this after registering or editing a meal.
    *
-   * Consider: invalidate() does NOT nuke dashboardData — the user still sees
-   * the previous dashboard until the refetch completes. This prevents layout
-   * jumps and keeps the UX smooth.
+   * FIX: Also triggers immediate refresh if we have an active baby profile,
+   * so the dashboard updates right away instead of waiting for navigation.
    */
   function invalidate(): void {
     lastFetched.value = null
     _sectionCache.value = new Map()
     // Keep dashboardData — next fetchDashboard() will update it
+    
+    // FIX: Trigger immediate refresh if we have an active profile
+    // Import profileStore here to avoid circular dependency
+    import('@/shared/stores/profileStore.js').then(({ useProfileStore }) => {
+      const profileStore = useProfileStore()
+      if (profileStore.activeProfile?.id) {
+        // Refresh immediately but silently (don't show loading state)
+        void fetchDashboard(profileStore.activeProfile.id)
+      }
+    })
   }
 
   /**
