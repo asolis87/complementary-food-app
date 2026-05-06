@@ -68,10 +68,20 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         const now = new Date()
 
         // Check if TRIALING subscription has expired
-        if (sub.status === 'TRIALING' && sub.trialEnd && now > sub.trialEnd) {
-          // Trial expired — treat as EXPIRED
-          subscriptionStatus = 'EXPIRED'
-          // Note: We don't update the DB here, just resolve tier
+        // FIX: Allow usage until END OF DAY (23:59:59) instead of exact timestamp
+        if (sub.status === 'TRIALING' && sub.trialEnd) {
+          // Set trial deadline to end of day (23:59:59.999)
+          const trialDeadline = new Date(sub.trialEnd)
+          trialDeadline.setHours(23, 59, 59, 999)
+          
+          if (now > trialDeadline) {
+            // Trial expired — treat as EXPIRED
+            subscriptionStatus = 'EXPIRED'
+            // Note: We don't update the DB here, just resolve tier
+          } else {
+            // Still within trial day — user has PRO access
+            tier = 'PRO'
+          }
         } else if (sub.status === 'ACTIVE' || sub.status === 'TRIALING') {
           tier = 'PRO'
         } else if (sub.status === 'PAST_DUE') {
