@@ -32,7 +32,7 @@ export function useDashboardData() {
     hasError: computed(() => store.hasError),
     /** True when no data has been fetched yet */
     isEmpty: computed(() => store.isEmpty),
-    /** True when the cached data is older than 5 minutes */
+    /** True when the cached data is older than 60 seconds */
     isStale: computed(() => store.isStale),
   }
 }

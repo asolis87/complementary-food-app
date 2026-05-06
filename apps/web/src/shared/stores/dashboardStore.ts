@@ -1,7 +1,7 @@
 /**
  * Dashboard Pinia store — manages dashboard data with SWR caching.
  *
- * Design: stale-while-revalidate (SWR) pattern with 5-min TTL.
+ * Design: stale-while-revalidate (SWR) pattern with 60s TTL (matches backend Cache-Control).
  * On fetchDashboard:
  *   1. Return cached data immediately if not expired
  *   2. Fetch fresh data from the consolidated endpoint in the background
@@ -16,8 +16,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, OfflineError } from '../api/client.js'
 
-// ── Frontend SWR cache TTL (5 minutes for consolidated data) ──────────────
-const SWR_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+// ── Frontend SWR cache TTL (60 seconds — matches backend Cache-Control: max-age=60)
+const SWR_CACHE_TTL_MS = 60 * 1000 // 60 seconds
 
 // ── Cached response shape ─────────────────────────────────────────────────
 interface CachedResponse<T> {
@@ -48,7 +48,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const hasError = computed(() => error.value !== null)
   const isEmpty = computed(() => dashboardData.value === null)
 
-  /** True when the consolidated dashboard data was fetched > 5 min ago */
+  /** True when the consolidated dashboard data was fetched > 60s ago */
   const isStale = computed(() => {
     if (lastFetched.value === null) return true
     return Date.now() - lastFetched.value > SWR_CACHE_TTL_MS
@@ -212,23 +212,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
    * Keeps showing the old (stale) data while forcing the next fetchDashboard()
    * call to go to the network. Use this after registering or editing a meal.
    *
-   * FIX: Also triggers immediate refresh if we have an active baby profile,
-   * so the dashboard updates right away instead of waiting for navigation.
+   * NOTE: Does NOT trigger an immediate fetch. The route watcher in
+   * DashboardPage.vue handles refreshing when navigating back from diary.
+   * Triggering a fetch here caused a race condition where the stale
+   * invalidate() fetch would overwrite the fresh route-watcher fetch.
    */
   function invalidate(): void {
     lastFetched.value = null
     _sectionCache.value = new Map()
     // Keep dashboardData — next fetchDashboard() will update it
-    
-    // FIX: Trigger immediate refresh if we have an active profile
-    // Import profileStore here to avoid circular dependency
-    import('@/shared/stores/profileStore.js').then(({ useProfileStore }) => {
-      const profileStore = useProfileStore()
-      if (profileStore.activeProfile?.id) {
-        // Refresh immediately but silently (don't show loading state)
-        void fetchDashboard(profileStore.activeProfile.id)
-      }
-    })
   }
 
   /**

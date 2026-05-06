@@ -521,6 +521,7 @@ import { useDiaryStore } from '../../shared/stores/diaryStore.js'
 import { useProfileStore } from '../../shared/stores/profileStore.js'
 import { useUiStore } from '../../shared/stores/uiStore.js'
 import { useFoodHistoryStore } from '../../shared/stores/foodHistoryStore.js'
+import { useDashboardStore } from '../../shared/stores/dashboardStore.js'
 import LoadingSkeleton from '../../shared/components/LoadingSkeleton.vue'
 import AddMealModal from './components/AddMealModal.vue'
 import EditLogModal from './components/EditLogModal.vue'
@@ -535,6 +536,7 @@ const diaryStore = useDiaryStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
 const foodHistoryStore = useFoodHistoryStore()
+const dashboardStore = useDashboardStore()
 
 // ── Export composable ──────────────────────────────────────────────────────
 
@@ -757,6 +759,8 @@ function onLogged() {
   if (activeProfileId.value) {
     diaryStore.fetchEntries(activeProfileId.value, diaryStore.selectedDate)
   }
+  // Invalidate dashboard so it refreshes with the new meal data
+  dashboardStore.invalidate()
 }
 
 async function confirmDelete(id: string) {

@@ -29,6 +29,7 @@ class ApiClient {
       method,
       headers,
       credentials: 'include', // Send cookies (BetterAuth session)
+      cache: 'no-store', // Always bypass HTTP cache — authenticated API calls must be fresh
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
 

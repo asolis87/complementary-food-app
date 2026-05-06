@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MealType } from '@pakulab/shared'
 import { DASHBOARD_MEAL_SLOTS } from '@pakulab/shared'
@@ -147,7 +147,7 @@ const LazyFoodRoadmapCard = defineAsyncComponent({
 const router = useRouter()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
-const { dashboardData, loading, error: storeError, hasError, isEmpty, lastFetched } = useDashboardData()
+const { dashboardData, loading, error: storeError, hasError, isEmpty, isStale } = useDashboardData()
 const { fetchDashboard, refreshDashboard } = useDashboardActions()
 const { isOnline } = useOnlineStatus()
 
@@ -236,6 +236,51 @@ const todayMealSlots = computed(() => {
 
 // ── Lifecycle ────────────────────────────────────────────────────────────
 
+// ── Real-time refresh: polling + visibility/focus handlers ────────────────
+
+const POLL_INTERVAL_MS = 30_000 // 30 seconds
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+/** Refresh dashboard if tab is visible and we have an active profile */
+function refreshIfVisible(): void {
+  if (document.visibilityState !== 'visible') return
+  const babyProfileId = profileStore.activeProfile?.id
+  if (babyProfileId) {
+    void refreshDashboard(babyProfileId)
+  }
+}
+
+/** Start polling — called on mount and when tab becomes visible */
+function startPolling(): void {
+  if (pollTimer !== null) return // already running
+  pollTimer = setInterval(refreshIfVisible, POLL_INTERVAL_MS)
+}
+
+/** Stop polling — called when tab is hidden or component unmounts */
+function stopPolling(): void {
+  if (pollTimer !== null) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function handleVisibilityChange(): void {
+  if (document.visibilityState === 'visible') {
+    // Tab became visible — refresh immediately + restart polling
+    refreshIfVisible()
+    startPolling()
+  } else {
+    // Tab hidden — stop polling to save resources
+    stopPolling()
+  }
+}
+
+function handleWindowFocus(): void {
+  refreshIfVisible()
+}
+
+// ── Lifecycle ────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   // Announce loading
   announce('Cargando dashboard...')
@@ -248,10 +293,8 @@ onMounted(async () => {
   const babyProfileId = profileStore.activeProfile?.id
   if (babyProfileId) {
     try {
-      // Force refresh if data is stale (>5 min old)
-      const isStale = dashboardData.value === null || (lastFetched.value && Date.now() - lastFetched.value > 5 * 60 * 1000)
-      
-      if (isStale) {
+      // Force refresh if data is stale (>60s old, aligned with backend Cache-Control)
+      if (isStale.value) {
         await fetchDashboard(babyProfileId)
       }
       
@@ -263,6 +306,17 @@ onMounted(async () => {
   } else {
     announce('Selecciona un perfil de bebé para ver el dashboard.')
   }
+
+  // Start real-time refresh listeners
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('focus', handleWindowFocus)
+  startPolling()
+})
+
+onUnmounted(() => {
+  stopPolling()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('focus', handleWindowFocus)
 })
 
 // ── Event handlers ───────────────────────────────────────────────────────
