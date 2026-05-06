@@ -290,10 +290,11 @@ const modalGroup = ref<FoodGroup>('FRUIT')
 function onGroupSelect(group: FoodGroup) {
   modalGroup.value = group
   showFoodModal.value = true
-  // Clear group filter — we filter locally using getEffectiveGroup
+  // Clear group and search filters — we filter locally using getEffectiveGroup
   // to handle dual-group foods (e.g., cacahuate → PROTEIN in 4-group, HEALTHY_FAT in 5-group).
   // The full catalog is already in memory from the initial fetchFoods() call.
   foodStore.setFilter('group', null)
+  foodStore.setFilter('search', '')
   // Fire-and-forget: fetch food history for this group's foods (AC: A1, A13)
   // Does NOT block modal opening — historyLoading state handles the skeleton
   const babyProfileId = profileStore.activeProfile?.id
