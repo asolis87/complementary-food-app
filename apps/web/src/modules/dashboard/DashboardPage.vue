@@ -147,7 +147,7 @@ const LazyFoodRoadmapCard = defineAsyncComponent({
 const router = useRouter()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
-const { dashboardData, loading, error: storeError, hasError, isEmpty, isStale } = useDashboardData()
+const { dashboardData, loading, error: storeError, hasError, isEmpty } = useDashboardData()
 const { fetchDashboard, refreshDashboard } = useDashboardActions()
 const { isOnline } = useOnlineStatus()
 
@@ -293,11 +293,11 @@ onMounted(async () => {
   const babyProfileId = profileStore.activeProfile?.id
   if (babyProfileId) {
     try {
-      // Force refresh if data is stale (>60s old, aligned with backend Cache-Control)
-      if (isStale.value) {
-        await fetchDashboard(babyProfileId)
-      }
-      
+      // Always re-fetch on mount. SWR shows the cached data instantly while
+      // the network call repopulates in the background, so any mutation that
+      // forgot to invalidate() still gets reflected on return.
+      await fetchDashboard(babyProfileId)
+
       dataLoaded.value = true
       announce('Dashboard cargado correctamente.')
     } catch {

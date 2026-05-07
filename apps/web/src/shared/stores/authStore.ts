@@ -232,7 +232,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     await authClient.signIn.social({
       provider: 'google',
-      callbackURL: '/',
+      callbackURL: '/dashboard',
       newUserCallbackURL: '/onboarding/plan',
     })
   }

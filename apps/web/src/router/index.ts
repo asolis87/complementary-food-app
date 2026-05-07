@@ -182,9 +182,9 @@ router.beforeEach(async (to) => {
     await authStore.checkSession()
   }
 
-  // 1. Guest-only pages (login, signup) — redirect to home if already logged in
+  // 1. Guest-only pages (login, signup) — redirect to dashboard if already logged in
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return { name: 'home' }
+    return { name: 'dashboard' }
   }
 
   // 2. Auth-required pages — redirect to login if not authenticated
