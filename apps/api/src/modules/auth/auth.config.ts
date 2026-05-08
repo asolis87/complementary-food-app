@@ -48,11 +48,17 @@ export const auth = betterAuth({
   baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3002',
   secret: process.env['BETTER_AUTH_SECRET'] ?? 'dev-secret-change-in-production-min-32-chars',
 
-  // Trusted origins for CORS (frontend URLs) - support both 5173 and 5174
+  // Trusted origins for CORS (frontend URLs)
+  // Can be extended via FRONTEND_URLS environment variable (comma-separated)
   trustedOrigins: [
     'http://localhost:5173',
     'http://localhost:5174',
     process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
+    // Staging and production domains
+    'https://staging.pakulab.cloud',
+    'https://pakulab.com',
+    ...(process.env['FRONTEND_URLS'] ? process.env['FRONTEND_URLS'].split(',').map(url => url.trim()) : []),
+  ],
     process.env['FRONTEND_URL'] ?? 'http://localhost:5173',
   ].filter((origin, idx, arr) => origin && arr.indexOf(origin) === idx), // dedupe
 

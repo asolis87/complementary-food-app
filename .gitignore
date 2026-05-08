@@ -48,3 +48,6 @@ workbox-*.js
 
 # Playwright MCP snapshots
 .playwright-mcp/
+
+e2e/
+playwright-report/
