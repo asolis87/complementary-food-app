@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod'
+import { sanitizeText } from '../../shared/utils/sanitize.js'
 
 const foodGroupSchema = z.enum(['FRUIT', 'VEGETABLE', 'PROTEIN', 'CEREAL_TUBER', 'HEALTHY_FAT'])
 const alClassificationSchema = z.enum(['ASTRINGENT', 'LAXATIVE', 'NEUTRAL'])
@@ -13,14 +14,14 @@ export const plateItemInputSchema = z.object({
 })
 
 export const createPlateSchema = z.object({
-  name: z.string().min(1).max(100).default('Mi plato'),
+  name: z.string().min(1).max(100).default('Mi plato').transform(sanitizeText),
   groupCount: z.literal(4).or(z.literal(5)).default(4),
   babyProfileId: z.string().cuid().optional(),
   items: z.array(plateItemInputSchema).max(20),
 })
 
 export const updatePlateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().min(1).max(100).optional().transform((v) => (v == null ? v : sanitizeText(v))),
   groupCount: z.literal(4).or(z.literal(5)).optional(),
   babyProfileId: z.string().cuid().optional().nullable(),
   items: z.array(plateItemInputSchema).max(20).optional(),

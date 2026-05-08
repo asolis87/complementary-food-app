@@ -1,4 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" rx="40" fill="#10B981"/>
-  <text x="96" y="130" font-size="110" text-anchor="middle" fill="white">🥦</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192" role="img" aria-label="Pakulab">
+  <title>Pakulab</title>
+  <!-- Background tile (brand green, rounded for maskable safe area) -->
+  <rect width="192" height="192" rx="40" fill="#00694b"/>
+  <!-- Plate ring -->
+  <circle cx="96" cy="96" r="68" fill="#ffffff"/>
+  <!-- Quadrants -->
+  <clipPath id="plate192">
+    <circle cx="96" cy="96" r="62"/>
+  </clipPath>
+  <g clip-path="url(#plate192)">
+    <rect x="34" y="34" width="62" height="62" fill="#ffc5a7"/>
+    <rect x="96" y="34" width="62" height="62" fill="#7eefc0"/>
+    <rect x="34" y="96" width="62" height="62" fill="#8cfece"/>
+    <rect x="96" y="96" width="62" height="62" fill="#feb289"/>
+  </g>
+  <!-- Dividers -->
+  <line x1="96" y1="34" x2="96" y2="158" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <line x1="34" y1="96" x2="158" y2="96" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <!-- Center well -->
+  <circle cx="96" cy="96" r="16" fill="#ffffff" stroke="#00694b" stroke-width="4"/>
 </svg>

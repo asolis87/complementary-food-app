@@ -191,8 +191,23 @@ export const diaryRoutes: FastifyPluginAsync = async (fastify) => {
         orderBy: { date: 'desc' },
       })
 
+      // Fetch DayObservations for the same window to derive hasSuspectedReaction (REQ-D1)
+      const uniqueDates = [...new Set(logs.map((l) => l.date.toISOString().split('T')[0]))]
+      const observations =
+        uniqueDates.length > 0
+          ? await fastify.prisma.dayObservation.findMany({
+              where: {
+                babyProfileId,
+                date: {
+                  in: uniqueDates.map((d) => new Date(d + 'T00:00:00.000Z')),
+                },
+              },
+              select: { date: true, symptoms: true },
+            })
+          : []
+
       // Aggregate with pure function — AD-1 (findMany + JS reduce)
-      const historyMap = aggregateFoodHistory(logs, foodIds)
+      const historyMap = aggregateFoodHistory(logs, observations, foodIds)
 
       reply.send({ data: historyMap })
     },

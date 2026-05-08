@@ -10,6 +10,7 @@
  */
 
 import type { AuthUser, SubscriptionStatus, UserTier } from '@pakulab/shared'
+import { DISCLAIMER_CURRENT_VERSION } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, ApiError } from '../api/client.js'
@@ -22,6 +23,10 @@ interface SessionResponse {
 interface AuthResponse {
   user: AuthUser
   token?: string
+}
+
+interface AcceptDisclaimerResponse {
+  user: Pick<AuthUser, 'lastAcceptedDisclaimerVersion'>
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -72,6 +77,20 @@ export const useAuthStore = defineStore('auth', () => {
   const showVerificationBanner = computed(() =>
     isAuthenticated.value && !emailVerified.value
   )
+
+  // ─── Disclaimer ───────────────────────────────────────────────────────────
+
+  /** Current disclaimer version — re-exported for ergonomic access in components (REQ-DC-07) */
+  const currentDisclaimerVersion = DISCLAIMER_CURRENT_VERSION
+
+  /**
+   * True iff the authenticated user has not yet accepted the current disclaimer version.
+   * False when unauthenticated (modal is never shown to anon users — REQ-DC-07, AD-DC-05).
+   */
+  const mustShowDisclaimer = computed(() => {
+    if (user.value === null) return false
+    return user.value.lastAcceptedDisclaimerVersion !== DISCLAIMER_CURRENT_VERSION
+  })
   
   const trialDaysLeft = computed((): number => {
     if (!isTrialing.value) return 0
@@ -213,9 +232,26 @@ export const useAuthStore = defineStore('auth', () => {
 
     await authClient.signIn.social({
       provider: 'google',
-      callbackURL: '/',
+      callbackURL: '/dashboard',
       newUserCallbackURL: '/onboarding/plan',
     })
+  }
+
+  /**
+   * Accept the current disclaimer version.
+   * POSTs to /api/disclaimer/accept and updates user.lastAcceptedDisclaimerVersion
+   * from the response. Throws on non-2xx — component handles toast/error UI (REQ-DC-09, AD-DC-05).
+   */
+  async function acceptDisclaimer(): Promise<void> {
+    const response = await apiClient.post<AcceptDisclaimerResponse>('/disclaimer/accept', {
+      version: DISCLAIMER_CURRENT_VERSION,
+    })
+    if (user.value !== null) {
+      user.value = {
+        ...user.value,
+        lastAcceptedDisclaimerVersion: response.user.lastAcceptedDisclaimerVersion,
+      }
+    }
   }
 
   /** Clear any auth error (call before showing form) */
@@ -338,12 +374,16 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters — email verification
     emailVerified,
     showVerificationBanner,
+    // Getters — disclaimer
+    mustShowDisclaimer,
+    currentDisclaimerVersion,
     // Actions
     checkSession,
     signIn,
     signUp,
     signOut,
     signInWithGoogle,
+    acceptDisclaimer,
     clearError,
     verifyEmail,
     forgotPassword,

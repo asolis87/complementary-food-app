@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Pakulab">
+  <title>Pakulab</title>
+  <!-- Full bleed brand background (safe area = inner 80%) -->
+  <rect width="512" height="512" fill="#00694b"/>
+  <!-- Plate ring inside safe area: scaled to ~70% of canvas -->
+  <circle cx="256" cy="256" r="140" fill="#ffffff"/>
+  <clipPath id="plateMask">
+    <circle cx="256" cy="256" r="128"/>
+  </clipPath>
+  <g clip-path="url(#plateMask)">
+    <rect x="128" y="128" width="128" height="128" fill="#ffc5a7"/>
+    <rect x="256" y="128" width="128" height="128" fill="#7eefc0"/>
+    <rect x="128" y="256" width="128" height="128" fill="#8cfece"/>
+    <rect x="256" y="256" width="128" height="128" fill="#feb289"/>
+  </g>
+  <line x1="256" y1="128" x2="256" y2="384" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  <line x1="128" y1="256" x2="384" y2="256" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="34" fill="#ffffff" stroke="#00694b" stroke-width="8"/>
+</svg>

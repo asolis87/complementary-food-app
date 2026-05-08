@@ -45,23 +45,37 @@ export const auth = betterAuth({
   }),
 
   // Base URL for auth routes
-  baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3001',
+  baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3002',
   secret: process.env['BETTER_AUTH_SECRET'] ?? 'dev-secret-change-in-production-min-32-chars',
 
   // Trusted origins for CORS (frontend URLs)
   // Can be extended via FRONTEND_URLS environment variable (comma-separated)
   trustedOrigins: [
-    process.env['FRONTEND_URL'] ?? 'http://localhost:5174',
+    'http://localhost:5173',
+    'http://localhost:5174',
     process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
     // Staging and production domains
     'https://staging.pakulab.cloud',
     'https://pakulab.com',
     ...(process.env['FRONTEND_URLS'] ? process.env['FRONTEND_URLS'].split(',').map(url => url.trim()) : []),
   ],
+    process.env['FRONTEND_URL'] ?? 'http://localhost:5173',
+  ].filter((origin, idx, arr) => origin && arr.indexOf(origin) === idx), // dedupe
+
+  // Session lifetime — explicit policy, audit H-06 (A07:2021)
+  // expiresIn: 7 days; refreshed (rolling) every 24h of activity
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+  },
 
   // Email + password auth
   emailAndPassword: {
     enabled: true,
+    // Password policy — audit M-03 (A07:2021): enforce a minimum length.
+    // 12 chars follows current OWASP guidance; complexity rules intentionally not enforced.
+    minPasswordLength: 12,
+    maxPasswordLength: 128,
     // Send password reset email when user requests it
     sendResetPassword: async ({ user, url }) => {
       // Rate limiting: max 3 password reset emails per email per hour
@@ -73,7 +87,7 @@ export const auth = betterAuth({
       if (lastSend && now - lastSend < windowMs) {
         const count = rateLimitCount.get(rateLimitKey) ?? 0
         if (count >= 3) {
-          console.warn(`[auth] Rate limit exceeded for password reset email: ${user.email}`)
+          console.warn('[auth] rate limit exceeded for password reset', { userId: user.id })
           return // Silently ignore - BetterAuth will return success anyway
         }
         rateLimitCount.set(rateLimitKey, count + 1)
@@ -98,10 +112,6 @@ export const auth = betterAuth({
   emailVerification: {
     // Send verification email on signup and resend requests
     sendVerificationEmail: async ({ user, url, token }) => {
-      console.log('[auth] sendVerificationEmail TRIGGERED for:', user.email)
-      console.log('[auth] Verification URL:', url)
-      console.log('[auth] Token:', token)
-      
       // Rate limiting: max 3 verification emails per email per hour
       const rateLimitKey = `verification:${user.email}`
       const now = Date.now()
@@ -111,7 +121,7 @@ export const auth = betterAuth({
       if (lastSend && now - lastSend < windowMs) {
         const count = rateLimitCount.get(rateLimitKey) ?? 0
         if (count >= 3) {
-          console.warn(`[auth] Rate limit exceeded for verification email: ${user.email}`)
+          console.warn('[auth] rate limit exceeded for verification email', { userId: user.id })
           return // Silently ignore - BetterAuth will return success anyway
         }
         rateLimitCount.set(rateLimitKey, count + 1)
@@ -121,24 +131,21 @@ export const auth = betterAuth({
       }
 
       const emailAdapter = getAdapter()
-      console.log('[auth] Getting email adapter...')
-      
+
       // Fire and forget - don't await
       void emailAdapter.sendEmail({
         to: user.email,
         subject: 'Verifica tu email',
-        htmlBody: verificationEmailHtml({ 
-          name: user.name ?? user.email.split('@')[0], 
-          url 
+        htmlBody: verificationEmailHtml({
+          name: user.name ?? user.email.split('@')[0],
+          url
         }),
-        textBody: verificationEmailText({ 
-          name: user.name ?? user.email.split('@')[0], 
-          url 
+        textBody: verificationEmailText({
+          name: user.name ?? user.email.split('@')[0],
+          url
         }),
-      }).then(() => {
-        console.log('[auth] ✅ Email sent successfully to:', user.email)
       }).catch((err) => {
-        console.error('[auth] ❌ Email send failed:', err)
+        console.error('[auth] verification email send failed', err)
       })
     },
     // Auto sign-in after verification

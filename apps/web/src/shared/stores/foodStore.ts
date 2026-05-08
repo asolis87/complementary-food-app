@@ -215,8 +215,8 @@ export const useFoodStore = defineStore('foods', () => {
     if (key === 'search') return
 
     // For other filters (group, alClassification, ageMonths), re-fetch from API.
+    // NOTE: search is NOT included — it's purely client-side (filteredFoods handles it).
     const currentFilters: FoodFilter = {}
-    if (filters.value.search) currentFilters.q = filters.value.search
     if (filters.value.group) currentFilters.group = filters.value.group
     if (filters.value.alClassification) currentFilters.alClassification = filters.value.alClassification
     if (filters.value.ageMonths !== null) currentFilters.ageMonths = filters.value.ageMonths

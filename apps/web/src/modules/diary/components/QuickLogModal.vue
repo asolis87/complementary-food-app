@@ -74,7 +74,9 @@ import { ref, computed, watch } from 'vue'
 import { MealType, derivePlateBalanceLabel } from '@pakulab/shared'
 import type { CreateMealLogPayload, Plate } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
+import { useDashboardStore } from '../../../shared/stores/dashboardStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -92,6 +94,7 @@ const emit = defineEmits<{
 // ── Stores ────────────────────────────────────────────────────────────────
 
 const diaryStore = useDiaryStore()
+const dashboardStore = useDashboardStore()
 const uiStore = useUiStore()
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -146,7 +149,7 @@ function close() {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateOnlyString(new Date())
 }
 
 function currentTime(): string {
@@ -188,6 +191,7 @@ async function submit() {
 
   if (failed === 0) {
     // All succeeded
+    dashboardStore.invalidate()
     uiStore.addToast(
       `${succeeded} ${succeeded === 1 ? 'alimento registrado' : 'alimentos registrados'}`,
       'success',
@@ -196,6 +200,7 @@ async function submit() {
     close()
   } else if (succeeded > 0) {
     // Partial failure — some succeeded
+    dashboardStore.invalidate()
     uiStore.addToast(
       `Error al registrar ${failed} de ${total} alimentos`,
       'warning',

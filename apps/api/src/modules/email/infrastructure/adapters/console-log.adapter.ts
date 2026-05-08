@@ -15,6 +15,19 @@ import type {
 } from '../../domain/ports/email.port.js'
 
 export class ConsoleLogAdapter implements EmailPort {
+  /**
+   * Audit M-06 (A08:2021): refuse instantiation in production. The factory
+   * already routes by NODE_ENV, but a misconfiguration must NOT silently
+   * leak email bodies (which contain reset/verification URLs) to logs.
+   */
+  constructor() {
+    if (process.env['NODE_ENV'] === 'production') {
+      throw new Error(
+        'ConsoleLogAdapter must not be used in production. Configure ResendAdapter instead.',
+      )
+    }
+  }
+
   async healthCheck(): Promise<EmailHealthStatus> {
     return { status: 'ok', adapter: 'console-log' }
   }

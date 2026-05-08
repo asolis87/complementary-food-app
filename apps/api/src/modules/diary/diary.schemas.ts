@@ -7,6 +7,7 @@
 
 import { z } from 'zod'
 import { MealType, ReactionType } from '@pakulab/shared'
+import { sanitizeOptional } from '../../shared/utils/sanitize.js'
 
 export const createLogSchema = z.object({
   babyProfileId: z.string(),
@@ -15,7 +16,7 @@ export const createLogSchema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   mealType: z.nativeEnum(MealType),
   reaction: z.nativeEnum(ReactionType).optional(),
-  notes: z.string().max(500).optional(),
+  notes: z.string().max(500).optional().transform(sanitizeOptional),
   plateId: z.string().optional(),
   plateBalanceLabel: z
     .enum([
@@ -32,7 +33,7 @@ export const updateLogSchema = z
   .object({
     reaction: z.nativeEnum(ReactionType).nullable().optional(),
     accepted: z.boolean().nullable().optional(),
-    notes: z.string().max(500).nullable().optional(),
+    notes: z.string().max(500).nullable().optional().transform(sanitizeOptional),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',

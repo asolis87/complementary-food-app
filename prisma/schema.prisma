@@ -25,11 +25,12 @@ model User {
   createdAt     DateTime
   updatedAt     DateTime
 
-  sessions     Session[]
-  accounts     Account[]
-  babyProfiles BabyProfile[]
-  plates       Plate[]
-  subscription Subscription?
+  sessions               Session[]
+  accounts               Account[]
+  babyProfiles           BabyProfile[]
+  plates                 Plate[]
+  subscription           Subscription?
+  disclaimerAcceptances  DisclaimerAcceptance[]
 
   @@map("user")
 }
@@ -95,10 +96,11 @@ model BabyProfile {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft delete
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plates      Plate[]
-  foodLogs    FoodLog[]
-  weeklyMenus WeeklyMenu[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plates           Plate[]
+  foodLogs         FoodLog[]
+  weeklyMenus      WeeklyMenu[]
+  dayObservations  DayObservation[]
 
   @@index([userId])
 }
@@ -194,9 +196,23 @@ enum ReactionType {
   LIKED
   DISLIKED
   NEUTRAL
-  ALLERGIC
-  GAS
+  REJECTED
+  // REMOVED: ALLERGIC, GAS, RASH
+}
+
+enum StoolType {
+  NORMAL
+  LOOSE
+  HARD
+  NONE
+}
+
+enum SymptomType {
+  ALLERGY_SUSPECT
   RASH
+  GAS
+  VOMITING
+  FEVER
 }
 
 model FoodLog {
@@ -225,7 +241,21 @@ model FoodLog {
   @@index([foodId])
 }
 
+model DayObservation {
+  id            String        @id @default(cuid())
+  babyProfileId String
+  date          DateTime      @db.Date
+  stool         StoolType?
+  symptoms      SymptomType[]
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
+  babyProfile BabyProfile @relation(fields: [babyProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([babyProfileId, date])
+  @@index([babyProfileId, date])
+}
 
 // ==========================================
 // DOMAIN: Weekly Menu Planner
@@ -320,4 +350,22 @@ model Subscription {
 
   @@index([userId])
   @@index([stripeSubId])
+}
+
+// ==========================================
+// DOMAIN: Legal — Disclaimer Acceptance
+// ==========================================
+
+model DisclaimerAcceptance {
+  id         String   @id @default(cuid())
+  userId     String
+  version    String
+  acceptedAt DateTime @default(now())
+  userAgent  String?
+  ipAddress  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, acceptedAt(sort: Desc)])
+  @@map("disclaimer_acceptance")
 }

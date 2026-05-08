@@ -30,6 +30,7 @@ import {
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { apiClient } from '../api/client.js'
+import { useDashboardStore } from './dashboardStore.js'
 import { usePlateStore } from './plateStore.js'
 
 /** Slot key format: `${dayKey}:${mealKey}` e.g., "lun:desayuno" */
@@ -331,8 +332,9 @@ export const useMenuStore = defineStore('menus', () => {
       }
 
       await apiClient.patch(`/menus/${menu.id}/meals`, payload)
-      
+
       // Success: keep the optimistic update
+      useDashboardStore().invalidate()
     } catch (err) {
       // Rollback on error (AD-7)
       updateLocalSlot(menu.id, dayKey, mealKey, previousPlate)
@@ -383,6 +385,7 @@ export const useMenuStore = defineStore('menus', () => {
       await apiClient.patch(`/menus/${menu.id}/meals`, payload)
 
       // Success: keep the optimistic update
+      useDashboardStore().invalidate()
     } catch (err) {
       // Rollback on error (AD-7)
       updateLocalSlot(menu.id, dayKey, mealKey, previousPlate)
@@ -433,6 +436,7 @@ export const useMenuStore = defineStore('menus', () => {
 
       // Update local state with servedAt timestamp
       updateLocalServedAt(menu.id, dayKey, mealKey, result.servedAt)
+      useDashboardStore().invalidate()
 
       return result
     } catch (err) {

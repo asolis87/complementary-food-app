@@ -103,6 +103,39 @@
             <strong>{{ allergenFoodsInEntry(entry).join(', ') }}</strong>
           </div>
         </div>
+
+        <!-- Day observation block -->
+        <div class="summary-divider" aria-hidden="true" />
+        <DayObservationBlock
+          :observation="diaryStore.observationForSelectedDate"
+          @open-sheet="isObservationSheetOpen = true"
+        />
+
+        <!-- Export menu -->
+        <div class="export-row" aria-label="Exportar bitácora">
+          <button
+            class="export-btn"
+            :disabled="isExporting"
+            :title="isExporting ? 'Generando PDF…' : 'Exportar este día a PDF'"
+            @click="exportDay(diaryStore.selectedDate)"
+          >
+            <span class="material-symbols-outlined export-btn-icon" aria-hidden="true">picture_as_pdf</span>
+            Exportar día (PDF)
+          </button>
+          <button
+            class="export-btn"
+            :disabled="isExporting"
+            :title="isExporting ? 'Generando PDF…' : 'Exportar los últimos 7 días a PDF'"
+            @click="exportWeek(diaryStore.selectedDate)"
+          >
+            <span class="material-symbols-outlined export-btn-icon" aria-hidden="true">calendar_view_week</span>
+            Exportar semana (PDF)
+          </button>
+        </div>
+        <!-- Export error notice -->
+        <p v-if="exportError" class="export-error" role="alert">
+          ⚠️ {{ exportError }}
+        </p>
       </section>
 
       <!-- ══ MEAL TIMELINE ═════════════════════════════════════════════ -->
@@ -370,8 +403,60 @@
         </div>
       </section>
 
+      <!-- ══ DAY DETAIL (expandable) ══════════════════════════════════ -->
+      <section
+        v-if="entriesForDate.length > 0 && profileStore.activeProfile"
+        class="day-detail-wrapper"
+        aria-label="Detalle del día"
+      >
+        <button
+          class="detail-toggle-btn"
+          :aria-expanded="showDayDetail"
+          @click="showDayDetail = !showDayDetail"
+        >
+          <span class="material-symbols-outlined detail-toggle-icon" aria-hidden="true">
+            {{ showDayDetail ? 'expand_less' : 'expand_more' }}
+          </span>
+          {{ showDayDetail ? 'Ocultar detalle' : 'Ver detalle del día' }}
+        </button>
+
+        <div v-show="showDayDetail" class="day-detail-content">
+          <DayDetailSection
+            :logs="entriesForDate"
+            :observation="diaryStore.observationForSelectedDate"
+            :baby-profile="profileStore.activeProfile"
+            :date="diaryStore.selectedDate"
+            :first-date-by-food-id="firstDateByFoodId"
+          />
+
+          <button
+            class="detail-obs-cta"
+            :class="diaryStore.observationForSelectedDate ? 'detail-obs-cta--edit' : 'detail-obs-cta--add'"
+            @click="isObservationSheetOpen = true"
+          >
+            <span class="material-symbols-outlined detail-obs-cta-icon" aria-hidden="true">
+              {{ diaryStore.observationForSelectedDate ? 'edit_note' : 'add_circle' }}
+            </span>
+            {{ diaryStore.observationForSelectedDate ? 'Editar observación del día' : 'Registrar observación del día' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ══ OBSERVATION BLOCK (empty day) ══════════════════════════ -->
+      <!-- Show DayObservationBlock even when there are no meal entries (SUGGESTION-2) -->
+      <section
+        v-if="entriesForDate.length === 0"
+        class="summary-card"
+        aria-label="Observación del día"
+      >
+        <DayObservationBlock
+          :observation="diaryStore.observationForSelectedDate"
+          @open-sheet="isObservationSheetOpen = true"
+        />
+      </section>
+
       <!-- ══ EMPTY STATE ═══════════════════════════════════════════════ -->
-      <div v-else class="empty-state" role="status" aria-live="polite">
+      <div v-if="entriesForDate.length === 0" class="empty-state" role="status" aria-live="polite">
         <div class="empty-icon-wrap">
           <span class="material-symbols-outlined empty-icon" aria-hidden="true">no_meals</span>
         </div>
@@ -416,30 +501,52 @@
       @updated="onEntryUpdated"
     />
 
+    <DayObservationSheet
+      :open="isObservationSheetOpen"
+      :date="diaryStore.selectedDate"
+      :observation="diaryStore.observationForSelectedDate"
+      :baby-profile-id="activeProfileId"
+      @close="isObservationSheetOpen = false"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { FoodGroup } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS, MealType, ReactionType } from '@pakulab/shared'
 import type { MealLog } from '@pakulab/shared'
 import { useDiaryStore } from '../../shared/stores/diaryStore.js'
 import { useProfileStore } from '../../shared/stores/profileStore.js'
 import { useUiStore } from '../../shared/stores/uiStore.js'
+import { useFoodHistoryStore } from '../../shared/stores/foodHistoryStore.js'
+import { useDashboardStore } from '../../shared/stores/dashboardStore.js'
 import LoadingSkeleton from '../../shared/components/LoadingSkeleton.vue'
 import AddMealModal from './components/AddMealModal.vue'
 import EditLogModal from './components/EditLogModal.vue'
+import DayObservationBlock from './components/DayObservationBlock.vue'
+import DayObservationSheet from './components/DayObservationSheet.vue'
+import DayDetailSection from './components/DayDetailSection.vue'
+import { useDiaryExport } from './export/useDiaryExport.js'
 
 // ── Stores ─────────────────────────────────────────────────────────────────
 
 const diaryStore = useDiaryStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
+const foodHistoryStore = useFoodHistoryStore()
+const dashboardStore = useDashboardStore()
+
+// ── Export composable ──────────────────────────────────────────────────────
+
+const { exportDay, exportWeek, isExporting, exportError } = useDiaryExport()
 
 // ── Local state ────────────────────────────────────────────────────────────
 
 const showAddModal = ref(false)
+const isObservationSheetOpen = ref(false)
+const showDayDetail = ref(false)
 
 // ── Edit modal state ───────────────────────────────────────────────────────
 
@@ -467,6 +574,40 @@ const entriesForDate = computed(() =>
     if (!a.time || !b.time) return 0
     return a.time.localeCompare(b.time)
   }),
+)
+
+/**
+ * Map of foodId → firstOfferedDate for the foods present in the selected day's entries.
+ * Used by DayDetailSection to flag entries whose food is being introduced for the first time
+ * (i.e. firstDate === selected date). The store caches per (babyProfileId, foodId).
+ */
+const firstDateByFoodId = computed<Record<string, string | null>>(() => {
+  const result: Record<string, string | null> = {}
+  const profileId = activeProfileId.value
+  if (!profileId) return result
+  for (const entry of entriesForDate.value) {
+    if (!entry.foodId) continue
+    const history = foodHistoryStore.historyForFood(profileId, entry.foodId)
+    result[entry.foodId] = history?.firstDate ?? null
+  }
+  return result
+})
+
+/** Fetch food history for the foods of the currently selected day so badges can render. */
+async function ensureFoodHistoryForSelectedDate() {
+  const profileId = activeProfileId.value
+  if (!profileId) return
+  const ids = Array.from(
+    new Set(entriesForDate.value.map((e) => e.foodId).filter((id): id is string => !!id)),
+  )
+  if (ids.length === 0) return
+  await foodHistoryStore.fetchForFoods(profileId, ids)
+}
+
+watch(
+  [activeProfileId, () => diaryStore.selectedDate, () => entriesForDate.value.length],
+  () => { void ensureFoodHistoryForSelectedDate() },
+  { immediate: true },
 )
 
 // ── Grouped entries (T-5.2) ────────────────────────────────────────────────
@@ -562,11 +703,9 @@ const activeDateLabel = computed(() => {
   return formatted
 })
 
-async function selectDate(iso: string) {
-  diaryStore.setSelectedDate(iso)
-  if (activeProfileId.value) {
-    await diaryStore.fetchEntries(activeProfileId.value, iso)
-  }
+function selectDate(iso: string) {
+  showDayDetail.value = false
+  diaryStore.setSelectedDate(iso, activeProfileId.value || undefined)
 }
 
 // ── Summary computed ───────────────────────────────────────────────────────
@@ -605,7 +744,10 @@ onMounted(async () => {
     await profileStore.fetchProfiles()
   }
   if (activeProfileId.value) {
-    await diaryStore.fetchEntries(activeProfileId.value)
+    await Promise.all([
+      diaryStore.fetchEntries(activeProfileId.value),
+      diaryStore.fetchObservation(activeProfileId.value, diaryStore.selectedDate),
+    ])
   }
 })
 
@@ -617,6 +759,8 @@ function onLogged() {
   if (activeProfileId.value) {
     diaryStore.fetchEntries(activeProfileId.value, diaryStore.selectedDate)
   }
+  // Invalidate dashboard so it refreshes with the new meal data
+  dashboardStore.invalidate()
 }
 
 async function confirmDelete(id: string) {
@@ -652,30 +796,24 @@ const MEAL_TYPE_ICONS: Record<MealType, string> = {
 
 const REACTION_LABELS_ES: Record<ReactionType, string> = {
   [ReactionType.LIKED]:    'Le gustó',
-  [ReactionType.DISLIKED]: 'Lo rechazó',
-  [ReactionType.ALLERGIC]: 'Reacción alérgica',
-  [ReactionType.NEUTRAL]:  'Sin reacción',
-  [ReactionType.GAS]:      'Gases leves',
-  [ReactionType.RASH]:     'Sarpullido',
+  [ReactionType.DISLIKED]: 'No le gustó',
+  [ReactionType.NEUTRAL]:  'Neutral',
+  [ReactionType.REJECTED]: 'Lo rechazó',
 }
 
 const REACTION_ICONS: Record<ReactionType, string> = {
   [ReactionType.LIKED]:    'sentiment_very_satisfied',
   [ReactionType.DISLIKED]: 'sentiment_dissatisfied',
-  [ReactionType.ALLERGIC]: 'emergency',
   [ReactionType.NEUTRAL]:  'sentiment_neutral',
-  [ReactionType.GAS]:      'air',
-  [ReactionType.RASH]:     'healing',
+  [ReactionType.REJECTED]: 'do_not_disturb_on',
 }
 
 // Lowercase key for CSS class names
 const REACTION_CSS_KEYS: Record<ReactionType, string> = {
   [ReactionType.LIKED]:    'liked',
   [ReactionType.DISLIKED]: 'disliked',
-  [ReactionType.ALLERGIC]: 'allergic',
   [ReactionType.NEUTRAL]:  'neutral',
-  [ReactionType.GAS]:      'gas',
-  [ReactionType.RASH]:     'rash',
+  [ReactionType.REJECTED]: 'rejected',
 }
 
 const MEAL_TYPE_CSS_KEYS: Record<MealType, string> = {
@@ -746,10 +884,8 @@ function balanceLabelKey(label: string): string {
 const REACTION_EMOJIS: Record<ReactionType, string> = {
   [ReactionType.LIKED]:    '😊',
   [ReactionType.DISLIKED]: '😣',
-  [ReactionType.ALLERGIC]: '🤧',
   [ReactionType.NEUTRAL]:  '😐',
-  [ReactionType.GAS]:      '💨',
-  [ReactionType.RASH]:     '🔴',
+  [ReactionType.REJECTED]: '🙅',
 }
 
 function reactionEmoji(r: ReactionType): string {
@@ -1343,24 +1479,14 @@ function groupKey(group: string): string {
   color: var(--md3-on-secondary-container);
 }
 
-.reaction-chip--allergic {
-  background: var(--md3-error-container);
-  color: var(--md3-on-error-container);
-}
-
 .reaction-chip--neutral {
   background: var(--md3-surface-container);
   color: var(--md3-on-surface-variant);
 }
 
-.reaction-chip--gas {
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
-}
-
-.reaction-chip--rash {
-  background: var(--md3-error-container);
-  color: var(--md3-on-error-container);
+.reaction-chip--rejected {
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
 }
 
 .reaction-icon {
@@ -1584,10 +1710,8 @@ function groupKey(group: string): string {
 
 .status-badge--liked    { background: var(--md3-primary-container); color: var(--md3-on-primary-container); }
 .status-badge--disliked { background: var(--md3-secondary-container); color: var(--md3-on-secondary-container); }
-.status-badge--allergic { background: var(--md3-error-container); color: var(--md3-on-error-container); }
 .status-badge--neutral  { background: var(--md3-surface-container); color: var(--md3-on-surface-variant); }
-.status-badge--gas      { background: var(--md3-tertiary-container); color: var(--md3-on-tertiary-container); }
-.status-badge--rash     { background: var(--md3-error-container); color: var(--md3-on-error-container); }
+.status-badge--rejected { background: var(--md3-secondary-container); color: var(--md3-on-secondary-container); }
 
 /* ─── Accepted indicator ────────────────────────────────────────── */
 .accepted-indicator {
@@ -1714,5 +1838,140 @@ function groupKey(group: string): string {
   .timeline-list {
     padding-left: var(--md3-space-2);
   }
+}
+
+/* ─── Summary card divider ──────────────────────────────────────── */
+.summary-divider {
+  height: 1px;
+  background: var(--md3-outline-variant);
+  margin: var(--md3-space-1) 0;
+}
+
+/* ─── Export row ────────────────────────────────────────────────── */
+.export-row {
+  display: flex;
+  gap: var(--md3-space-2);
+  flex-wrap: wrap;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.45rem 0.875rem;
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface-variant);
+  border: none;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-sm);
+  font-weight: var(--md3-weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--md3-transition-fast),
+    opacity var(--md3-transition-fast);
+}
+
+.export-btn:hover:not(:disabled) {
+  background: var(--md3-surface-container-high);
+}
+
+.export-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.export-error {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-error-container);
+  background: var(--md3-error-container);
+  border-radius: var(--md3-rounded-md);
+  padding: 0.5rem var(--md3-space-3);
+  margin: 0;
+}
+
+.export-btn-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ─── Day detail toggle ─────────────────────────────────────────── */
+.day-detail-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.detail-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.55rem 1.125rem;
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface-variant);
+  border: none;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-medium);
+  cursor: pointer;
+  transition: all var(--md3-transition-fast);
+  align-self: flex-start;
+}
+
+.detail-toggle-btn:hover {
+  background: var(--md3-surface-container);
+}
+
+.detail-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.day-detail-content {
+  margin-top: var(--md3-space-3);
+  background: var(--md3-surface-container-lowest);
+  border-radius: var(--md3-rounded-lg);
+  overflow: hidden;
+}
+
+.detail-obs-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 var(--md3-space-4) var(--md3-space-4) var(--md3-space-4);
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-semibold);
+  cursor: pointer;
+  transition: filter var(--md3-transition-fast), background var(--md3-transition-fast);
+  align-self: flex-start;
+}
+
+.detail-obs-cta--add {
+  background: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.detail-obs-cta--add:hover {
+  filter: brightness(0.93);
+}
+
+.detail-obs-cta--edit {
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface-variant);
+}
+
+.detail-obs-cta--edit:hover {
+  background: var(--md3-surface-container-high);
+}
+
+.detail-obs-cta-icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 </style>

@@ -3,6 +3,9 @@
     <!-- Skip to main content (T-030 a11y) -->
     <a href="#main-content" class="skip-to-content">Ir al contenido principal</a>
 
+    <!-- Skip to navigation -->
+    <a href="#main-nav" class="skip-to-content skip-to-nav">Ir a navegación</a>
+
     <!-- Offline indicator — shows when offline or syncing (T-028) -->
     <OfflineIndicator :is-syncing="isSyncing" />
 
@@ -15,12 +18,14 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-content">
-        <RouterLink to="/" class="logo">
+        <!-- Logo: goes to dashboard when authenticated, home when not -->
+        <RouterLink :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="logo">
           <span class="material-symbols-outlined logo-icon">eco</span>
           <span class="logo-text">Pakulab</span>
         </RouterLink>
 
-        <nav class="header-nav">
+        <nav class="header-nav" id="main-nav" aria-label="Navegación principal">
+          <RouterLink v-if="authStore.isAuthenticated" to="/dashboard">Inicio</RouterLink>
           <RouterLink to="/foods">Alimentos</RouterLink>
           <RouterLink v-if="authStore.isAuthenticated" to="/plates">Mis platos</RouterLink>
           <RouterLink v-if="authStore.isAuthenticated" to="/diary">Bitácora</RouterLink>
@@ -96,6 +101,10 @@
 
     <!-- Bottom navigation (mobile) -->
     <nav class="bottom-nav" aria-label="Navegación principal">
+      <RouterLink v-if="authStore.isAuthenticated" to="/dashboard" class="bottom-nav-item" active-class="active">
+        <span class="material-symbols-outlined bottom-nav-icon">home</span>
+        <span class="bottom-nav-label">Inicio</span>
+      </RouterLink>
       <RouterLink to="/plates" class="bottom-nav-item" active-class="active">
         <span class="material-symbols-outlined bottom-nav-icon">restaurant</span>
         <span class="bottom-nav-label">Plato</span>
@@ -161,6 +170,9 @@
         <button class="btn btn-primary" @click="showDisclaimer = false">Entendido</button>
       </div>
     </div>
+
+    <!-- Disclaimer Gate — backend-persisted acceptance (M-01) -->
+    <DisclaimerGate v-if="authStore.isAuthenticated" />
   </div>
 </template>
 
@@ -169,16 +181,48 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useBillingStore } from '@/shared/stores/billingStore.js'
+import { useDashboardStore } from '@/shared/stores/dashboardStore.js'
+import { useProfileStore } from '@/shared/stores/profileStore.js'
 import OfflineIndicator from '@/shared/components/OfflineIndicator.vue'
 import VerificationBanner from '@/shared/components/VerificationBanner.vue'
 import TrialBanner from '@/shared/components/TrialBanner.vue'
+import DisclaimerGate from '@/shared/components/DisclaimerGate.vue'
 import { getPendingCount, getPendingPlates, removeFromQueue } from '@/shared/services/syncQueue.js'
 import { apiClient } from '@/shared/api/client.js'
 const router = useRouter()
 const authStore = useAuthStore()
 const billingStore = useBillingStore()
+const dashboardStore = useDashboardStore()
+const profileStore = useProfileStore()
 const showDisclaimer = ref(false)
 const isSyncing = ref(false)
+
+// ─── Dashboard prefetch ────────────────────────────────────────────────────
+
+const PREFETCH_TTL_MS = 5 * 60 * 1000 // 5 minutes
+let _prefetchTimestamp = 0
+
+/**
+ * Prefetch dashboard data in the background (non-blocking).
+ * Only fetches if:
+ *   1. User is authenticated
+ *   2. Last prefetch was >5 min ago (or never)
+ *   3. An active profile exists
+ */
+async function prefetchDashboardData(): Promise<void> {
+  const now = Date.now()
+  if (now - _prefetchTimestamp < PREFETCH_TTL_MS) return // still fresh
+
+  const babyProfileId = profileStore.activeProfile?.id
+  if (!babyProfileId) return
+
+  try {
+    await dashboardStore.fetchDashboard(babyProfileId)
+    _prefetchTimestamp = now
+  } catch {
+    // Silently ignore — prefetch is best-effort
+  }
+}
 
 // ─── Sync queue flush ────────────────────────────────────────────────────────
 
@@ -231,6 +275,11 @@ onMounted(async () => {
   // (needed for trial banner, pro tier display, etc.)
   if (authStore.isAuthenticated && !billingStore.subscription) {
     await billingStore.fetchSubscription()
+  }
+
+  // Prefetch dashboard data in background (non-blocking) when authenticated
+  if (authStore.isAuthenticated) {
+    void prefetchDashboardData()
   }
 })
 
@@ -332,6 +381,16 @@ async function handleSignOut() {
 }
 
 .skip-to-content:focus {
+  top: 0;
+}
+
+.skip-to-nav {
+  left: auto;
+  right: 0;
+  border-radius: 0 0 0 var(--md3-rounded-sm);
+}
+
+.skip-to-nav:focus {
   top: 0;
 }
 
@@ -481,12 +540,21 @@ async function handleSignOut() {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  overflow-x: hidden; /* Prevent horizontal overflow on mobile */
 }
 
 @media (min-width: 768px) {
   .app-main {
     padding: var(--md3-space-4) var(--md3-space-6);
     padding-bottom: var(--md3-space-4);
+  }
+}
+
+/* Mobile: Reduce padding to prevent content clipping */
+@media (max-width: 767px) {
+  .app-main {
+    padding: var(--md3-space-2); /* Reduced from space-3 (12px) to space-2 (8px) */
+    overflow-x: hidden;
   }
 }
 

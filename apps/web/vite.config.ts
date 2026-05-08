@@ -11,7 +11,14 @@ export default defineConfig({
     // Design Decision AD7: generateSW + IndexedDB for food catalog cache
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-192x192.svg', 'icons/icon-512x512.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon-32.png',
+        'icons/icon-192x192.png',
+        'icons/icon-512x512.png',
+        'icons/icon-maskable-512.png',
+        'icons/apple-touch-icon.png',
+      ],
 
       manifest: {
         name: 'Pakulab - Alimentación Complementaria',
@@ -27,20 +34,22 @@ export default defineConfig({
         categories: ['health', 'food', 'lifestyle'],
         icons: [
           {
-            src: 'icons/icon-192x192.svg',
+            src: 'icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: 'icons/icon-512x512.svg',
+            src: 'icons/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: 'icons/icon-512x512.svg',
+            src: 'icons/icon-maskable-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },
@@ -90,7 +99,24 @@ export default defineConfig({
             },
           },
           {
-            // User plates — NetworkFirst (user data should be fresh)
+            // Personal baby data — NetworkOnly (audit M-05).
+            // Prevents shared-device leakage: the SW must NOT persist these
+            // responses. Listed BEFORE /api/plates so the catch-all of plates
+            // does not absorb these paths.
+            urlPattern: /\/api\/(profiles|diary|menus|allergens)/,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Dashboard — NetworkOnly (must always reflect latest data after diary changes).
+            // Mobile browsers aggressively cache API responses even without SW rules.
+            urlPattern: /\/api\/dashboard(?:\/|\?|$)/,
+            handler: 'NetworkOnly',
+          },
+          {
+            // User plates — NetworkFirst (user data should be fresh).
+            // Kept cached for offline access to saved recipes; backend sets
+            // Cache-Control: no-store, private as defense-in-depth for any
+            // cache layer the SW does not control.
             urlPattern: /\/api\/plates/,
             handler: 'NetworkFirst',
             options: {

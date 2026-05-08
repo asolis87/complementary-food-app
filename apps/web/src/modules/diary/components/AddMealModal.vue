@@ -184,6 +184,7 @@ import { MealType, ReactionType } from '@pakulab/shared'
 import type { Food, CreateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
+import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -231,9 +232,7 @@ const reactions: { value: ReactionType; emoji: string; label: string }[] = [
   { value: ReactionType.LIKED,    emoji: '😊', label: 'Le gustó' },
   { value: ReactionType.DISLIKED, emoji: '😣', label: 'No le gustó' },
   { value: ReactionType.NEUTRAL,  emoji: '😐', label: 'Neutral' },
-  { value: ReactionType.ALLERGIC, emoji: '🤧', label: 'Alergia' },
-  { value: ReactionType.GAS,      emoji: '💨', label: 'Gases' },
-  { value: ReactionType.RASH,     emoji: '🔴', label: 'Sarpullido' },
+  { value: ReactionType.REJECTED, emoji: '🙅', label: 'Lo rechazó' },
 ]
 
 // ── Getters ───────────────────────────────────────────────────────────────
@@ -268,7 +267,7 @@ function currentTime(): string {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateOnlyString(new Date())
 }
 
 function onSearchInput() {
@@ -710,7 +709,7 @@ async function submit() {
 /* ─── Reaction grid ─────────────────────────────────────────────── */
 .reaction-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--md3-space-2);
 }
 

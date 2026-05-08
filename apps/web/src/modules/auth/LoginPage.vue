@@ -135,7 +135,8 @@ async function handleSubmit() {
   if (!validate()) return
   try {
     await authStore.signIn(email.value, password.value)
-    const redirect = (route.query.redirect as string) ?? '/'
+    // Redirect to dashboard after login (not home/landing)
+    const redirect = (route.query.redirect as string) ?? '/dashboard'
     await router.push(redirect)
   } catch {
     // Error is displayed via authStore.error

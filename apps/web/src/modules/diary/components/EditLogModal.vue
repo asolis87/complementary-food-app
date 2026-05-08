@@ -138,6 +138,7 @@ import { ref, computed, watch } from 'vue'
 import { ReactionType } from '@pakulab/shared'
 import type { MealLog, UpdateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
+import { useDashboardStore } from '../../../shared/stores/dashboardStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
@@ -155,6 +156,7 @@ const emit = defineEmits<{
 // ── Stores ────────────────────────────────────────────────────────────────
 
 const diaryStore = useDiaryStore()
+const dashboardStore = useDashboardStore()
 const uiStore = useUiStore()
 
 // ── Local state ───────────────────────────────────────────────────────────
@@ -171,9 +173,7 @@ const reactions: { value: ReactionType; emoji: string; label: string }[] = [
   { value: ReactionType.LIKED,    emoji: '😊', label: 'Le gustó' },
   { value: ReactionType.DISLIKED, emoji: '😣', label: 'No le gustó' },
   { value: ReactionType.NEUTRAL,  emoji: '😐', label: 'Neutral' },
-  { value: ReactionType.ALLERGIC, emoji: '🤧', label: 'Alergia' },
-  { value: ReactionType.GAS,      emoji: '💨', label: 'Gases' },
-  { value: ReactionType.RASH,     emoji: '🔴', label: 'Sarpullido' },
+  { value: ReactionType.REJECTED, emoji: '🙅', label: 'Lo rechazó' },
 ]
 
 // ── Init local state from entry when modal opens ──────────────────────────
@@ -243,6 +243,7 @@ async function save() {
       notes: localNotes.value.trim() || null,
     }
     await diaryStore.updateEntry(props.entry.id, payload)
+    dashboardStore.invalidate()
     uiStore.addToast('Registro actualizado', 'success')
     emit('updated')
     close()
@@ -461,7 +462,7 @@ async function save() {
 /* ─── Reaction grid ─────────────────────────────────────────────── */
 .reaction-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--md3-space-2);
 }
 

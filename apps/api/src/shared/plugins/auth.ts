@@ -23,6 +23,7 @@ declare module 'fastify' {
       tier: UserTier
       subscriptionStatus?: SubscriptionStatus | null
       trialEnd?: Date | null
+      lastAcceptedDisclaimerVersion: string | null
     }
   }
 }
@@ -39,11 +40,25 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         return
       }
 
-      // Determine tier and subscription status
-      const sub = await fastify.prisma.subscription.findUnique({
-        where: { userId: session.user.id },
-        select: { status: true, currentPeriodEnd: true, trialEnd: true },
+      // Single query: subscription + latest disclaimer acceptance (AD-DC-03, NF-DC-02).
+      // A second separate round-trip is PROHIBITED per REQ-DC-05.
+      const userData = await fastify.prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          subscription: {
+            select: { status: true, currentPeriodEnd: true, trialEnd: true },
+          },
+          disclaimerAcceptances: {
+            orderBy: { acceptedAt: 'desc' },
+            take: 1,
+            select: { version: true },
+          },
+        },
       })
+
+      const sub = userData?.subscription ?? null
+      const lastAcceptedDisclaimerVersion =
+        (userData?.disclaimerAcceptances[0]?.version) ?? null
 
       let tier: UserTier = 'FREE'
       let subscriptionStatus: SubscriptionStatus | null = sub?.status ?? null
@@ -53,10 +68,20 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         const now = new Date()
 
         // Check if TRIALING subscription has expired
-        if (sub.status === 'TRIALING' && sub.trialEnd && now > sub.trialEnd) {
-          // Trial expired — treat as EXPIRED
-          subscriptionStatus = 'EXPIRED'
-          // Note: We don't update the DB here, just resolve tier
+        // FIX: Allow usage until END OF DAY (23:59:59) instead of exact timestamp
+        if (sub.status === 'TRIALING' && sub.trialEnd) {
+          // Set trial deadline to end of day (23:59:59.999)
+          const trialDeadline = new Date(sub.trialEnd)
+          trialDeadline.setHours(23, 59, 59, 999)
+          
+          if (now > trialDeadline) {
+            // Trial expired — treat as EXPIRED
+            subscriptionStatus = 'EXPIRED'
+            // Note: We don't update the DB here, just resolve tier
+          } else {
+            // Still within trial day — user has PRO access
+            tier = 'PRO'
+          }
         } else if (sub.status === 'ACTIVE' || sub.status === 'TRIALING') {
           tier = 'PRO'
         } else if (sub.status === 'PAST_DUE') {
@@ -79,6 +104,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
         tier,
         subscriptionStatus,
         trialEnd,
+        lastAcceptedDisclaimerVersion,
       }
     } catch {
       // Never block the request on auth errors — let requireAuth handle it
