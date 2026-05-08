@@ -54,12 +54,11 @@ export const auth = betterAuth({
     'http://localhost:5173',
     'http://localhost:5174',
     process.env['CORS_ORIGIN'] ?? 'http://localhost:5173',
+    process.env['FRONTEND_URL'] ?? 'http://localhost:5173',
     // Staging and production domains
     'https://staging.pakulab.cloud',
     'https://pakulab.com',
     ...(process.env['FRONTEND_URLS'] ? process.env['FRONTEND_URLS'].split(',').map(url => url.trim()) : []),
-  ],
-    process.env['FRONTEND_URL'] ?? 'http://localhost:5173',
   ].filter((origin, idx, arr) => origin && arr.indexOf(origin) === idx), // dedupe
 
   // Session lifetime — explicit policy, audit H-06 (A07:2021)
