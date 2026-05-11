@@ -253,6 +253,7 @@ import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useDashboardStore } from '../../../shared/stores/dashboardStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
+import { normalizeAccents } from '../../../shared/utils/text.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -355,9 +356,13 @@ const foodChanged = computed(() => localFoodId.value !== props.entry.foodId)
 
 const foodSearchResults = computed<Food[]>(() => {
   if (!debouncedFoodQuery.value) return []
-  const q = debouncedFoodQuery.value.toLowerCase()
+  const q = normalizeAccents(debouncedFoodQuery.value.toLowerCase())
   return foodStore.foods
-    .filter((f) => f.name.toLowerCase().includes(q) && f.id !== localFoodId.value)
+    .filter(
+      (f) =>
+        normalizeAccents(f.name.toLowerCase()).includes(q) &&
+        f.id !== localFoodId.value,
+    )
     .slice(0, 15)
 })
 

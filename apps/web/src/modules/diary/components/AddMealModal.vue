@@ -184,6 +184,7 @@ import { MealType, ReactionType } from '@pakulab/shared'
 import type { Food, CreateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
+import { normalizeAccents } from '../../../shared/utils/text.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -239,9 +240,13 @@ const reactions: { value: ReactionType; emoji: string; label: string }[] = [
 
 const searchResults = computed<Food[]>(() => {
   if (!debouncedQuery.value) return []
-  const q = debouncedQuery.value.toLowerCase()
+  const q = normalizeAccents(debouncedQuery.value.toLowerCase())
   return foodStore.foods
-    .filter((f) => f.name.toLowerCase().includes(q) && f.id !== selectedFood.value?.id)
+    .filter(
+      (f) =>
+        normalizeAccents(f.name.toLowerCase()).includes(q) &&
+        f.id !== selectedFood.value?.id,
+    )
     .slice(0, 15)
 })
 
