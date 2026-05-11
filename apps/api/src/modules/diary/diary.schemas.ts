@@ -34,6 +34,9 @@ export const updateLogSchema = z
     reaction: z.nativeEnum(ReactionType).nullable().optional(),
     accepted: z.boolean().nullable().optional(),
     notes: z.string().max(500).nullable().optional().transform(sanitizeOptional),
+    foodId: z.string().min(1).optional(),
+    mealType: z.nativeEnum(MealType).optional(),
+    time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',

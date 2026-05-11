@@ -116,12 +116,17 @@ export type PlateBalanceLabel =
   | 'VERY_LAXATIVE'
 
 /** Payload sent to PATCH /api/diary/:id
- *  Used during the review moment to fill in reaction, acceptance, and notes
+ *  Used during the review moment to fill in reaction, acceptance, and notes,
+ *  and to correct the original entry (food, meal type, time) when the user
+ *  logged the wrong details.
  */
 export interface UpdateMealLogPayload {
   reaction?: ReactionType | null
   accepted?: boolean | null
   notes?: string | null
+  foodId?: string
+  mealType?: MealType
+  time?: string | null
 }
 
 /** Food history summary for display in food selection UI.

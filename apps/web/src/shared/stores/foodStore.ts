@@ -12,6 +12,7 @@ import type { Food, FoodGroup, ALClassification } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiClient, OfflineError } from '../api/client.js'
+import { normalizeAccents } from '../utils/text.js'
 import {
   cacheFoods,
   getCachedFoods,
@@ -58,11 +59,6 @@ export const useFoodStore = defineStore('foods', () => {
   })
 
   // ─── Getters ────────────────────────────────────────────────────────────────
-
-  /** Strip diacritical marks (accents) for accent-insensitive comparison */
-  function normalizeAccents(str: string): string {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  }
 
   /** Foods filtered by current filter state (client-side, works offline).
    *  Search is PURELY client-side — typing in the search input NEVER triggers an API
