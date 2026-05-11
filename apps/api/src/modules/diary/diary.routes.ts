@@ -109,12 +109,23 @@ export const diaryRoutes: FastifyPluginAsync = async (fastify) => {
       if (!existing) return reply.status(404).send({ error: 'Not found' })
       if (existing.userId !== userId) return reply.status(403).send({ error: 'Forbidden' })
 
+      if (input.foodId !== undefined && input.foodId !== existing.foodId) {
+        const food = await fastify.prisma.food.findUnique({
+          where: { id: input.foodId },
+          select: { id: true },
+        })
+        if (!food) return reply.status(400).send({ error: 'Invalid foodId' })
+      }
+
       const updated = await fastify.prisma.foodLog.update({
         where: { id },
         data: {
           ...(input.reaction !== undefined && { reaction: input.reaction }),
           ...(input.accepted !== undefined && { accepted: input.accepted }),
           ...(input.notes !== undefined && { notes: input.notes }),
+          ...(input.foodId !== undefined && { foodId: input.foodId }),
+          ...(input.mealType !== undefined && { mealType: input.mealType }),
+          ...(input.time !== undefined && { time: input.time }),
         },
         include: { food: true },
       })
