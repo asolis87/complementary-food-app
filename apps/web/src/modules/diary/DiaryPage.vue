@@ -490,6 +490,7 @@
     <AddMealModal
       v-model="showAddModal"
       :baby-profile-id="activeProfileId"
+      :date="diaryStore.selectedDate"
       @logged="onLogged"
     />
 

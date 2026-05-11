@@ -162,7 +162,6 @@ import { useUiStore } from '@/shared/stores/uiStore.js'
 import BalanceIndicator from './components/BalanceIndicator.vue'
 import MealSlotPicker from '@/shared/components/MealSlotPicker.vue'
 import type { SlotSelection } from '@/shared/components/MealSlotPicker.vue'
-// QuickLogModal removed — "Dar este plato" button removed in favor of menu-based serving
 
 const route = useRoute()
 const router = useRouter()

@@ -11,12 +11,16 @@
 
 /**
  * Extract the YYYY-MM-DD portion from either a string ("YYYY-MM-DD" or ISO
- * datetime) or a Date instance. Date inputs are formatted in UTC, matching
- * the legacy `.toISOString().split('T')[0]` pattern that this helper replaces.
+ * datetime) or a Date instance. Date inputs are formatted using the local
+ * timezone so "today" matches the user's calendar, not UTC. String inputs
+ * are sliced as-is (assumed to already be in the desired calendar).
  */
 export function toDateOnlyString(value: string | Date): string {
   if (value instanceof Date) {
-    return value.toISOString().split('T')[0] as string
+    const y = value.getFullYear()
+    const m = String(value.getMonth() + 1).padStart(2, '0')
+    const d = String(value.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
   }
   return value.split('T')[0] ?? value
 }
