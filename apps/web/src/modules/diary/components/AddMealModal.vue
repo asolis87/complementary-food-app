@@ -184,13 +184,13 @@ import { MealType, ReactionType } from '@pakulab/shared'
 import type { Food, CreateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
-import { toDateOnlyString } from '../../../shared/utils/date.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
 const props = defineProps<{
   modelValue: boolean
   babyProfileId: string
+  date: string
 }>()
 
 const emit = defineEmits<{
@@ -266,10 +266,6 @@ function currentTime(): string {
   return `${hh}:${mm}`
 }
 
-function todayIso(): string {
-  return toDateOnlyString(new Date())
-}
-
 function onSearchInput() {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
@@ -336,7 +332,7 @@ async function submit() {
 
   try {
     const payload: CreateMealLogPayload = {
-      date: todayIso(),
+      date: props.date,
       time: selectedTime.value || undefined,
       mealType: selectedMealType.value,
       reaction: selectedReaction.value ?? undefined,
