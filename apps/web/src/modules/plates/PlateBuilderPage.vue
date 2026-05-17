@@ -148,25 +148,7 @@
       @search="onModalSearch"
     />
 
-    <!-- Export helper (off-screen capture) -->
-    <PlateExport
-      ref="exportRef"
-      :plate-name="draftName"
-      :balance="balance"
-      :show-watermark="!authStore.isPro"
-      @done="onExportDone"
-      @error="onExportError"
-    >
-      <template #visualization>
-        <div class="export-mini-plate">
-          <PlateVisualization
-            :items="draftItems"
-            :group-count="draftGroupCount"
-            :times-offered-by-food-id="timesOfferedByFoodId"
-          />
-        </div>
-      </template>
-    </PlateExport>
+
 
     <!-- ⑤ Meal Slot Picker — post-save assignment to weekly menu (AD-4) -->
     <MealSlotPicker
@@ -177,6 +159,20 @@
       @assigned="onMealSlotAssigned"
       @close="onMealSlotClose"
       @skip="onMealSlotSkip"
+    />
+
+    <!-- Off-screen beautiful export frame -->
+    <PlateExportFrame
+      ref="exportFrameRef"
+      :plate-name="draftName || 'Mi plato'"
+      :items="draftItems"
+      :group-count="draftGroupCount"
+      :times-offered-by-food-id="timesOfferedByFoodId"
+      :baby-name="profileStore.activeProfile?.name"
+      :is-pro="authStore.isPro"
+      :balance-label="balance?.labelEs"
+      @done="onExportDone"
+      @error="onExportError"
     />
 
     <!-- Toast notification -->
@@ -209,9 +205,10 @@ import BalanceIndicator from './components/BalanceIndicator.vue'
 import PlateContents from './components/PlateContents.vue'
 import FoodSearchModal from './components/FoodSearchModal.vue'
 import PlateActions from './components/PlateActions.vue'
-import PlateExport from './components/PlateExport.vue'
+import PlateExportFrame from './components/PlateExportFrame.vue'
 import MealSlotPicker from '@/shared/components/MealSlotPicker.vue'
 import type { SlotSelection } from '@/shared/components/MealSlotPicker.vue'
+import { fixHtml2CanvasColors } from '@/shared/utils/exportUtils.js'
 
 // ─── Meal Slot Picker state (AD-4: Builder → Menu flow) ─────────────────
 const showMealSlotPicker = ref(false)
@@ -358,7 +355,7 @@ const foodHistoriesForModal = computed((): FoodHistoryMap | undefined => {
 // ─── State flags ──────────────────────────────────────────────────────────
 const exporting = ref(false)
 const vizRef = ref<InstanceType<typeof PlateVisualization> | null>(null)
-const exportRef = ref<InstanceType<typeof PlateExport> | null>(null)
+const exportFrameRef = ref<InstanceType<typeof PlateExportFrame> | null>(null)
 
 // ─── Toast ────────────────────────────────────────────────────────────────
 interface Toast {
@@ -478,12 +475,16 @@ function onMealSlotClose() {
 // ─── Export & share handlers ───────────────────────────────────────────
 
 async function handleExport() {
-  if (!exportRef.value) return
+  if (!hasItems.value) return
+
+  showToast('Iniciando exportación...', 'info')
+
   exporting.value = true
-  try {
-    await exportRef.value.capture()
-  } finally {
+  if (exportFrameRef.value) {
+    await exportFrameRef.value.capture()
+  } else {
     exporting.value = false
+    showToast('No se pudo inicializar el exportador', 'error')
   }
 }
 
@@ -491,7 +492,10 @@ function onExportDone(dataUrl: string) {
   const link = document.createElement('a')
   link.href = dataUrl
   link.download = `${draftName.value || 'plato'}-pakulab.png`
+  // Must be in the DOM for click() to trigger download in all browsers
+  document.body.appendChild(link)
   link.click()
+  document.body.removeChild(link)
   showToast('Imagen descargada', 'success')
 }
 
@@ -760,12 +764,6 @@ async function handleShare() {
 /* PlateContents section wrapper — component handles its own styles */
 section[aria-label="Contenido del plato"] {
   display: contents;
-}
-
-/* ─── Export mini plate helper ────────────────────────────────────────── */
-.export-mini-plate {
-  max-width: 300px;
-  margin: 0 auto;
 }
 
 /* ─── Toast ────────────────────────────────────────────────────────────── */
