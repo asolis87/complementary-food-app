@@ -138,6 +138,20 @@
       @skip="onMealSlotSkip"
     />
 
+    <!-- Off-screen beautiful export frame -->
+    <PlateExportFrame
+      v-if="plate"
+      ref="exportFrameRef"
+      :plate-name="plate.name"
+      :items="plate.items || []"
+      :group-count="plate.groupCount"
+      :baby-name="profileStore.activeProfile?.name"
+      :is-pro="authStore.isPro"
+      :balance-label="plateBalance?.labelEs"
+      @done="onExportDone"
+      @error="onExportError"
+    />
+
     <!-- Toast notification -->
     <transition name="toast">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`" role="status">
@@ -160,8 +174,10 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
 import BalanceIndicator from './components/BalanceIndicator.vue'
+import PlateExportFrame from './components/PlateExportFrame.vue'
 import MealSlotPicker from '@/shared/components/MealSlotPicker.vue'
 import type { SlotSelection } from '@/shared/components/MealSlotPicker.vue'
+import { fixHtml2CanvasColors } from '@/shared/utils/exportUtils.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,6 +192,7 @@ const exporting = ref(false)
 const deleting = ref(false)
 const showDeleteModal = ref(false)
 const showMealSlotPicker = ref(false)
+const exportFrameRef = ref<InstanceType<typeof PlateExportFrame> | null>(null)
 
 interface Toast {
   message: string
@@ -324,29 +341,28 @@ async function confirmDelete() {
 
 async function handleExport() {
   exporting.value = true
-  try {
-    // Use html2canvas on the detail view
-    const { default: html2canvas } = await import('html2canvas')
-    const canvas = await html2canvas(document.querySelector('.plate-detail-page') as HTMLElement, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      ignoreElements: (el) =>
-        el.classList.contains('modal-overlay') ||
-        el.classList.contains('export-area') ||
-        el.classList.contains('disclaimer-banner'),
-    })
-    const dataUrl = canvas.toDataURL('image/png')
-    const link = document.createElement('a')
-    link.href = dataUrl
-    link.download = `${plate.value?.name ?? 'plato'}-pakulab.png`
-    link.click()
-  } catch {
-    // silent
-  } finally {
+  if (exportFrameRef.value) {
+    await exportFrameRef.value.capture()
+  } else {
     exporting.value = false
   }
+}
+
+function onExportDone(dataUrl: string) {
+  exporting.value = false
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = `${plate.value?.name ?? 'plato'}-pakulab.png`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  showToast('Imagen descargada', 'success')
+}
+
+function onExportError(message: string) {
+  exporting.value = false
+  console.error('[export] error:', message)
+  showToast(message, 'error')
 }
 
 // ─── Meal Slot Picker handlers ──────────────────────────────────────────

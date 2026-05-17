@@ -60,6 +60,19 @@
 
   <!-- Mobile FAB (hidden on desktop) -->
   <div class="plate-fab">
+    <!-- Export (mobile) -->
+    <button
+      class="fab-btn fab-btn--export"
+      :disabled="!hasItems || exporting"
+      title="Exportar como imagen"
+      aria-label="Exportar plato como imagen"
+      @click="emit('export')"
+    >
+      <span v-if="exporting" class="btn-spinner fab-spinner fab-spinner--export" aria-hidden="true" />
+      <span v-else class="material-symbols-outlined fab-icon" aria-hidden="true">photo_camera</span>
+    </button>
+
+    <!-- Save (mobile) -->
     <button
       class="fab-btn"
       :disabled="!canSave || !hasItems || saving"
@@ -253,6 +266,9 @@ const saveHint = computed(() => {
   right: 1.5rem;
   z-index: 110;
   display: flex;
+  flex-direction: row-reverse;
+  gap: 0.75rem;
+  align-items: flex-end;
 }
 
 @media (min-width: 768px) {
@@ -274,6 +290,16 @@ const saveHint = computed(() => {
   align-items: center;
   justify-content: center;
   transition: transform var(--md3-transition-fast), opacity var(--md3-transition-fast);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab-btn--export {
+  width: 3.25rem;
+  height: 3.25rem;
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.12);
 }
 
 .fab-btn:disabled {
@@ -287,11 +313,18 @@ const saveHint = computed(() => {
 
 .fab-icon {
   font-size: 1.875rem; /* ~3xl equivalent */
+  pointer-events: none;
 }
 
 .fab-spinner {
   width: 20px;
   height: 20px;
   border-width: 2.5px;
+  pointer-events: none;
+}
+
+.fab-spinner--export {
+  border-color: color-mix(in srgb, var(--md3-on-surface) 25%, transparent);
+  border-top-color: var(--md3-on-surface);
 }
 </style>

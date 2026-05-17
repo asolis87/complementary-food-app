@@ -154,6 +154,12 @@
         :key="food.id"
         class="food-card"
         :class="{ 'food-card--needs-validation': food.needsValidation }"
+        role="button"
+        tabindex="0"
+        :aria-label="`Ver detalle de ${food.name}`"
+        @click="router.push({ name: 'food-detail', params: { id: food.id } })"
+        @keydown.enter="router.push({ name: 'food-detail', params: { id: food.id } })"
+        @keydown.space.prevent="router.push({ name: 'food-detail', params: { id: food.id } })"
       >
         <!-- Header row: badge + name + allergen flag -->
         <div class="card-header">
@@ -205,10 +211,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FoodGroup, ALClassification } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from '@pakulab/shared'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 
+const router = useRouter()
 const store = useFoodStore()
 
 // ── Local filter state (drives the store setFilter calls) ──────────────────
@@ -688,11 +696,17 @@ function groupChipClass(group: FoodGroup): string {
   box-shadow: var(--md3-shadow-ambient);
   transition: box-shadow var(--md3-transition-normal), transform var(--md3-transition-normal);
   min-width: 0; /* Prevent grid blowout from nowrap children */
+  cursor: pointer;
 }
 
 .food-card:hover {
   box-shadow: var(--md3-shadow-elevated);
   transform: translateY(-2px);
+}
+
+.food-card:focus-visible {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 2px;
 }
 
 /* Needs-validation: subtle surface shift instead of a border */
