@@ -51,3 +51,5 @@ workbox-*.js
 
 e2e/
 playwright-report/
+# Local Pi runtime state
+.atl/

@@ -1,0 +1,142 @@
+{
+  "files": {
+    "src/router/index.ts": {
+      "modifiedRanges": [
+        {
+          "start": 34,
+          "end": 39
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T15:05:16.781Z"
+    },
+    "src/modules/foods/FoodSearchPage.vue": {
+      "modifiedRanges": [
+        {
+          "start": 157,
+          "end": 162
+        },
+        {
+          "start": 214,
+          "end": 214
+        },
+        {
+          "start": 219,
+          "end": 219
+        },
+        {
+          "start": 699,
+          "end": 699
+        },
+        {
+          "start": 707,
+          "end": 711
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T15:06:27.022Z"
+    },
+    "vite.config.ts": {
+      "modifiedRanges": [
+        {
+          "start": 168,
+          "end": 168
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T17:19:30.473Z"
+    },
+    "src/modules/plates/components/PlateExport.vue": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 291
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T17:59:48.427Z"
+    },
+    "src/modules/plates/PlateBuilderPage.vue": {
+      "modifiedRanges": [
+        {
+          "start": 151,
+          "end": 169
+        },
+        {
+          "start": 194,
+          "end": 194
+        },
+        {
+          "start": 342,
+          "end": 342
+        },
+        {
+          "start": 461,
+          "end": 596
+        },
+        {
+          "start": 880,
+          "end": 885
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T19:13:17.737Z"
+    },
+    "src/modules/plates/PlateDetailPage.vue": {
+      "modifiedRanges": [
+        {
+          "start": 328,
+          "end": 346
+        },
+        {
+          "start": 355,
+          "end": 361
+        },
+        {
+          "start": 368,
+          "end": 368
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T19:12:34.197Z"
+    },
+    "src/modules/plates/components/PlateActions.vue": {
+      "modifiedRanges": [
+        {
+          "start": 29,
+          "end": 29
+        },
+        {
+          "start": 63,
+          "end": 63
+        },
+        {
+          "start": 65,
+          "end": 76
+        },
+        {
+          "start": 269,
+          "end": 271
+        },
+        {
+          "start": 293,
+          "end": 302
+        },
+        {
+          "start": 314,
+          "end": 314
+        },
+        {
+          "start": 321,
+          "end": 325
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T19:00:44.543Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-17T19:13:17.737Z",
+  "sessionId": "lens-mp9w22sp-fb67077a"
+}

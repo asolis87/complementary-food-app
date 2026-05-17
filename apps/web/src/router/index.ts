@@ -31,6 +31,12 @@ export const router = createRouter({
       component: () => import('@/modules/foods/FoodSearchPage.vue'),
       meta: { requiresAuth: false },
     },
+    {
+      path: '/foods/:id',
+      name: 'food-detail',
+      component: () => import('@/modules/foods/FoodDetailPage.vue'),
+      meta: { requiresAuth: false },
+    },
 
     // === Auth routes ===
     {
