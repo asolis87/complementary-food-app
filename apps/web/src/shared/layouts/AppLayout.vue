@@ -28,8 +28,8 @@
           <RouterLink v-if="authStore.isAuthenticated" to="/dashboard">Inicio</RouterLink>
           <RouterLink to="/foods">Alimentos</RouterLink>
           <RouterLink v-if="authStore.isAuthenticated" to="/plates">Mis platos</RouterLink>
-          <RouterLink v-if="authStore.isAuthenticated" to="/diary">Bitácora</RouterLink>
           <RouterLink v-if="authStore.isPro" to="/menus">Menús</RouterLink>
+          <RouterLink v-if="authStore.isAuthenticated" to="/diary">Bitácora</RouterLink>
         </nav>
 
         <div class="header-actions">
