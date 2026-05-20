@@ -11,7 +11,7 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { PrismaClient } from '@prisma/client'
-import { createTrialSubscription } from '../billing/billing.service.js'
+import { createTrialSubscription } from '../billing/index.js'
 import { getAdapter } from '../email/email.service.js'
 import {
   verificationEmailHtml,

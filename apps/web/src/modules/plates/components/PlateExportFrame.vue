@@ -41,7 +41,7 @@
               <span v-if="item.food.isAllergen" class="allergen-badge">
                 <span class="material-symbols-outlined">warning</span> Alérgeno
               </span>
-              <span v-if="timesOfferedByFoodId && timesOfferedByFoodId[item.food.id] !== undefined && timesOfferedByFoodId[item.food.id] < 3" class="exposure-badge">
+              <span v-if="timesOfferedByFoodId && typeof timesOfferedByFoodId[item.food.id] === 'number' && timesOfferedByFoodId[item.food.id]! < 3" class="exposure-badge">
                 NUEVO
               </span>
             </li>

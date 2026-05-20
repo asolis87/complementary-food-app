@@ -188,6 +188,11 @@ router.beforeEach(async (to) => {
     await authStore.checkSession()
   }
 
+  // Redirect authenticated users trying to access root (landing page) to dashboard
+  if (to.path === '/' && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+
   // 1. Guest-only pages (login, signup) — redirect to dashboard if already logged in
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return { name: 'dashboard' }

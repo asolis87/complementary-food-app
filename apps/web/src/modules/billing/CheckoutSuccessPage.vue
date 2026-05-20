@@ -34,9 +34,9 @@
       </ul>
 
       <div class="actions">
-        <RouterLink to="/" class="btn btn-primary">
-          <span class="material-symbols-outlined btn-icon" aria-hidden="true">home</span>
-          Ir al inicio
+        <RouterLink to="/dashboard" class="btn btn-primary">
+          <span class="material-symbols-outlined btn-icon" aria-hidden="true">dashboard</span>
+          Ir al dashboard
         </RouterLink>
         <RouterLink to="/plates" class="btn btn-ghost">
           <span class="material-symbols-outlined btn-icon" aria-hidden="true">restaurant</span>

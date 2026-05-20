@@ -17,7 +17,7 @@ import { requireAuth } from '../../shared/hooks/requireAuth.js'
 import { requireTier } from '../../shared/hooks/requireTier.js'
 import { sanitizeText, sanitizeOptional } from '../../shared/utils/sanitize.js'
 import { BABY_PROFILE_LIMITS } from '@pakulab/shared'
-import { deleteUserAccount } from '../billing/billing.service.js'
+import { deleteUserAccount } from '../billing/index.js'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
