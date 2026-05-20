@@ -1,0 +1,266 @@
+{
+  "files": {
+    "src/modules/billing/domain/ports/billing.port.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 46
+        },
+        {
+          "start": 51,
+          "end": 51
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T23:50:46.194Z"
+    },
+    "src/modules/billing/domain/exceptions/missing-stripe-customer.exception.ts": {
+      "modifiedRanges": [
+        {
+          "start": 6,
+          "end": 6
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:47:44.151Z"
+    },
+    "src/modules/billing/domain/exceptions/duplicate-subscription.exception.ts": {
+      "modifiedRanges": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:47:44.154Z"
+    },
+    "src/modules/billing/application/dtos/checkout.dto.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 10
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T23:48:47.116Z"
+    },
+    "src/modules/billing/application/dtos/subscription.dto.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 20
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T23:48:47.119Z"
+    },
+    "src/modules/billing/application/dtos/portal.dto.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 4
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T23:48:47.120Z"
+    },
+    "src/modules/billing/application/dtos/trial.dto.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 11
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-17T23:48:47.121Z"
+    },
+    "src/modules/billing/application/use-cases/start-trial.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 51
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:49:48.447Z"
+    },
+    "src/modules/billing/application/use-cases/create-portal.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 29
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:49:48.450Z"
+    },
+    "src/modules/billing/application/use-cases/get-subscription.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 35
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:49:48.451Z"
+    },
+    "src/modules/billing/application/use-cases/create-checkout.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 33
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:49:48.452Z"
+    },
+    "src/modules/billing/application/use-cases/handle-webhook.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 200
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:51:49.680Z"
+    },
+    "src/modules/billing/application/use-cases/delete-user-account.use-case.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 21
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:51:49.683Z"
+    },
+    "src/modules/billing/infrastructure/adapters/stripe-payment-gateway.adapter.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 172
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:53:12.417Z"
+    },
+    "src/modules/billing/infrastructure/adapters/prisma-subscription.repository.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 116
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:54:10.270Z"
+    },
+    "src/modules/billing/infrastructure/adapters/prisma-user-account.adapter.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 93
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:54:10.272Z"
+    },
+    "src/modules/billing/infrastructure/controllers/billing.controller.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 102
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:54:51.750Z"
+    },
+    "src/modules/billing/infrastructure/routes/billing.routes.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 92
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:55:27.348Z"
+    },
+    "src/shared/infrastructure/di/billing.container.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 69
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:57:50.958Z"
+    },
+    "src/modules/billing/index.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 34
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:58:26.268Z"
+    },
+    "src/app.ts": {
+      "modifiedRanges": [
+        {
+          "start": 29,
+          "end": 30
+        },
+        {
+          "start": 125,
+          "end": 127
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:58:58.426Z"
+    },
+    "src/modules/auth/auth.config.ts": {
+      "modifiedRanges": [
+        {
+          "start": 14,
+          "end": 14
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:59:12.656Z"
+    },
+    "src/modules/profiles/profiles.routes.ts": {
+      "modifiedRanges": [
+        {
+          "start": 20,
+          "end": 20
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T23:59:12.658Z"
+    },
+    "src/modules/billing/__tests__/unit/start-trial.use-case.spec.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 371
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-18T00:01:13.697Z"
+    },
+    "src/modules/billing/__tests__/integration/billing.routes.spec.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 95
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-18T00:01:46.666Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-18T00:01:46.666Z",
+  "sessionId": "lens-mpaf8xzb-a8bb65ca"
+}

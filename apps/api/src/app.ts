@@ -26,7 +26,8 @@ import { dayObservationRoutes } from './modules/diary/dayObservation.routes.js'
 import { rangeRoutes } from './modules/diary/range.routes.js'
 import { menusRoutes } from './modules/menus/menus.routes.js'
 import { allergensRoutes } from './modules/allergens/allergens.routes.js'
-import { billingRoutes } from './modules/billing/billing.routes.js'
+import { billingRoutes } from './modules/billing/infrastructure/routes/billing.routes.js'
+import { createBillingContainer } from './shared/infrastructure/di/billing.container.js'
 import { authRoutes } from './modules/auth/auth.routes.js'
 import { disclaimerRoutes } from './modules/disclaimer/disclaimer.routes.js'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js'
@@ -122,7 +123,8 @@ export async function buildApp() {
   await app.register(rangeRoutes, { prefix: '/api/diary' })
   await app.register(menusRoutes, { prefix: '/api/menus' })
   await app.register(allergensRoutes, { prefix: '/api/allergens' })
-  await app.register(billingRoutes, { prefix: '/api/billing' })
+  const billingContainer = createBillingContainer(app.prisma)
+  await app.register(billingRoutes, { prefix: '/api/billing', controller: billingContainer.controller })
   await app.register(disclaimerRoutes, { prefix: '/api/disclaimer' })
   await app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 

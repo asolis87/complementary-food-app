@@ -37,6 +37,7 @@
         </span>
       </div>
       <button
+        v-if="subscription?.stripeCustomerId"
         class="btn-manage"
         @click="handleOpenPortal"
         :disabled="billingStore.loading"
@@ -46,12 +47,12 @@
     </div>
 
     <!-- Pricing cards -->
-    <div v-if="!isSubscribed || isPastDue" class="plans">
+    <div v-if="!isSubscribed || isPastDue || (isTrialing && !subscription?.stripeCustomerId)" class="plans">
       <!-- Mensual -->
       <div class="plan plan-mensual" :class="{ 'current-plan': isCurrentPlan('MONTHLY') }">
         <div v-if="isCurrentPlan('MONTHLY')" class="badge-current">Tu plan actual</div>
         <h2>Pro Mensual</h2>
-        <p class="price">$99 <span>MXN / mes</span></p>
+        <p class="price">$189 <span>MXN / mes</span></p>
 
         <ul class="features">
           <li v-for="feature in proFeatures" :key="feature">
@@ -79,8 +80,8 @@
         <div v-if="!isCurrentPlan('YEARLY')" class="badge">Recomendado</div>
         <div v-else class="badge-current">Tu plan actual</div>
         <h2>Pro Anual</h2>
-        <p class="price">$999 <span>MXN / año</span></p>
-        <p class="price-monthly-equiv">Equivale a $83 / mes</p>
+        <p class="price">$1890 <span>MXN / año</span></p>
+        <p class="price-monthly-equiv">Equivale a $157.50 / mes</p>
         <div v-if="!isCurrentPlan('YEARLY')" class="savings-pill">Ahorra 17%</div>
 
         <ul class="features">
