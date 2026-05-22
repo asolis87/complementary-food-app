@@ -9,9 +9,9 @@
  * profileStore to avoid circular store dependencies.
  */
 
+import { MealType } from '@pakulab/shared'
 import type {
   MealLog,
-  MealType,
   CreateMealLogPayload,
   UpdateMealLogPayload,
   DayObservation,
@@ -43,10 +43,37 @@ export const useDiaryStore = defineStore('diary', () => {
 
   // ─── Getters ──────────────────────────────────────────────────────────────
 
-  /** Entries filtered to the currently selected date */
-  const entriesForDate = computed<MealLog[]>(() =>
-    entries.value.filter((e) => toDateOnlyString(e.date) === selectedDate.value),
-  )
+  const MEAL_TYPE_ORDER: Record<MealType, number> = {
+    [MealType.BREAKFAST]: 1,
+    [MealType.SNACK_1]:   2,
+    [MealType.LUNCH]:     3,
+    [MealType.SNACK_2]:   4,
+    [MealType.DINNER]:    5,
+    [MealType.SNACK]:     6,
+  }
+
+  /** Entries filtered to the currently selected date and sorted chronologically */
+  const entriesForDate = computed<MealLog[]>(() => {
+    const filtered = entries.value.filter((e) => toDateOnlyString(e.date) === selectedDate.value)
+    return [...filtered].sort((a, b) => {
+      // 1. Sort by mealType order first
+      const orderA = MEAL_TYPE_ORDER[a.mealType] ?? 99
+      const orderB = MEAL_TYPE_ORDER[b.mealType] ?? 99
+      if (orderA !== orderB) {
+        return orderA - orderB
+      }
+      // 2. If same mealType, sort by time if available
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time)
+      }
+      if (a.time) return -1
+      if (b.time) return 1
+      // 3. Otherwise, fallback to creation order (ascending: older first)
+      const timeA = new Date(a.createdAt).getTime()
+      const timeB = new Date(b.createdAt).getTime()
+      return timeA - timeB
+    })
+  })
 
   /** Entries grouped by meal type for the selected date */
   const entriesGroupedByMeal = computed<Record<MealType, MealLog[]>>(() => {
