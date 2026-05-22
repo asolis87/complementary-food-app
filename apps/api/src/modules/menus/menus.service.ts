@@ -608,23 +608,21 @@ export async function serveMeal(
   const result = await prisma.$transaction(async (tx: TxClient) => {
     let replacedCount = 0
 
-    // If force=true and meal was already served, soft-delete old FoodLogs
-    // Scoped by the ACTUAL diary entries: date + mealType + babyProfile (plate may have changed)
-    if (menuMeal.servedAt && force) {
-      const deletedLogs = await tx.foodLog.updateMany({
-        where: {
-          userId,
-          babyProfileId: payload.babyProfileId,
-          date: serveDate,
-          mealType: payload.mealType,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: new Date(),
-        },
-      })
-      replacedCount = deletedLogs.count
-    }
+    // Always soft-delete any existing active FoodLogs for this babyProfile + date + mealType
+    // to prevent duplicate entries in the diary (e.g. when plate has changed but servedAt was null).
+    const deletedLogs = await tx.foodLog.updateMany({
+      where: {
+        userId,
+        babyProfileId: payload.babyProfileId,
+        date: serveDate,
+        mealType: payload.mealType,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    })
+    replacedCount = deletedLogs.count
 
     // Check for empty plate
     if (!plate.items || plate.items.length === 0) {
@@ -659,7 +657,7 @@ export async function serveMeal(
     return {
       servedAt: updatedMeal.servedAt!,
       entriesCount: foodLogData.length,
-      replacedCount: force ? replacedCount : undefined,
+      replacedCount: replacedCount > 0 ? replacedCount : undefined,
     }
   })
 

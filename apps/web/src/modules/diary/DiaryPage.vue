@@ -151,154 +151,138 @@
 
         <div class="timeline-list">
 
-          <!-- ── Plate groups (T-5.3) ────────────────────────────────── -->
-          <template v-if="groupedEntries.plateGroups.length > 0">
-            <article
-              v-for="(group, gIdx) in groupedEntries.plateGroups"
-              :key="group.plateId"
-              class="meal-card plate-group-card"
-            >
-              <!-- Timeline connector -->
-              <div class="timeline-connector" aria-hidden="true">
-                <div class="connector-dot" :class="`connector-dot--${mealTypeKey(group.mealType)}`" />
-                <div
-                  v-if="gIdx < groupedEntries.plateGroups.length - 1 || groupedEntries.standalone.length > 0"
-                  class="connector-line"
-                />
-              </div>
-
-              <!-- Card content -->
-              <div class="meal-card-body">
-                <!-- Card header: meal type + time + balance badge -->
-                <div class="meal-card-header">
-                  <span class="meal-type-badge" :class="`meal-badge--${mealTypeKey(group.mealType)}`">
-                    <span class="material-symbols-outlined meal-badge-icon" aria-hidden="true">{{ mealTypeIcon(group.mealType) }}</span>
-                    {{ mealTypeLabel(group.mealType) }}
-                  </span>
-                  <span v-if="group.time" class="meal-time">
-                    <span class="material-symbols-outlined time-icon" aria-hidden="true">schedule</span>
-                    {{ group.time }}
-                  </span>
-                  <!-- Plate balance badge -->
-                  <span
-                    v-if="group.balanceLabel"
-                    class="balance-badge"
-                    :class="`balance-badge--${balanceLabelKey(group.balanceLabel)}`"
-                    :title="balanceLabelText(group.balanceLabel)"
-                    role="img"
-                    :aria-label="balanceLabelText(group.balanceLabel)"
-                  >
-                    {{ balanceLabelText(group.balanceLabel) }}
-                  </span>
-                </div>
-
-                <!-- Food items as chips -->
-                <div class="food-chips plate-food-chips" aria-label="Alimentos del plato">
-                  <div
-                    v-for="entry in group.entries"
-                    :key="entry.id"
-                    class="plate-food-item"
-                  >
-                    <!-- Food chip -->
-                    <span
-                      v-if="entry.food"
-                      class="food-chip"
-                      :class="{ 'food-chip--allergen': entry.food.isAllergen }"
-                    >
-                      <span
-                        class="material-symbols-outlined food-chip-icon"
-                        aria-hidden="true"
-                      >{{ entry.food.isAllergen ? 'warning' : 'nutrition' }}</span>
-                      {{ entry.food.name }}
-                      <span
-                        v-if="entry.food.group"
-                        class="food-group-dot"
-                        :class="`food-group-dot--${groupKey(entry.food.group)}`"
-                        :title="groupLabel(entry.food.group)"
-                        aria-hidden="true"
-                      />
-                      <!-- Status badge: sin revisar or reaction -->
-                      <span
-                        v-if="entry.reaction === null || entry.reaction === undefined"
-                        class="status-badge status-badge--unreviewed"
-                        title="Sin revisar"
-                      >Sin revisar</span>
-                      <span
-                        v-else
-                        class="status-badge"
-                        :class="`status-badge--${reactionKey(entry.reaction)}`"
-                        :title="reactionLabel(entry.reaction)"
-                      >{{ reactionEmoji(entry.reaction) }}</span>
-                      <!-- Accepted indicator -->
-                      <span
-                        v-if="entry.accepted === true"
-                        class="accepted-indicator accepted-indicator--yes"
-                        title="Lo aceptó"
-                        aria-label="Lo aceptó"
-                      >
-                        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                      </span>
-                      <span
-                        v-else-if="entry.accepted === false"
-                        class="accepted-indicator accepted-indicator--no"
-                        title="No lo aceptó"
-                        aria-label="No lo aceptó"
-                      >
-                        <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
-                      </span>
-                    </span>
-
-                    <!-- Edit button -->
-                    <button
-                      class="edit-btn"
-                      :aria-label="`Editar ${entry.food?.name ?? 'entrada'}`"
-                      title="Editar"
-                      @click="openEdit(entry)"
-                    >
-                      <span class="material-symbols-outlined" aria-hidden="true">edit</span>
-                    </button>
-                    <!-- Delete button -->
-                    <button
-                      class="delete-btn"
-                      :aria-label="`Eliminar ${entry.food?.name ?? 'entrada'}`"
-                      title="Eliminar"
-                      @click="confirmDelete(entry.id)"
-                    >
-                      <span class="material-symbols-outlined" aria-hidden="true">delete</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </template>
-
-          <!-- ── Standalone entries (T-5.3) ─────────────────────────── -->
           <article
-            v-for="(entry, idx) in groupedEntries.standalone"
-            :key="entry.id"
+            v-for="(item, idx) in timelineItems"
+            :key="item.type === 'plate' ? item.group.plateId : item.entry.id"
             class="meal-card"
-            :class="{ 'meal-card--allergen': entryHasAllergen(entry) }"
+            :class="{
+              'plate-group-card': item.type === 'plate',
+              'meal-card--allergen': item.type === 'standalone' && entryHasAllergen(item.entry)
+            }"
           >
             <!-- Timeline connector -->
             <div class="timeline-connector" aria-hidden="true">
-              <div class="connector-dot" :class="`connector-dot--${mealTypeKey(entry.mealType)}`" />
-              <div v-if="idx < groupedEntries.standalone.length - 1" class="connector-line" />
+              <div class="connector-dot" :class="`connector-dot--${mealTypeKey(item.mealType)}`" />
+              <div v-if="idx < timelineItems.length - 1" class="connector-line" />
             </div>
 
-            <!-- Card content -->
-            <div class="meal-card-body">
+            <!-- Card content (Plate) -->
+            <div v-if="item.type === 'plate'" class="meal-card-body">
+              <!-- Card header: meal type + time + balance badge -->
+              <div class="meal-card-header">
+                <span class="meal-type-badge" :class="`meal-badge--${mealTypeKey(item.group.mealType)}`">
+                  <span class="material-symbols-outlined meal-badge-icon" aria-hidden="true">{{ mealTypeIcon(item.group.mealType) }}</span>
+                  {{ mealTypeLabel(item.group.mealType) }}
+                </span>
+                <span v-if="item.group.time" class="meal-time">
+                  <span class="material-symbols-outlined time-icon" aria-hidden="true">schedule</span>
+                  {{ item.group.time }}
+                </span>
+                <!-- Plate balance badge -->
+                <span
+                  v-if="item.group.balanceLabel"
+                  class="balance-badge"
+                  :class="`balance-badge--${balanceLabelKey(item.group.balanceLabel)}`"
+                  :title="balanceLabelText(item.group.balanceLabel)"
+                  role="img"
+                  :aria-label="balanceLabelText(item.group.balanceLabel)"
+                >
+                  {{ balanceLabelText(item.group.balanceLabel) }}
+                </span>
+              </div>
+
+              <!-- Food items as chips -->
+              <div class="food-chips plate-food-chips" aria-label="Alimentos del plato">
+                <div
+                  v-for="entry in item.group.entries"
+                  :key="entry.id"
+                  class="plate-food-item"
+                >
+                  <!-- Food chip -->
+                  <span
+                    v-if="entry.food"
+                    class="food-chip"
+                    :class="{ 'food-chip--allergen': entry.food.isAllergen }"
+                  >
+                    <span
+                      class="material-symbols-outlined food-chip-icon"
+                      aria-hidden="true"
+                    >{{ entry.food.isAllergen ? 'warning' : 'nutrition' }}</span>
+                    {{ entry.food.name }}
+                    <span
+                      v-if="entry.food.group"
+                      class="food-group-dot"
+                      :class="`food-group-dot--${groupKey(entry.food.group)}`"
+                      :title="groupLabel(entry.food.group)"
+                      aria-hidden="true"
+                    />
+                    <!-- Status badge: sin revisar or reaction -->
+                    <span
+                      v-if="entry.reaction === null || entry.reaction === undefined"
+                      class="status-badge status-badge--unreviewed"
+                      title="Sin revisar"
+                    >Sin revisar</span>
+                    <span
+                      v-else
+                      class="status-badge"
+                      :class="`status-badge--${reactionKey(entry.reaction)}`"
+                      :title="reactionLabel(entry.reaction)"
+                    >{{ reactionEmoji(entry.reaction) }}</span>
+                    <!-- Accepted indicator -->
+                    <span
+                      v-if="entry.accepted === true"
+                      class="accepted-indicator accepted-indicator--yes"
+                      title="Lo aceptó"
+                      aria-label="Lo aceptó"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                    </span>
+                    <span
+                      v-else-if="entry.accepted === false"
+                      class="accepted-indicator accepted-indicator--no"
+                      title="No lo aceptó"
+                      aria-label="No lo aceptó"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
+                    </span>
+                  </span>
+
+                  <!-- Edit button -->
+                  <button
+                    class="edit-btn"
+                    :aria-label="`Editar ${entry.food?.name ?? 'entrada'}`"
+                    title="Editar"
+                    @click="openEdit(entry)"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                  </button>
+                  <!-- Delete button -->
+                  <button
+                    class="delete-btn"
+                    :aria-label="`Eliminar ${entry.food?.name ?? 'entrada'}`"
+                    title="Eliminar"
+                    @click="confirmDelete(entry.id)"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card content (Standalone) -->
+            <div v-else-if="item.type === 'standalone'" class="meal-card-body">
               <!-- Card header row -->
               <div class="meal-card-header">
-                <span class="meal-type-badge" :class="`meal-badge--${mealTypeKey(entry.mealType)}`">
-                  <span class="material-symbols-outlined meal-badge-icon" aria-hidden="true">{{ mealTypeIcon(entry.mealType) }}</span>
-                  {{ mealTypeLabel(entry.mealType) }}
+                <span class="meal-type-badge" :class="`meal-badge--${mealTypeKey(item.entry.mealType)}`">
+                  <span class="material-symbols-outlined meal-badge-icon" aria-hidden="true">{{ mealTypeIcon(item.entry.mealType) }}</span>
+                  {{ mealTypeLabel(item.entry.mealType) }}
                 </span>
-                <span v-if="entry.time" class="meal-time">
+                <span v-if="item.entry.time" class="meal-time">
                   <span class="material-symbols-outlined time-icon" aria-hidden="true">schedule</span>
-                  {{ entry.time }}
+                  {{ item.entry.time }}
                 </span>
                 <span
-                  v-if="entryHasAllergen(entry)"
+                  v-if="entryHasAllergen(item.entry)"
                   class="allergen-flag"
                   title="Alérgeno detectado"
                   role="img"
@@ -309,18 +293,18 @@
                 <!-- Edit button -->
                 <button
                   class="edit-btn"
-                  :aria-label="`Editar ${entry.food?.name ?? 'entrada'}`"
+                  :aria-label="`Editar ${item.entry.food?.name ?? 'entrada'}`"
                   title="Editar"
-                  @click="openEdit(entry)"
+                  @click="openEdit(item.entry)"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true">edit</span>
                 </button>
                 <!-- Delete button -->
                 <button
                   class="delete-btn"
-                  :aria-label="`Eliminar entrada de ${mealTypeLabel(entry.mealType)}`"
+                  :aria-label="`Eliminar entrada de ${mealTypeLabel(item.entry.mealType)}`"
                   title="Eliminar"
-                  @click="confirmDelete(entry.id)"
+                  @click="confirmDelete(item.entry.id)"
                 >
                   <span class="material-symbols-outlined" aria-hidden="true">delete</span>
                 </button>
@@ -329,37 +313,37 @@
               <!-- Food chip (single food per standalone entry) -->
               <div class="food-chips" aria-label="Alimento registrado">
                 <span
-                  v-if="entry.food"
+                  v-if="item.entry.food"
                   class="food-chip"
-                  :class="{ 'food-chip--allergen': entry.food.isAllergen }"
+                  :class="{ 'food-chip--allergen': item.entry.food.isAllergen }"
                 >
                   <span
                     class="material-symbols-outlined food-chip-icon"
                     aria-hidden="true"
-                  >{{ entry.food.isAllergen ? 'warning' : 'nutrition' }}</span>
-                  {{ entry.food.name }}
+                  >{{ item.entry.food.isAllergen ? 'warning' : 'nutrition' }}</span>
+                  {{ item.entry.food.name }}
                   <span
-                    v-if="entry.food.group"
+                    v-if="item.entry.food.group"
                     class="food-group-dot"
-                    :class="`food-group-dot--${groupKey(entry.food.group)}`"
-                    :title="groupLabel(entry.food.group)"
+                    :class="`food-group-dot--${groupKey(item.entry.food.group)}`"
+                    :title="groupLabel(item.entry.food.group)"
                     aria-hidden="true"
                   />
                   <!-- Status badge -->
                   <span
-                    v-if="entry.reaction === null || entry.reaction === undefined"
+                    v-if="item.entry.reaction === null || item.entry.reaction === undefined"
                     class="status-badge status-badge--unreviewed"
                     title="Sin revisar"
                   >Sin revisar</span>
                   <span
                     v-else
                     class="status-badge"
-                    :class="`status-badge--${reactionKey(entry.reaction)}`"
-                    :title="reactionLabel(entry.reaction)"
-                  >{{ reactionEmoji(entry.reaction) }}</span>
+                    :class="`status-badge--${reactionKey(item.entry.reaction)}`"
+                    :title="reactionLabel(item.entry.reaction)"
+                  >{{ reactionEmoji(item.entry.reaction) }}</span>
                   <!-- Accepted indicator -->
                   <span
-                    v-if="entry.accepted === true"
+                    v-if="item.entry.accepted === true"
                     class="accepted-indicator accepted-indicator--yes"
                     title="Lo aceptó"
                     aria-label="Lo aceptó"
@@ -367,7 +351,7 @@
                     <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
                   </span>
                   <span
-                    v-else-if="entry.accepted === false"
+                    v-else-if="item.entry.accepted === false"
                     class="accepted-indicator accepted-indicator--no"
                     title="No lo aceptó"
                     aria-label="No lo aceptó"
@@ -379,23 +363,23 @@
 
               <!-- Reaction row (full chip, only if reviewed) -->
               <div
-                v-if="entry.reaction"
+                v-if="item.entry.reaction"
                 class="reaction-row"
-                :aria-label="`Reacción: ${reactionLabel(entry.reaction)}`"
+                :aria-label="`Reacción: ${reactionLabel(item.entry.reaction)}`"
               >
                 <span
                   class="reaction-chip"
-                  :class="`reaction-chip--${reactionKey(entry.reaction)}`"
+                  :class="`reaction-chip--${reactionKey(item.entry.reaction)}`"
                 >
-                  <span class="material-symbols-outlined reaction-icon" aria-hidden="true">{{ reactionIcon(entry.reaction) }}</span>
-                  {{ reactionLabel(entry.reaction) }}
+                  <span class="material-symbols-outlined reaction-icon" aria-hidden="true">{{ reactionIcon(item.entry.reaction) }}</span>
+                  {{ reactionLabel(item.entry.reaction) }}
                 </span>
               </div>
 
               <!-- Notes -->
-              <p v-if="entry.notes" class="meal-notes">
+              <p v-if="item.entry.notes" class="meal-notes">
                 <span class="material-symbols-outlined notes-icon" aria-hidden="true">format_quote</span>
-                {{ entry.notes }}
+                {{ item.entry.notes }}
               </p>
             </div>
           </article>
@@ -570,12 +554,7 @@ function onEntryUpdated() {
 
 const activeProfileId = computed(() => profileStore.activeProfile?.id ?? '')
 
-const entriesForDate = computed(() =>
-  [...diaryStore.entriesForDate].sort((a, b) => {
-    if (!a.time || !b.time) return 0
-    return a.time.localeCompare(b.time)
-  }),
-)
+const entriesForDate = computed(() => diaryStore.entriesForDate)
 
 /**
  * Map of foodId → firstOfferedDate for the foods present in the selected day's entries.
@@ -647,6 +626,65 @@ const groupedEntries = computed(() => {
   }))
 
   return { plateGroups, standalone }
+})
+
+// Unified and sorted timeline items (desayuno -> colación 1 -> almuerzo -> colación 2 -> cena)
+const timelineItems = computed(() => {
+  const { plateGroups, standalone } = groupedEntries.value
+  const items: Array<
+    | { id: string; type: 'plate'; mealType: MealType; time?: string; group: PlateGroup; createdAt: string }
+    | { id: string; type: 'standalone'; mealType: MealType; time?: string; entry: MealLog; createdAt: string }
+  > = []
+
+  for (const group of plateGroups) {
+    items.push({
+      id: group.plateId,
+      type: 'plate',
+      mealType: group.mealType,
+      time: group.time,
+      group,
+      createdAt: group.entries[0]?.createdAt || '',
+    })
+  }
+
+  for (const entry of standalone) {
+    items.push({
+      id: entry.id,
+      type: 'standalone',
+      mealType: entry.mealType,
+      time: entry.time ?? undefined,
+      entry,
+      createdAt: entry.createdAt,
+    })
+  }
+
+  const MEAL_TYPE_ORDER: Record<MealType, number> = {
+    [MealType.BREAKFAST]: 1,
+    [MealType.SNACK_1]:   2,
+    [MealType.LUNCH]:     3,
+    [MealType.SNACK_2]:   4,
+    [MealType.DINNER]:    5,
+    [MealType.SNACK]:     6,
+  }
+
+  return items.sort((a, b) => {
+    // 1. Sort by mealType order first
+    const orderA = MEAL_TYPE_ORDER[a.mealType] ?? 99
+    const orderB = MEAL_TYPE_ORDER[b.mealType] ?? 99
+    if (orderA !== orderB) {
+      return orderA - orderB
+    }
+    // 2. If same mealType, sort by time if available
+    if (a.time && b.time) {
+      return a.time.localeCompare(b.time)
+    }
+    if (a.time) return -1
+    if (b.time) return 1
+    // 3. Otherwise, fallback to creation order (ascending: older first)
+    const timeA = new Date(a.createdAt).getTime()
+    const timeB = new Date(b.createdAt).getTime()
+    return timeA - timeB
+  })
 })
 
 // ── Date navigation ────────────────────────────────────────────────────────

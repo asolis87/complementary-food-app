@@ -139,14 +139,14 @@ const REACTION_LABELS: Record<ReactionType, string> = {
   [ReactionType.REJECTED]: 'Lo rechazó',
 }
 
-// Meal type sort order for display
+// Meal type sort order for display (chronological)
 const MEAL_ORDER: MealType[] = [
   MealType.BREAKFAST,
-  MealType.LUNCH,
-  MealType.SNACK,
   MealType.SNACK_1,
+  MealType.LUNCH,
   MealType.SNACK_2,
   MealType.DINNER,
+  MealType.SNACK,
 ]
 
 // ── Computed ──────────────────────────────────────────────────────────────
@@ -165,7 +165,20 @@ const groupedMeals = computed<MealGroup[]>(() => {
   }
   return MEAL_ORDER
     .filter((mt) => map.has(mt))
-    .map((mt) => ({ mealType: mt, entries: map.get(mt)! }))
+    .map((mt) => {
+      // Sort entries within each group chronologically
+      const sortedEntries = [...map.get(mt)!].sort((a, b) => {
+        if (a.time && b.time) {
+          return a.time.localeCompare(b.time)
+        }
+        if (a.time) return -1
+        if (b.time) return 1
+        const timeA = new Date(a.createdAt).getTime()
+        const timeB = new Date(b.createdAt).getTime()
+        return timeA - timeB
+      })
+      return { mealType: mt, entries: sortedEntries }
+    })
 })
 
 /**
