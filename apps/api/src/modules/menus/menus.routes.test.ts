@@ -52,7 +52,11 @@ function createMockPrisma(scenarios: {
       findUnique: vi.fn().mockResolvedValue(scenarios.menu ?? null),
     },
     babyProfile: {
-      findFirst: vi.fn().mockResolvedValue(scenarios.babyProfile ?? null),
+      findFirst: vi.fn().mockResolvedValue(
+        scenarios.babyProfile !== undefined
+          ? scenarios.babyProfile
+          : { id: VALID_BABY_PROFILE_CUID, userId: VALID_USER_ID }
+      ),
     },
     menuDay: {
       findFirst: vi.fn().mockResolvedValue(scenarios.menuDay ?? null),
@@ -322,6 +326,63 @@ describe('POST /api/menus/:menuId/meals/serve', () => {
     expect(result.servedAt).toBeDefined()
     expect(result.entriesCount).toBe(2)
     expect(result.replacedCount).toBe(2)
+  })
+
+  it('soft-deletes old FoodLogs and overwrites when serving even if servedAt is null (plate swapped case)', async () => {
+    const mockMenu = {
+      id: VALID_MENU_CUID,
+      userId: VALID_USER_ID,
+      babyProfileId: VALID_BABY_PROFILE_CUID,
+      weekStart: new Date('2024-06-10'),
+      deletedAt: null,
+    }
+
+    const mockMenuDay = {
+      id: 'day-0',
+      menuId: VALID_MENU_CUID,
+      dayOfWeek: 0,
+      meals: [{
+        id: 'meal-1',
+        menuDayId: 'day-0',
+        mealType: MealType.LUNCH,
+        plateId: VALID_PLATE_CUID,
+        servedAt: null, // MenuMeal shows NOT served (e.g. plate was swapped)
+        plate: {
+          id: VALID_PLATE_CUID,
+          balanceScore: 0.5,
+          items: [
+            { id: 'item-3', foodId: 'food-3', food: { id: 'food-3', name: 'Plátano', alClassification: 'NEUTRAL' } },
+          ],
+        },
+      }],
+    }
+
+    const prisma = createMockPrisma({
+      menu: mockMenu,
+      menuDay: mockMenuDay,
+      foodLog: { updateMany: { count: 2 } }, // Mocks 2 existing entries being deleted
+    })
+
+    prisma.weeklyMenu.findFirst = vi.fn().mockResolvedValue(mockMenu)
+    prisma.menuDay.findFirst = vi.fn().mockResolvedValue(mockMenuDay)
+
+    const { serveMeal } = await import('./menus.service.js')
+
+    const result = await serveMeal(
+      prisma as unknown as import('@prisma/client').PrismaClient,
+      VALID_USER_ID,
+      VALID_MENU_CUID,
+      {
+        dayOfWeek: 0,
+        mealType: MealType.LUNCH,
+        babyProfileId: VALID_BABY_PROFILE_CUID,
+      },
+      false // force=false (standard serve, but will still overwrite existing logs)
+    )
+
+    expect(result.servedAt).toBeDefined()
+    expect(result.entriesCount).toBe(1)
+    expect(result.replacedCount).toBe(2) // Verifies that updateMany was indeed called and replaced the old entries
   })
 
   it('throws NotFoundError when menu does not exist', async () => {
