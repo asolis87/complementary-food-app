@@ -1,5 +1,5 @@
 # ── Stage 1: Builder ───────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # OpenSSL is required by Prisma on Alpine
 RUN apk add --no-cache openssl
@@ -31,7 +31,7 @@ RUN pnpm --filter @pakulab/shared build
 RUN pnpm --filter api build
 
 # ── Stage 2: Runner ─────────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@latest --activate

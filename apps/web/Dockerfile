@@ -1,5 +1,5 @@
 # ── Stage 1: Builder ───────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Vite build-time env vars — must be passed as build args
 ARG VITE_STRIPE_PRICE_MONTHLY
