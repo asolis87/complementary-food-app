@@ -29,7 +29,13 @@ export const usePlateStore = defineStore('plates', () => {
   /** Saved plates (from API) */
   const savedPlates = ref<Plate[]>([])
   const loading = ref(false)
+  const fetchMoreLoading = ref(false)
   const error = ref<string | null>(null)
+
+  /** Pagination state */
+  const currentPage = ref(1)
+  const totalPlates = ref(0)
+  const PLATES_PER_PAGE = 20
 
   // ─── Getters ──────────────────────────────────────────────────────────────
 
@@ -56,6 +62,9 @@ export const usePlateStore = defineStore('plates', () => {
 
   /** True when the current balance is in the green (balanced) zone */
   const isBalanced = computed(() => balance.value.label === 'balanced')
+
+  /** True when there are more pages of plates to fetch */
+  const hasMore = computed(() => savedPlates.value.length < totalPlates.value)
 
   /**
    * True when the user can save a new plate:
@@ -108,16 +117,49 @@ export const usePlateStore = defineStore('plates', () => {
     draftName.value = 'Mi plato'
   }
 
+  /** Paginated response shape from GET /plates */
+  interface PaginatedPlatesResponse {
+    data: Plate[]
+    total: number
+    page: number
+    limit: number
+  }
+
+  /** Fetch the first page of saved plates (resets pagination state). */
   async function fetchSavedPlates() {
     loading.value = true
     error.value = null
     try {
-      const result = await apiClient.get<{ data: Plate[] }>('/plates')
+      const result = await apiClient.get<PaginatedPlatesResponse>(
+        `/plates?page=1&limit=${PLATES_PER_PAGE}`,
+      )
       savedPlates.value = result.data
+      totalPlates.value = result.total
+      currentPage.value = result.page
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error al cargar platos'
     } finally {
       loading.value = false
+    }
+  }
+
+  /** Fetch the next page and append results to the existing list. */
+  async function fetchMorePlates() {
+    if (!hasMore.value || fetchMoreLoading.value) return
+    fetchMoreLoading.value = true
+    error.value = null
+    try {
+      const nextPage = currentPage.value + 1
+      const result = await apiClient.get<PaginatedPlatesResponse>(
+        `/plates?page=${nextPage}&limit=${PLATES_PER_PAGE}`,
+      )
+      savedPlates.value = [...savedPlates.value, ...result.data]
+      totalPlates.value = result.total
+      currentPage.value = result.page
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Error al cargar más platos'
+    } finally {
+      fetchMoreLoading.value = false
     }
   }
 
@@ -289,12 +331,16 @@ export const usePlateStore = defineStore('plates', () => {
     draftGroupCount,
     savedPlates,
     loading,
+    fetchMoreLoading,
     error,
+    currentPage,
+    totalPlates,
     // Getters
     balance,
     itemsByGroup,
     hasItems,
     isBalanced,
+    hasMore,
     canSave,
     // Actions
     addFoodToDraft,
@@ -303,6 +349,7 @@ export const usePlateStore = defineStore('plates', () => {
     resetDraft,
     clearItems,
     fetchSavedPlates,
+    fetchMorePlates,
     loadPlate,
     saveDraftAsPlate,
     updatePlate,
