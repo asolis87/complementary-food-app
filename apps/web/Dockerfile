@@ -1,6 +1,17 @@
 # ── Stage 1: Builder ───────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# Vite build-time env vars — must be passed as build args
+ARG VITE_STRIPE_PRICE_MONTHLY
+ARG VITE_STRIPE_PRICE_ANNUAL
+ARG VITE_API_URL=/api
+ARG VITE_APP_ENV=production
+
+ENV VITE_STRIPE_PRICE_MONTHLY=${VITE_STRIPE_PRICE_MONTHLY}
+ENV VITE_STRIPE_PRICE_ANNUAL=${VITE_STRIPE_PRICE_ANNUAL}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_APP_ENV=${VITE_APP_ENV}
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
