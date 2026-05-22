@@ -67,6 +67,11 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        VITE_STRIPE_PRICE_MONTHLY: ${STRIPE_PRICE_MONTHLY}
+        VITE_STRIPE_PRICE_ANNUAL: ${STRIPE_PRICE_YEARLY}
+        VITE_API_URL: /api
+        VITE_APP_ENV: staging
     restart: unless-stopped
     expose:
       - "80"
