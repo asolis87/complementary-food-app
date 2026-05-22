@@ -139,6 +139,31 @@
           <RouterLink to="/pricing" class="upsell-btn">Hacete Pro</RouterLink>
         </div>
       </li>
+
+      <!-- Load more button -->
+      <li v-if="plateStore.hasMore" class="load-more-item">
+        <button
+          class="load-more-btn"
+          :disabled="plateStore.fetchMoreLoading"
+          @click="plateStore.fetchMorePlates()"
+        >
+          <span
+            v-if="plateStore.fetchMoreLoading"
+            class="spinner-mini"
+            aria-hidden="true"
+          />
+          <span
+            v-else
+            class="material-symbols-outlined"
+            aria-hidden="true"
+          >expand_more</span>
+          {{
+            plateStore.fetchMoreLoading
+              ? 'Cargando...'
+              : `Cargar más (${plateStore.savedPlates.length} de ${plateStore.totalPlates})`
+          }}
+        </button>
+      </li>
     </ul>
 
     <!-- Mobile FAB: Create new plate -->
@@ -957,6 +982,58 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
   .upsell-banner {
     display: none;
   }
+}
+
+/* ─── Load More ─── */
+.load-more-item {
+  display: flex;
+  justify-content: center;
+  padding: var(--md3-space-4) 0;
+  grid-column: 1 / -1;
+}
+
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  padding: 0.75rem var(--md3-space-6);
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface-variant);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-full);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  cursor: pointer;
+  transition: all var(--md3-transition-fast);
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+  border-color: var(--md3-outline);
+}
+
+.load-more-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.load-more-btn .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.spinner-mini {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 /* ─── Mobile FAB ─── */
