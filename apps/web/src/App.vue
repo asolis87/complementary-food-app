@@ -4,6 +4,11 @@
     <RouterView />
   </template>
 
+  <!-- Authenticated routes get the sidebar layout (dashboard redesign) -->
+  <SidebarLayout v-else-if="isAuthenticatedRoute">
+    <RouterView />
+  </SidebarLayout>
+
   <!-- All other pages get the full app shell: header, bottom nav, footer -->
   <AppLayout v-else>
     <RouterView />
@@ -25,6 +30,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/shared/layouts/AppLayout.vue'
+import SidebarLayout from '@/shared/layouts/SidebarLayout.vue'
 import ToastNotification from '@/shared/components/ToastNotification.vue'
 
 const route = useRoute()
@@ -34,6 +40,14 @@ const route = useRoute()
  * Detect them by path prefix so AppLayout chrome is not rendered on top.
  */
 const isAuthRoute = computed(() => route.path.startsWith('/auth'))
+
+/**
+ * Authenticated routes use the sidebar layout (dashboard redesign).
+ * Detected by meta.requiresAuth = true on the route.
+ */
+const isAuthenticatedRoute = computed(() =>
+  route.matched.some((record) => record.meta.requiresAuth === true),
+)
 
 // Session restoration is handled by the router beforeEach guard
 // (runs before any navigation, including initial app load)

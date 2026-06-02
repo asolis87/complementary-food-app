@@ -1,0 +1,36 @@
+/*
+ * Tailwind CSS v4 entry point — Pakulab "Nurture & Growth" design system.
+ *
+ * Imported by main.ts. Coexists with tokens.css (MD3) for non-dashboard pages.
+ * Dashboard components and SidebarLayout use only Tailwind utility classes.
+ *
+ * Tailwind v4 uses CSS-native config: tokens are declared with @theme
+ * inside this file (or in @theme blocks). tailwind.config.ts is supported
+ * via the @config directive.
+ */
+
+@import "tailwindcss";
+
+@config "../../../tailwind.config.ts";
+
+/* Custom component classes used in dashboard cards. */
+@layer components {
+  .ambient-shadow {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05),
+      0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  }
+
+  .progress-track {
+    background-color: #f1f3f5;
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 6px;
+  }
+
+  .progress-fill {
+    background-color: #34a853;
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease-out;
+  }
+}

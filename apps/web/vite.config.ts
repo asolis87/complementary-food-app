@@ -2,10 +2,12 @@ import { resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     vue(),
+    tailwindcss(),
 
     // PWA Plugin — generateSW strategy (zero config precaching)
     // Design Decision AD7: generateSW + IndexedDB for food catalog cache
