@@ -78,6 +78,12 @@ export const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/roadmap',
+      name: 'roadmap-detail',
+      component: () => import('@/modules/roadmap/RoadmapDetailPage.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/plates',
       name: 'plates',
       component: () => import('@/modules/plates/PlateListPage.vue'),
