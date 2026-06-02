@@ -1,7 +1,7 @@
 <template>
   <section
     v-if="hasContent"
-    class="allergen-card"
+    class="dashboard-card allergen-card"
     role="region"
     aria-label="Alérgenos pendientes"
   >
@@ -9,23 +9,33 @@
     <TierGate required-tier="PRO" feature-name="Alertas de alérgenos">
       <!-- Loading -->
       <div v-if="loading" class="loading-skeleton">
-        <div v-for="n in 2" :key="n" class="skeleton-line skeleton-line-long" />
+        <div v-for="n in 2" :key="n" class="skeleton-line" />
       </div>
 
       <!-- Allergen content -->
       <div v-if="!loading && allergens.length > 0" class="allergen-content">
         <div class="allergen-header">
-          <span class="material-symbols-outlined allergen-warning" aria-hidden="true">warning</span>
+          <span class="material-symbols-outlined allergen-icon" aria-hidden="true">health_and_safety</span>
           <div class="allergen-text">
-            <h3 class="allergen-title">Alérgenos Pendientes</h3>
-            <p class="allergen-description">
-              Por edad (<span class="font-bold">{{ babyAgeMonths }}+ meses</span>):
-              <span class="allergen-list-inline">
-                {{ allergenSummary }}
-              </span>
-            </p>
+            <h3 class="allergen-title">Próximos alérgenos</h3>
+            <p class="allergen-description">Recomendados por edad:</p>
           </div>
         </div>
+
+        <ul class="allergen-list" role="list">
+          <li
+            v-for="allergen in topAllergens"
+            :key="allergen.allergenKey"
+            class="allergen-item"
+            role="listitem"
+          >
+            <span class="allergen-item-icon" aria-hidden="true">{{ allergen.icon }}</span>
+            <span class="allergen-item-name">{{ allergen.nameEs }}</span>
+            <span v-if="allergen.urgency === 'closing_window'" class="urgency-badge">
+              Pronto
+            </span>
+          </li>
+        </ul>
         
         <button
           class="btn-intro"
@@ -37,6 +47,7 @@
 
       <!-- All caught up -->
       <div v-if="!loading && allergens.length === 0" class="caught-up">
+        <span class="material-symbols-outlined caught-up-icon" aria-hidden="true">check_circle</span>
         <p class="caught-up-text">
           ¡Sin alérgenos pendientes! Todos los alérgenos para esta edad ya fueron introducidos.
         </p>
@@ -65,98 +76,130 @@ const hasContent = computed(() => props.loading || props.allergens.length > 0)
 // Show top 3 allergens in the summary
 const topAllergens = computed(() => props.allergens.slice(0, 3))
 
-// Create summary text: "🥜 Maní, 🐟 Pescado, 🥛 Lácteos"
-const allergenSummary = computed(() => {
-  return topAllergens.value.map(a => `${a.icon} ${a.nameEs}`).join(', ')
-})
 </script>
 
 <style scoped>
 /* ═══════════════════════════════════════════════════════════════════════
-   AllergenAlertsCard — Compact card matching Stitch design.
-   Single card with inline allergen list + one CTA button.
+   AllergenAlertsCard — Nurture & Growth redesign
+   Soft warning tint background with improved visual hierarchy and
+   modern button styling.
    ═══════════════════════════════════════════════════════════════════════ */
 
 .allergen-card {
-  background: var(--md3-error-container);
-  background: color-mix(in srgb, var(--md3-error-container) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--md3-error-container) 30%, transparent);
-  border-radius: 16px;
-  padding: 3rem 2rem; /* 48px vertical, 32px horizontal - MUCH more breathing room */
+  /* Inherit default styles from dashboard-card */
 }
 
 .allergen-content {
   display: flex;
   flex-direction: column;
-  gap: 2rem; /* 32px - Significant space between sections */
+  gap: var(--md3-space-4);
 }
 
 .allergen-header {
   display: flex;
-  gap: 1rem;
+  gap: var(--md3-space-3);
   align-items: flex-start;
 }
 
-.allergen-warning {
-  font-size: 1.5rem;
-  color: var(--md3-error);
+.allergen-icon {
+  font-size: 1.75rem !important;
+  color: var(--md3-primary);
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: -2px;
 }
 
 .allergen-text {
   flex: 1;
+  min-width: 0;
 }
 
 .allergen-title {
-  margin: 0 0 1rem 0; /* 16px below title - more space */
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
+  margin: 0 0 var(--md3-space-1) 0;
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-title-md);
   font-weight: var(--md3-weight-bold);
-  color: var(--md3-error);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: 1.4;
+  color: var(--md3-on-surface);
+  line-height: var(--md3-title-line-height);
 }
 
 .allergen-description {
-  margin: 0 0 1.5rem 0; /* 24px below description - significant space */
+  margin: 0;
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   color: var(--md3-on-surface-variant);
-  line-height: 1.7; /* More line height for readability */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  line-height: var(--md3-body-line-height);
 }
 
-.allergen-list-inline {
-  font-weight: var(--md3-weight-semibold);
+/* ── Allergen List ──────────────────────────────────────── */
+.allergen-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-2);
+}
+
+.allergen-item {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-3);
+  padding: 8px 12px;
+  background: var(--md3-surface-container-low);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
   color: var(--md3-on-surface);
-  display: inline; /* Keep inline but allow wrapping */
 }
 
-.font-bold {
+.allergen-item-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.allergen-item-name {
   font-weight: var(--md3-weight-semibold);
+  flex: 1;
+}
+
+.urgency-badge {
+  font-family: var(--md3-font-label);
+  font-size: 9px;
+  font-weight: var(--md3-weight-bold);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #fef3c7; /* Soft amber */
+  color: #b45309; /* Warm brown/amber */
+  text-transform: uppercase;
 }
 
 /* ── Intro button ───────────────────────────────────────── */
 .btn-intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md3-space-2);
   width: 100%;
-  padding: 1.25rem 2rem; /* 20px vertical, 32px horizontal - Much more breathing room */
-  border: 1px solid color-mix(in srgb, var(--md3-primary) 20%, transparent);
-  border-radius: 12px;
-  background: white;
+  padding: var(--md3-space-3) var(--md3-space-4);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-lg);
+  background: var(--md3-surface-container-lowest);
   color: var(--md3-primary);
   font-family: var(--md3-font-label);
-  font-size: var(--md3-label-lg);
+  font-size: var(--md3-label-md);
   font-weight: var(--md3-weight-bold);
   cursor: pointer;
-  transition: background var(--md3-transition-fast);
-  margin-top: 1rem; /* 16px extra space above button */
+  transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast), transform var(--md3-transition-fast);
 }
 
 .btn-intro:hover {
-  background: color-mix(in srgb, var(--md3-primary-container) 5%, transparent);
+  background: var(--md3-surface-container-low);
+  box-shadow: var(--md3-shadow-card);
+  transform: translateY(-1px);
+}
+
+.btn-intro:active {
+  transform: translateY(0);
 }
 
 .btn-intro:focus-visible {
@@ -167,13 +210,24 @@ const allergenSummary = computed(() => {
 /* ── Caught-up state ──────────────────────────────────────── */
 .caught-up {
   text-align: center;
-  padding: var(--md3-space-2) 0;
+  padding: var(--md3-space-4) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--md3-space-3);
+}
+
+.caught-up-icon {
+  font-size: 2.5rem;
+  color: var(--md3-primary);
 }
 
 .caught-up-text {
   margin: 0;
+  font-family: var(--md3-font-body);
   font-size: var(--md3-body-md);
   color: var(--md3-on-surface-variant);
+  line-height: var(--md3-body-line-height);
 }
 
 /* ── Loading skeleton ─────────────────────────────────────── */
@@ -184,7 +238,7 @@ const allergenSummary = computed(() => {
 }
 
 .skeleton-line {
-  height: 14px;
+  height: 16px;
   border-radius: var(--md3-rounded-sm);
   background: linear-gradient(
     90deg,
@@ -195,8 +249,6 @@ const allergenSummary = computed(() => {
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }
-
-.skeleton-line-long { width: 100%; }
 
 @keyframes shimmer {
   0% { background-position: -400px 0; }

@@ -81,11 +81,11 @@ describe('FoodRoadmapCard', () => {
     expect(wrapper.text()).toContain('❌')
   })
 
-  it('emits viewFullRoadmap on "Ver completo" click', async () => {
+  it('emits viewFullRoadmap on "Ver Detalle" click', async () => {
     const wrapper = mount(FoodRoadmapCard, {
       props: { progress: [vegetableProgress] },
     })
-    await wrapper.find('.card-link').trigger('click')
+    await wrapper.find('.btn-view-detail').trigger('click')
     expect(wrapper.emitted('viewFullRoadmap')).toHaveLength(1)
   })
 

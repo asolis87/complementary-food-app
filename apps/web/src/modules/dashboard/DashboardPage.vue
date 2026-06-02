@@ -47,16 +47,22 @@
 
       <!-- Bento Grid -->
       <div class="bento-grid" id="main-content">
-        <!-- Col 1: Today's logs (full width on mobile, col-1 on desktop) -->
-        <TodayLogsCard
-          class="bento-col-1"
-          :meal-slots="todayMealSlots"
-          :loading="loading"
-          @register="handleRegister"
-          @edit="handleEdit"
-        />
+        <!-- Col 1: Today's logs + Texture Guide (full width on mobile, col-1 on desktop) -->
+        <div class="bento-col-1">
+          <TodayLogsCard
+            :meal-slots="todayMealSlots"
+            :loading="loading"
+            @register="handleRegister"
+            @edit="handleEdit"
+          />
 
-        <!-- Col 2: Suggestions + Allergens (stacked on mobile, col-2 on desktop) -->
+          <TextureGuideCard
+            :baby-age-months="dashboardData?.baby?.ageInMonths ?? 0"
+            :loading="loading"
+          />
+        </div>
+
+        <!-- Col 2: Suggestions (stacked on mobile, col-2 on desktop) -->
         <div class="bento-col-2">
           <LazySuggestedFoodsCard
             :suggestions="dashboardData?.suggestedFoods ?? []"
@@ -64,21 +70,23 @@
             @view-food="handleViewFood"
             @view-all="handleViewAllFoods"
           />
+        </div>
+
+        <!-- Col 3: Roadmap + Allergens (stacked on mobile/tablet, col-3 on desktop) -->
+        <div class="bento-col-3">
+          <LazyFoodRoadmapCard
+            :progress="dashboardData?.roadmapProgress ?? []"
+            :loading="loading"
+            @view-full-roadmap="handleViewFullRoadmap"
+          />
 
           <AllergenAlertsCard
             :allergens="dashboardData?.pendingAllergens ?? []"
             :loading="loading"
+            :baby-age-months="dashboardData?.baby?.ageInMonths ?? 0"
             @view-guide="handleViewAllergenGuide"
           />
         </div>
-
-        <!-- Col 3: Roadmap (full width on mobile/tablet, col-3 on desktop) -->
-        <LazyFoodRoadmapCard
-          class="bento-col-3"
-          :progress="dashboardData?.roadmapProgress ?? []"
-          :loading="loading"
-          @view-full-roadmap="handleViewFullRoadmap"
-        />
       </div>
 
       <!-- Full width: Balance Insight -->
@@ -103,6 +111,7 @@ import { useDashboardData, useDashboardActions } from '@/shared/composables/useD
 import { useOnlineStatus } from '@/shared/composables/useOnlineStatus.js'
 import DashboardHeader from './components/DashboardHeader.vue'
 import TodayLogsCard from './components/TodayLogsCard.vue'
+import TextureGuideCard from './components/TextureGuideCard.vue'
 import AllergenAlertsCard from './components/AllergenAlertsCard.vue'
 import BalanceInsightCard from './components/BalanceInsightCard.vue'
 import DashboardSkeleton from './components/DashboardSkeleton.vue'
@@ -114,12 +123,17 @@ const LazySuggestedFoodsCard = defineAsyncComponent({
   loader: () => import('./components/SuggestedFoodsCard.vue'),
   // Show skeleton while loading the lazy component
   loadingComponent: {
-    template: `<div class="dashboard-card" style="min-height: 220px;">
-      <div class="skeleton-line skeleton-line-short" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;margin-bottom:12px;" />
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div v-for="n in 3" :key="n" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--md3-surface-container);border-radius:8px;">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--md3-surface-container-high);" />
-          <div style="height:14px;width:65%;background:var(--md3-surface-container-high);border-radius:4px;" />
+    template: `<div class="dashboard-card" style="min-height: 280px;">
+      <div class="skeleton-header" style="margin-bottom: var(--md3-space-4);">
+        <div class="skeleton-line" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--md3-space-3);">
+        <div v-for="n in 3" :key="n" style="display:flex;align-items:center;gap:var(--md3-space-3);padding:var(--md3-space-3);background:var(--md3-surface-container-low);border:1px solid var(--md3-outline-variant);border-radius:var(--md3-rounded-lg);">
+          <div style="width:52px;height:52px;border-radius:var(--md3-rounded-lg);background:var(--md3-surface-container);" />
+          <div style="flex:1;display:flex;flex-direction:column;gap:var(--md3-space-2);">
+            <div style="height:16px;width:50%;background:var(--md3-surface-container);border-radius:4px;" />
+            <div style="height:14px;width:80%;background:var(--md3-surface-container);border-radius:4px;" />
+          </div>
         </div>
       </div>
     </div>`,
@@ -130,12 +144,17 @@ const LazyFoodRoadmapCard = defineAsyncComponent({
   loader: () => import('./components/FoodRoadmapCard.vue'),
   // Show skeleton while loading the lazy component
   loadingComponent: {
-    template: `<div class="dashboard-card" style="min-height: 300px;">
-      <div class="skeleton-line skeleton-line-short" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;margin-bottom:12px;" />
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div v-for="n in 5" :key="n" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--md3-surface-container);border-radius:8px;">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--md3-surface-container-high);" />
-          <div style="flex:1;height:14px;background:var(--md3-surface-container-high);border-radius:4px;" />
+    template: `<div class="dashboard-card" style="min-height: 350px;">
+      <div class="skeleton-header" style="margin-bottom: var(--md3-space-4);">
+        <div class="skeleton-line" style="height:14px;width:40%;background:var(--md3-surface-container);border-radius:4px;" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--md3-space-2);">
+        <div v-for="n in 5" :key="n" style="display:flex;align-items:center;gap:var(--md3-space-3);padding:var(--md3-space-3);background:var(--md3-surface-container-low);border:1px solid var(--md3-outline-variant);border-radius:var(--md3-rounded-lg);">
+          <div style="width:40px;height:40px;border-radius:var(--md3-rounded-md);background:var(--md3-surface-container);" />
+          <div style="flex:1;display:flex;flex-direction:column;gap:var(--md3-space-1);">
+            <div style="height:16px;width:30%;background:var(--md3-surface-container);border-radius:4px;" />
+            <div style="height:8px;background:var(--md3-surface-container-high);border-radius:9999px;width:70%;" />
+          </div>
         </div>
       </div>
     </div>`,
@@ -234,8 +253,6 @@ const todayMealSlots = computed(() => {
   })
 })
 
-// ── Lifecycle ────────────────────────────────────────────────────────────
-
 // ── Real-time refresh: polling + visibility/focus handlers ────────────────
 
 const POLL_INTERVAL_MS = 30_000 // 30 seconds
@@ -279,7 +296,7 @@ function handleWindowFocus(): void {
   refreshIfVisible()
 }
 
-// ── Lifecycle ────────────────────────────────────────────────────────────
+// ── Lifecycle ───────────────────────────────────────────────────────────
 
 onMounted(async () => {
   // Announce loading
@@ -351,7 +368,7 @@ function handleViewAllergenGuide(allergenKey: string): void {
 }
 
 function handleViewFullRoadmap(): void {
-  void router.push({ name: 'foods' })
+  void router.push({ name: 'roadmap-detail' })
 }
 
 function handleViewWeeklyDetail(): void {
@@ -361,18 +378,21 @@ function handleViewWeeklyDetail(): void {
 
 <style scoped>
 /* ═══════════════════════════════════════════════════════════════════════
-   DashboardPage — Bento Grid orchestrator with responsive layout.
+   DashboardPage — Nurture & Growth redesign
+   Bento Grid orchestrator with responsive layout.
    Mobile: 1-col stack, Tablet: 2-col, Desktop: 3-col Bento Grid.
    ═══════════════════════════════════════════════════════════════════════ */
 
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-4);
-  max-width: 1200px;
+  gap: var(--md3-space-5);
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+  padding: 0 var(--md3-space-4);
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ─── Screen reader only ────────────────────────────────────── */
@@ -396,10 +416,11 @@ function handleViewWeeklyDetail(): void {
   gap: var(--md3-space-2);
   background: var(--md3-tertiary-container);
   color: var(--md3-on-tertiary-container);
-  font-size: var(--md3-body-sm);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
   font-weight: var(--md3-weight-medium);
-  padding: var(--md3-space-2);
-  border-radius: var(--md3-rounded-md);
+  padding: var(--md3-space-3) var(--md3-space-4);
+  border-radius: var(--md3-rounded-lg);
   text-align: center;
 }
 
@@ -407,18 +428,20 @@ function handleViewWeeklyDetail(): void {
 .bento-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--md3-space-4); /* Increased from space-3 for more breathing room */
-  min-width: 0; /* Prevent grid from overflowing container */
-  width: 100%; /* Ensure grid takes full container width */
-  max-width: 100%; /* Prevent grid from exceeding container */
-  box-sizing: border-box; /* Include padding in width */
+  gap: var(--md3-space-5);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-/* Stack suggestions + allergens with gap on all breakpoints (mobile had no gap before). */
-.bento-col-2 {
+/* Stack child components with gap on all breakpoints. */
+.bento-col-1,
+.bento-col-2,
+.bento-col-3 {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-5); /* 26px gap between suggestions and allergens */
+  gap: var(--md3-space-4);
   min-width: 0;
 }
 
@@ -434,70 +457,53 @@ function handleViewWeeklyDetail(): void {
   .bento-col-2,
   .bento-col-3 {
     grid-column: auto;
-    width: 100% !important; /* Force full width on mobile */
-    max-width: 100% !important; /* Prevent overflow */
-    min-width: 0 !important; /* CRITICAL: Allow grid items to shrink below min-content size */
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box;
   }
   
-  /* CRITICAL: Keep gap between suggestions and allergens on mobile */
   .bento-col-2 {
-    gap: var(--md3-space-5); /* 26px - same as desktop */
+    gap: var(--md3-space-4);
   }
 }
 
 /* Desktop: 3-column Bento Grid */
 @media (min-width: 1024px) {
   .bento-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1.25fr 1.25fr 0.9fr;
     gap: var(--md3-space-4);
   }
 
-  .bento-col-1 {
-    grid-column: 1;
-  }
-
-  .bento-col-2 {
-    grid-column: 2;
-  }
-
-  .bento-col-3 {
-    grid-column: 3;
-  }
+  .bento-col-1 { grid-column: 1; }
+  .bento-col-2 { grid-column: 2; }
+  .bento-col-3 { grid-column: 3; }
 }
 
 /* Tablet: 2-column grid */
 @media (min-width: 768px) and (max-width: 1023px) {
   .bento-grid {
     grid-template-columns: 1fr 1fr;
-    gap: var(--md3-space-4);
+    gap: var(--md3-space-5);
   }
 
-  .bento-col-1 {
-    grid-column: 1;
-  }
-
-  .bento-col-2 {
-    grid-column: 2;
-  }
-
-  .bento-col-3 {
-    grid-column: 1 / -1;
-  }
+  .bento-col-1 { grid-column: 1; }
+  .bento-col-2 { grid-column: 2; }
+  .bento-col-3 { grid-column: 1 / -1; }
 }
 
 /* ─── Card base — shared by all dashboard cards ───────────── */
 :deep(.dashboard-card) {
   background: var(--md3-surface-container-lowest);
-  border-radius: var(--md3-rounded-lg);
-  padding: var(--md3-space-5); /* Increased from space-4 for more breathing room */
+  border-radius: var(--md3-rounded-xl);
+  padding: var(--md3-space-5);
   box-shadow: var(--md3-shadow-ambient);
   border: 1px solid var(--md3-outline-variant);
   transition: box-shadow var(--md3-transition-fast);
-  min-width: 0; /* Prevent flex overflow */
-  max-width: 100%; /* Ensure card doesn't exceed container */
-  box-sizing: border-box; /* Include padding in width calculation */
-  width: 100%; /* Force card to take available width */
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Mobile: Force cards to fit within viewport */
@@ -506,7 +512,7 @@ function handleViewWeeklyDetail(): void {
   :deep(.bento-col-1),
   :deep(.bento-col-2),
   :deep(.bento-col-3) {
-    width: 100% !important; /* Override any inline or conflicting widths */
+    width: 100% !important;
     max-width: 100% !important;
   }
 }
@@ -518,17 +524,15 @@ function handleViewWeeklyDetail(): void {
 /* ─── Responsive spacing ──────────────────────────────────── */
 @media (max-width: 767px) {
   .dashboard-page {
-    gap: var(--md3-space-4); /* Keep increased spacing on mobile */
-    padding: 0;
-    overflow-x: hidden; /* Extra protection for mobile */
+    gap: var(--md3-space-4);
   }
 
   .bento-grid {
-    gap: var(--md3-space-4); /* Keep increased spacing on mobile */
+    gap: var(--md3-space-4);
   }
 
   :deep(.dashboard-card) {
-    padding: var(--md3-space-4); /* Slightly less than desktop (space-5) but still increased from space-3 */
+    padding: var(--md3-space-4);
   }
 }
 </style>

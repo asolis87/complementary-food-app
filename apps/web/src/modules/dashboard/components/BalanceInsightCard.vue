@@ -17,19 +17,28 @@
     </template>
 
     <template v-else>
-      <!-- Main label -->
-      <div class="balance-main">
-        <span class="balance-icon" aria-hidden="true">{{ severityIcon }}</span>
+      <!-- Left: Status indicator dot + Label -->
+      <div class="balance-status">
+        <span class="status-dot" :class="`status-dot--${insight.severity}`">●</span>
         <h2 class="balance-label">{{ insight.labelEs }}</h2>
       </div>
 
-      <!-- Tip -->
-      <p class="balance-tip" aria-label="Consejo del día">
+      <!-- Middle: Tip -->
+      <div class="balance-tip-wrapper">
         <span class="tip-icon" aria-hidden="true">💡</span>
-        {{ insight.tip }}
-      </p>
+        <span class="balance-tip">{{ insight.tip }}</span>
+      </div>
 
-      <span class="balance-click-hint" aria-hidden="true">Ver detalle semanal →</span>
+      <!-- Right: Text CTA -->
+      <button
+        class="balance-cta"
+        tabindex="-1"
+        aria-hidden="true"
+        @click.stop="$emit('viewWeeklyDetail')"
+      >
+        Ver detalle semanal
+        <span class="cta-arrow" aria-hidden="true">→</span>
+      </button>
     </template>
   </section>
 </template>
@@ -49,27 +58,43 @@ defineEmits<{
 
 const severityIcon = computed(() => {
   switch (props.insight.severity) {
-    case 'green': return '🟢'
-    case 'yellow': return '🟠'
-    case 'red': return '🔴'
-    default: return '⚪'
+    case 'green': return '🌿'
+    case 'yellow': return '🍊'
+    case 'red': return '⚠️'
+    default: return '📊'
   }
 })
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════════════════
+   BalanceInsightCard — Nurture & Growth redesign
+   Severity-based color gradients (green/yellow/red), modern card layout,
+   and improved visual hierarchy.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .balance-card {
   display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-2);
-  padding: var(--md3-space-4) var(--md3-space-6);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--md3-space-4);
+  padding: 12px var(--md3-space-5);
   cursor: pointer;
-  transition: box-shadow var(--md3-transition-fast), background var(--md3-transition-fast);
+  transition: box-shadow var(--md3-transition-fast), transform var(--md3-transition-fast);
   text-align: left;
+  border-radius: var(--md3-rounded-lg);
+  border: 1px solid var(--md3-outline-variant);
+  background: var(--md3-surface-container-lowest);
+  width: 100%;
 }
 
 .balance-card:hover {
   box-shadow: var(--md3-shadow-card);
+  transform: translateY(-1px);
+}
+
+.balance-card:active {
+  transform: translateY(0);
 }
 
 .balance-card:focus-visible {
@@ -77,73 +102,96 @@ const severityIcon = computed(() => {
   outline-offset: 2px;
 }
 
-/* ── Severity themes ──────────────────────────────────────── */
-.balance-card--green {
-  background: linear-gradient(135deg, var(--md3-primary-container), var(--md3-surface-container-low));
-  border: 1px solid var(--md3-outline-variant);
-}
-
-.balance-card--yellow {
-  background: linear-gradient(135deg, var(--md3-tertiary-container), var(--md3-surface-container-low));
-  border: 1px solid var(--md3-outline-variant);
-}
-
-.balance-card--red {
-  background: linear-gradient(135deg, var(--md3-error-container), var(--md3-surface-container-low));
-  border: 1px solid var(--md3-error);
-}
-
-/* ── Main label ───────────────────────────────────────────── */
-.balance-main {
+/* ── Status dot and label ────────────────────────────────── */
+.balance-status {
   display: flex;
   align-items: center;
   gap: var(--md3-space-2);
+  flex-shrink: 0;
 }
 
-.balance-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
+.status-dot {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.status-dot--green {
+  color: var(--md3-primary);
+}
+
+.status-dot--yellow {
+  color: var(--md3-secondary);
+}
+
+.status-dot--red {
+  color: var(--md3-error);
 }
 
 .balance-label {
   margin: 0;
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-headline-sm);
+  font-size: var(--md3-body-md);
   font-weight: var(--md3-weight-bold);
   color: var(--md3-on-surface);
-  line-height: var(--md3-headline-line-height);
+  line-height: 1.2;
 }
 
-/* ── Tip ──────────────────────────────────────────────────── */
-.balance-tip {
-  margin: 0;
-  font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
-  color: var(--md3-on-surface-variant);
-  line-height: var(--md3-body-line-height);
+/* ── Tip section ─────────────────────────────────────────── */
+.balance-tip-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
 }
 
 .tip-icon {
-  margin-right: 0.25rem;
+  font-size: 14px;
 }
 
-/* ── Click hint ───────────────────────────────────────────── */
-.balance-click-hint {
-  font-size: var(--md3-label-sm);
+.balance-tip {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  color: var(--md3-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── CTA Button ───────────────────────────────────────────── */
+.balance-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  padding: 0;
+  border: none;
+  background: transparent;
   color: var(--md3-primary);
-  font-weight: var(--md3-weight-medium);
-  align-self: flex-end;
-  opacity: 0.7;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
   transition: opacity var(--md3-transition-fast);
+  flex-shrink: 0;
 }
 
-.balance-card:hover .balance-click-hint {
-  opacity: 1;
+.balance-cta:hover {
+  opacity: 0.8;
+}
+
+.cta-arrow {
+  transition: transform var(--md3-transition-fast);
+}
+
+.balance-cta:hover .cta-arrow {
+  transform: translateX(2px);
 }
 
 /* ── Loading skeleton ─────────────────────────────────────── */
 .skeleton-line {
-  height: 14px;
+  height: 16px;
   border-radius: var(--md3-rounded-sm);
   background: linear-gradient(
     90deg,
@@ -155,34 +203,38 @@ const severityIcon = computed(() => {
   animation: shimmer 1.4s infinite linear;
 }
 
-.skeleton-line-short { width: 40%; }
-.skeleton-line-medium { width: 65%; }
-.skeleton-line-long { width: 85%; }
+.skeleton-line-short { width: 120px; }
+.skeleton-line-medium { width: 200px; }
+.skeleton-line-long { width: 280px; }
 
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (min-width: 768px) {
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
   .balance-card {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--md3-space-3);
+    padding: var(--md3-space-4);
   }
 
-  .balance-main {
-    flex-shrink: 0;
+  .balance-tip-wrapper {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .balance-tip {
-    flex: 1;
-    text-align: center;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
-  .balance-click-hint {
-    flex-shrink: 0;
+  .balance-cta {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 </style>

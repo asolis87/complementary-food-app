@@ -4,8 +4,12 @@
     role="region"
     aria-label="Registros de hoy"
   >
-    <h2 class="card-title">¿Qué comió hoy?</h2>
+    <!-- Card header -->
+    <div class="card-header">
+      <h2 class="card-title">¿Qué comió hoy?</h2>
+    </div>
 
+    <!-- Empty state -->
     <div v-if="!hasSlots && !loading" class="empty-state">
       <p class="empty-text">Aún no hay registros para hoy.</p>
     </div>
@@ -13,8 +17,11 @@
     <!-- Loading skeleton -->
     <div v-if="loading" class="loading-skeleton">
       <div v-for="n in 4" :key="n" class="skeleton-slot">
-        <div class="skeleton-line skeleton-line-short" />
-        <div class="skeleton-line skeleton-line-medium" />
+        <div class="skeleton-icon" />
+        <div class="skeleton-content">
+          <div class="skeleton-line skeleton-line-short" />
+          <div class="skeleton-line skeleton-line-medium" />
+        </div>
       </div>
     </div>
 
@@ -29,36 +36,40 @@
           'slot-item--pending': !slot.isRegistered,
         }"
       >
-        <div class="slot-info">
-          <span class="slot-icon" aria-hidden="true">{{ slot.icon }}</span>
-          <span class="slot-label">{{ slot.label }}</span>
-          <span v-if="slot.isRegistered && slot.registeredTime" class="slot-time">
-            {{ slot.registeredTime }}
-          </span>
-          <span v-else-if="!slot.isRegistered" class="slot-pending-badge">
-            Pendiente
-          </span>
+        <!-- Slot left group: Icon and Label -->
+        <div class="slot-left-group">
+          <div class="slot-icon-wrapper" :class="{ 'icon--active': slot.isRegistered }">
+            <MealSlotIcon :meal-type="slot.mealType" :size="20" weight="bold" />
+          </div>
+          <div class="slot-text-content">
+            <span class="slot-label">{{ slot.label }}</span>
+            <span v-if="slot.isRegistered && slot.registeredTime" class="slot-time">
+              {{ slot.registeredTime }} · {{ slot.foodCount }} alimento{{ slot.foodCount !== 1 ? 's' : '' }}
+            </span>
+          </div>
         </div>
 
-        <div class="slot-actions">
-          <!-- Registered: show food count + edit button -->
-          <template v-if="slot.isRegistered">
-            <span class="slot-food-count" :aria-label="`${slot.foodCount} alimentos registrados`">
-              {{ slot.foodCount }} alimento{{ slot.foodCount !== 1 ? 's' : '' }}
-            </span>
-            <button
-              class="btn-edit"
-              aria-label="Editar registro"
-              @click="$emit('edit', slot.mealType)"
-            >
-              Editar
-            </button>
-          </template>
+        <!-- Status tag in the middle -->
+        <span
+          class="status-chip"
+          :class="slot.isRegistered ? 'status-chip--registered' : 'status-chip--pending'"
+        >
+          {{ slot.isRegistered ? 'Registrado' : 'Pendiente' }}
+        </span>
 
-          <!-- Pending: show register button -->
+        <!-- Slot action on the right -->
+        <div class="slot-actions">
+          <button
+            v-if="slot.isRegistered"
+            class="btn-action btn-edit"
+            :aria-label="`Editar registro de ${slot.label}`"
+            @click="$emit('edit', slot.mealType)"
+          >
+            Editar
+          </button>
           <button
             v-else
-            class="btn-register"
+            class="btn-action btn-register"
             :aria-label="`Registrar ${slot.label}`"
             @click="$emit('register', slot.mealType)"
           >
@@ -74,6 +85,7 @@
 import { computed } from 'vue'
 import type { MealSlot, MealType } from '@pakulab/shared'
 import { DASHBOARD_MEAL_SLOTS } from '@pakulab/shared'
+import MealSlotIcon from '@/shared/components/MealSlotIcon.vue'
 
 const props = defineProps<{
   mealSlots: MealSlot[]
@@ -106,14 +118,24 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════════════════
+   TodayLogsCard — Nurture & Growth redesign
+   Modern card with icon badges, better visual hierarchy, and improved
+   action buttons with Material Symbols icons.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .logs-card {
   /* Card styling inherited from dashboard-card */
 }
 
+.card-header {
+  margin-bottom: var(--md3-space-4);
+}
+
 .card-title {
-  margin: 0 0 var(--md3-space-3);
+  margin: 0;
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-sm);
+  font-size: var(--md3-title-lg);
   font-weight: var(--md3-weight-semibold);
   color: var(--md3-on-surface);
   line-height: var(--md3-title-line-height);
@@ -126,16 +148,17 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-3); /* Increased from space-2 for more breathing room */
+  gap: var(--md3-space-3);
 }
 
 .slot-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--md3-space-3) var(--md3-space-4); /* Increased padding */
-  border-radius: var(--md3-rounded-md);
-  transition: background var(--md3-transition-fast);
+  padding: 12px 14px;
+  border-radius: var(--md3-rounded-lg);
+  transition: background var(--md3-transition-fast), box-shadow var(--md3-transition-fast);
+  gap: var(--md3-space-2);
 }
 
 .slot-item--pending {
@@ -147,70 +170,118 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
   background: var(--md3-primary-container);
 }
 
-.slot-info {
+.slot-item--registered:hover {
+  box-shadow: var(--md3-shadow-card);
+}
+
+/* ── Slot Info ─────────────────────────────────────────── */
+.slot-left-group {
   display: flex;
   align-items: center;
   gap: var(--md3-space-2);
-  font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
-  color: var(--md3-on-surface);
+  min-width: 0;
+  flex: 1;
 }
 
-.slot-icon {
-  font-size: 1.25rem;
+.slot-text-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slot-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--md3-rounded-lg);
+  background: var(--md3-surface-container);
+  color: var(--md3-on-surface-variant);
   flex-shrink: 0;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.slot-icon-wrapper.icon--active {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
 }
 
 .slot-label {
-  font-weight: var(--md3-weight-medium);
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-title-md);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface);
+  line-height: var(--md3-title-line-height);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.slot-time {
-  color: var(--md3-on-surface-variant);
-  font-size: var(--md3-body-sm);
-  font-family: var(--md3-font-mono, monospace);
-}
-
-.slot-pending-badge {
-  font-size: var(--md3-label-sm);
-  font-weight: var(--md3-weight-medium);
-  color: var(--md3-on-surface-variant);
-  background: var(--md3-surface-container-high);
-  padding: 0.1rem 0.5rem;
+.status-chip {
+  font-family: var(--md3-font-label);
+  font-size: 11px;
+  font-weight: var(--md3-weight-semibold);
+  padding: 2px 8px;
   border-radius: var(--md3-rounded-full);
-}
-
-.slot-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--md3-space-2);
   flex-shrink: 0;
 }
 
-.slot-food-count {
-  font-size: var(--md3-label-sm);
-  color: var(--md3-on-primary-container);
-  font-weight: var(--md3-weight-medium);
+.status-chip--pending {
+  background: var(--md3-surface-container-highest);
+  color: var(--md3-on-surface-variant);
 }
 
-/* ── Buttons ──────────────────────────────────────────────── */
-.btn-register {
+.status-chip--registered {
+  background: var(--md3-primary-container);
+  color: var(--md3-primary);
+}
+
+.slot-time {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Slot Actions ────────────────────────────────────────── */
+.slot-actions {
+  flex-shrink: 0;
+}
+
+.btn-action {
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 1rem;
-  border: none;
+  gap: var(--md3-space-1);
+  padding: 6px 12px;
   border-radius: var(--md3-rounded-full);
-  background: var(--md3-primary);
-  color: var(--md3-on-primary);
   font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
+  font-size: var(--md3-label-md);
   font-weight: var(--md3-weight-semibold);
   cursor: pointer;
-  transition: background var(--md3-transition-fast), opacity var(--md3-transition-fast);
+  transition: background var(--md3-transition-fast), transform var(--md3-transition-fast);
+  border: none;
+}
+
+.btn-action:active {
+  transform: scale(0.98);
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+}
+
+.btn-register {
+  background: var(--md3-primary);
+  color: var(--md3-on-primary);
 }
 
 .btn-register:hover {
-  opacity: 0.9;
+  background: var(--md3-primary-dim);
 }
 
 .btn-register:focus-visible {
@@ -219,22 +290,13 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 }
 
 .btn-edit {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--md3-outline);
-  border-radius: var(--md3-rounded-full);
-  background: transparent;
+  background: var(--md3-surface-container-lowest);
   color: var(--md3-on-primary-container);
-  font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
-  font-weight: var(--md3-weight-medium);
-  cursor: pointer;
-  transition: background var(--md3-transition-fast);
+  border: 1px solid var(--md3-outline-variant);
 }
 
 .btn-edit:hover {
-  background: var(--md3-surface-container-high);
+  background: var(--md3-surface-container);
 }
 
 .btn-edit:focus-visible {
@@ -245,13 +307,13 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 /* ── Empty state ─────────────────────────────────────────── */
 .empty-state {
   text-align: center;
-  padding: var(--md3-space-4) 0;
+  padding: var(--md3-space-8) 0;
 }
 
 .empty-text {
   margin: 0;
   font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
+  font-size: var(--md3-body-lg);
   color: var(--md3-on-surface-variant);
 }
 
@@ -259,20 +321,34 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 .loading-skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-2);
+  gap: var(--md3-space-3);
 }
 
 .skeleton-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-3);
+  padding: var(--md3-space-4);
   background: var(--md3-surface-container-low);
-  border-radius: var(--md3-rounded-md);
-  padding: var(--md3-space-3);
+  border-radius: var(--md3-rounded-lg);
+}
+
+.skeleton-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--md3-rounded-lg);
+  background: var(--md3-surface-container-high);
+}
+
+.skeleton-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--md3-space-1);
+  gap: var(--md3-space-2);
 }
 
 .skeleton-line {
-  height: 14px;
+  height: 16px;
   border-radius: var(--md3-rounded-sm);
   background: linear-gradient(
     90deg,
@@ -285,10 +361,28 @@ const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 }
 
 .skeleton-line-short { width: 40%; }
-.skeleton-line-medium { width: 65%; }
+.skeleton-line-medium { width: 60%; }
 
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .slot-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--md3-space-3);
+  }
+
+  .slot-actions {
+    width: 100%;
+  }
+
+  .btn-action {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

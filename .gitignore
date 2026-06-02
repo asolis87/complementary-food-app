@@ -53,3 +53,6 @@ e2e/
 playwright-report/
 # Local Pi runtime state
 .atl/
+
+# Antigravity CLI
+.antigravitycli/

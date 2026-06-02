@@ -1,1 +1,30 @@
-{}
+{
+	"subagents": {
+		"agentOverrides": {
+			"scout": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"context-builder": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"delegate": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"oracle": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"planner": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"researcher": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"reviewer": {
+				"model": "minimax-m3/MiniMax-M3"
+			},
+			"worker": {
+				"model": "minimax-m3/MiniMax-M3"
+			}
+		}
+	}
+}
