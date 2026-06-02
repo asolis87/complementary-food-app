@@ -22,6 +22,9 @@ import { computed, ref } from 'vue'
 import { apiClient } from '../api/client.js'
 import { toDateOnlyString } from '../utils/date.js'
 
+import { useDashboardStore } from './dashboardStore.js'
+import { useFoodHistoryStore } from './foodHistoryStore.js'
+
 export const useDiaryStore = defineStore('diary', () => {
   // ─── State ────────────────────────────────────────────────────────────────
 
@@ -129,13 +132,27 @@ export const useDiaryStore = defineStore('diary', () => {
   /** POST a new meal log entry, prepend to local state */
   async function logMeal(payload: CreateMealLogPayload): Promise<MealLog> {
     const result = await apiClient.post<{ data: MealLog }>('/diary', payload)
+    
+    // Invalidate dashboard and food history caches
+    useDashboardStore().invalidate()
+    useFoodHistoryStore().invalidateFood(result.data.babyProfileId, result.data.foodId)
+
     entries.value.unshift(result.data)
     return result.data
   }
 
   /** PATCH an existing meal log entry (reaction, accepted, notes) */
   async function updateEntry(id: string, payload: UpdateMealLogPayload): Promise<MealLog> {
+    const originalEntry = entries.value.find((e) => e.id === id)
     const result = await apiClient.patch<{ data: MealLog }>(`/diary/${id}`, payload)
+    
+    // Invalidate dashboard and food history caches
+    useDashboardStore().invalidate()
+    if (originalEntry) {
+      useFoodHistoryStore().invalidateFood(originalEntry.babyProfileId, originalEntry.foodId)
+    }
+    useFoodHistoryStore().invalidateFood(result.data.babyProfileId, result.data.foodId)
+
     const idx = entries.value.findIndex((e) => e.id === id)
     if (idx !== -1) entries.value[idx] = result.data
     return result.data
@@ -143,7 +160,15 @@ export const useDiaryStore = defineStore('diary', () => {
 
   /** Soft-delete a meal log entry */
   async function deleteEntry(id: string): Promise<void> {
+    const entryToDelete = entries.value.find((e) => e.id === id)
     await apiClient.delete(`/diary/${id}`)
+    
+    // Invalidate dashboard and food history caches
+    useDashboardStore().invalidate()
+    if (entryToDelete) {
+      useFoodHistoryStore().invalidateFood(entryToDelete.babyProfileId, entryToDelete.foodId)
+    }
+
     entries.value = entries.value.filter((e) => e.id !== id)
   }
 

@@ -80,6 +80,18 @@ export const useFoodHistoryStore = defineStore('foodHistory', () => {
     }
   }
 
+  /** Invalidate cache for a specific baby profile and food ID */
+  function invalidateFood(babyProfileId: string, foodId: string): void {
+    if (!babyProfileId || !foodId) return
+    history.value.delete(`${babyProfileId}:${foodId}`)
+  }
+
+  /** Clear entire history cache */
+  function clearCache(): void {
+    history.value.clear()
+    error.value = null
+  }
+
   return {
     // State
     history,
@@ -89,5 +101,7 @@ export const useFoodHistoryStore = defineStore('foodHistory', () => {
     historyForFood,
     // Actions
     fetchForFoods,
+    invalidateFood,
+    clearCache,
   }
 })
