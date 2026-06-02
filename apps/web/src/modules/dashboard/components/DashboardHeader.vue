@@ -1,33 +1,23 @@
 <template>
   <header class="dashboard-header" role="banner">
-    <div class="header-greeting">
-      <span class="greeting-emoji" aria-hidden="true">{{ greetingEmoji }}</span>
-      <h1 class="greeting-text">
-        {{ greetingText }}, <strong>{{ userName }}</strong>
-      </h1>
-    </div>
+    <!-- Left side: Greeting -->
+    <h1 class="greeting-title">
+      <span class="greeting-word" :class="greetingClass">{{ greetingText }}</span>, <span class="user-name">{{ userName }}</span>
+    </h1>
 
-    <div class="header-baby-info">
-      <span class="baby-name" aria-label="Nombre del bebé">
-        <span class="baby-icon" aria-hidden="true">👶</span>
-        {{ babyName }}
+    <!-- Right side: Baby profile capsule -->
+    <div class="baby-capsule">
+      <div class="baby-avatar">
+        <span class="baby-emoji" aria-hidden="true">👶</span>
+        <span class="baby-name">{{ babyName }}</span>
+      </div>
+      <span class="separator">·</span>
+      <span class="baby-meta">{{ babyAgeMonths }} meses</span>
+      <span class="separator">·</span>
+      <span class="baby-meta">{{ daysInAC }} días en AC</span>
+      <span v-if="isPro" class="pro-badge" aria-label="Plan Pro activo">
+        Pro
       </span>
-      <span class="baby-meta" aria-label="Edad del bebé">
-        {{ babyAgeMonths }} meses
-      </span>
-      <span
-        v-if="daysInAC > 0"
-        class="baby-meta"
-        :aria-label="`${daysInAC} días en alimentación complementaria`"
-      >
-        · {{ daysInAC }} días en AC
-      </span>
-
-      <span
-        v-if="isPro"
-        class="pro-badge"
-        aria-label="Plan Pro activo"
-      >Pro</span>
     </div>
   </header>
 </template>
@@ -46,101 +36,144 @@ const props = defineProps<{
 // ── Time-based greeting ─────────────────────────────────────────────────
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  if (hour < 12) return { emoji: '🌅', text: 'Buenos días' }
-  if (hour < 19) return { emoji: '☀️', text: 'Buenas tardes' }
-  return { emoji: '🌙', text: 'Buenas noches' }
+  if (hour < 12) return { text: 'Buenos días', class: 'greeting-word--morning' }
+  if (hour < 19) return { text: 'Buenas tardes', class: 'greeting-word--afternoon' }
+  return { text: 'Buenas noches', class: 'greeting-word--night' }
 })
 
-const greetingEmoji = computed(() => greeting.value.emoji)
 const greetingText = computed(() => greeting.value.text)
+const greetingClass = computed(() => greeting.value.class)
 const isPro = computed(() => props.userTier === 'PRO')
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════════════════════════════
+   DashboardHeader — Nurture & Growth redesign
+   Matches screen.png exactly: horizontal layout with greeting on the left
+   and beautiful baby profile pill capsule on the right.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 .dashboard-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--md3-space-1);
-  padding: var(--md3-space-3) 0 var(--md3-space-2);
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--md3-space-4) 0;
+  width: 100%;
 }
 
-.header-greeting {
-  display: flex;
-  align-items: baseline;
-  gap: var(--md3-space-2);
-  min-width: 0; /* Allow flex shrinking */
-}
-
-.greeting-emoji {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.greeting-text {
+/* ─── Greeting Section ─────────────────────────────────── */
+.greeting-title {
   margin: 0;
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-headline-sm);
-  font-weight: var(--md3-weight-regular);
-  letter-spacing: var(--md3-headline-tracking);
-  line-height: var(--md3-headline-line-height);
+  font-size: 24px;
+  font-weight: 700;
   color: var(--md3-on-surface);
-  word-wrap: break-word; /* Prevent long names from overflowing */
-  overflow-wrap: break-word;
 }
 
-.greeting-text strong {
-  font-weight: var(--md3-weight-bold);
+.greeting-word {
+  transition: color var(--md3-transition-fast);
 }
 
-.header-baby-info {
+.greeting-word--morning {
+  color: #d85c41; /* Warm sunrise coral */
+}
+
+.greeting-word--afternoon {
+  color: #c27803; /* Golden afternoon amber */
+}
+
+.greeting-word--night {
+  color: #3b508f; /* Night sky indigo */
+}
+
+.user-name {
+  font-weight: 700;
+}
+
+/* ─── Baby Pill Capsule ────────────────────────────────── */
+.baby-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md3-space-3);
+  padding: 8px 18px;
+  background: var(--md3-surface-container-low);
+  border-radius: 9999px;
+}
+
+.baby-avatar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--md3-space-2);
-  font-family: var(--md3-font-body);
-  font-size: var(--md3-body-md);
-  line-height: var(--md3-body-line-height);
-  color: var(--md3-on-surface-variant);
-  min-width: 0; /* Allow flex shrinking */
 }
 
-.baby-icon {
-  margin-right: 0.25rem;
+.baby-emoji {
+  font-size: 16px;
 }
 
 .baby-name {
-  font-weight: var(--md3-weight-semibold);
+  font-family: var(--md3-font-headline);
+  font-size: var(--md3-body-md);
+  font-weight: 600;
   color: var(--md3-on-surface);
 }
 
+.separator {
+  color: var(--md3-outline-variant);
+  font-weight: bold;
+}
+
 .baby-meta {
-  white-space: nowrap;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-label-lg);
+  color: var(--md3-on-surface-variant);
 }
 
 .pro-badge {
   display: inline-flex;
   align-items: center;
   font-family: var(--md3-font-label);
-  font-size: var(--md3-label-sm);
-  font-weight: var(--md3-weight-bold);
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--md3-rounded-full);
-  background: var(--md3-tertiary-container);
-  color: var(--md3-on-tertiary-container);
-  letter-spacing: var(--md3-label-tracking);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #fd9d1a; /* Gold/Orange from screen.png */
+  color: #ffffff;
+  text-transform: uppercase;
   margin-left: var(--md3-space-1);
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (min-width: 768px) {
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 767px) {
   .dashboard-header {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--md3-space-2);
+    padding: var(--md3-space-3) 0;
   }
 
-  .greeting-text {
-    font-size: var(--md3-headline-md);
+  .greeting-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .user-name {
+    font-weight: 600;
+  }
+
+  .baby-capsule {
+    width: auto;
+    justify-content: center;
+    padding: 5px 14px;
+    gap: var(--md3-space-2);
+  }
+
+  .baby-name {
+    font-size: var(--md3-body-sm);
+  }
+
+  .baby-meta {
+    font-size: var(--md3-label-md);
   }
 }
 </style>
