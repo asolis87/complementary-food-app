@@ -62,7 +62,7 @@
           <!-- Desktop: Plate Hero Banner -->
           <div class="plate-hero desktop-only">
             <img
-              src="/images/Plate_Img.jpeg"
+              src="/images/silicone_baby_plate.png"
               alt=""
               aria-hidden="true"
               class="plate-photo plate-photo--desktop"
@@ -78,7 +78,7 @@
           <!-- Mobile: Plate Image -->
           <div class="plate-image mobile-only">
             <img
-              src="/images/Plate_Img.jpeg"
+              src="/images/silicone_baby_plate.png"
               alt=""
               aria-hidden="true"
               class="plate-photo plate-photo--mobile"

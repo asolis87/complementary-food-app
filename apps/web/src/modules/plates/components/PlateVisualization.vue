@@ -23,6 +23,12 @@
             <img src="/images/plate/fruits.png" alt="" aria-hidden="true" class="segment-img" />
           </div>
           <span class="material-symbols-outlined segment-icon text-primary">nutrition</span>
+          <FoodIcon
+            v-if="groupItems('FRUIT').length > 0"
+            :food="groupItems('FRUIT')[0].food"
+            :size="20"
+            weight="bold"
+          />
           <span class="segment-label text-primary-dim">Frutas</span>
           <template v-if="sectionHasItems('FRUIT')">
             <span
@@ -58,6 +64,12 @@
             <img src="/images/plate/vegetables.png" alt="" aria-hidden="true" class="segment-img" />
           </div>
           <span class="material-symbols-outlined segment-icon text-tertiary">eco</span>
+          <FoodIcon
+            v-if="groupItems('VEGETABLE').length > 0"
+            :food="groupItems('VEGETABLE')[0].food"
+            :size="20"
+            weight="bold"
+          />
           <span class="segment-label text-tertiary-dim">Verduras</span>
           <template v-if="sectionHasItems('VEGETABLE')">
             <span
@@ -93,6 +105,12 @@
             <img src="/images/plate/cereals.png" alt="" aria-hidden="true" class="segment-img" />
           </div>
           <span class="material-symbols-outlined segment-icon text-secondary">bakery_dining</span>
+          <FoodIcon
+            v-if="groupItems('CEREAL_TUBER').length > 0"
+            :food="groupItems('CEREAL_TUBER')[0].food"
+            :size="20"
+            weight="bold"
+          />
           <span class="segment-label text-secondary-dim">Cereales</span>
           <template v-if="sectionHasItems('CEREAL_TUBER')">
             <span
@@ -125,6 +143,12 @@
           @click="emit('select-group', 'PROTEIN')"
         >
           <span class="material-symbols-outlined segment-icon text-on-surface-variant">egg</span>
+          <FoodIcon
+            v-if="groupItems('PROTEIN').length > 0"
+            :food="groupItems('PROTEIN')[0].food"
+            :size="20"
+            weight="bold"
+          />
           <span class="segment-label text-on-surface-variant">Proteínas</span>
           <template v-if="sectionHasItems('PROTEIN')">
             <span
@@ -158,6 +182,12 @@
           @click="emit('select-group', 'HEALTHY_FAT')"
         >
           <span class="material-symbols-outlined segment-icon segment-icon--fat">water_drop</span>
+          <FoodIcon
+            v-if="groupItems('HEALTHY_FAT').length > 0"
+            :food="groupItems('HEALTHY_FAT')[0].food"
+            :size="20"
+            weight="bold"
+          />
           <span class="segment-label segment-label--fat">Grasas Saludables</span>
           <template v-if="sectionHasItems('HEALTHY_FAT')">
             <span
@@ -197,6 +227,7 @@ import type { FoodGroup } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS } from '@pakulab/shared'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
 import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
+import FoodIcon from '@/shared/components/FoodIcon.vue'
 
 const props = defineProps<{
   items: PlateItemDraft[]
