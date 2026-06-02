@@ -411,7 +411,7 @@ async function handleSignOut() {
   display: flex;
   align-items: center;
   gap: var(--md3-space-3);
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   height: 60px;
 }
@@ -537,7 +537,7 @@ async function handleSignOut() {
   flex: 1;
   padding: var(--md3-space-3);
   padding-bottom: 5rem; /* Room for fixed bottom nav */
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
   overflow-x: hidden; /* Prevent horizontal overflow on mobile */
@@ -807,7 +807,7 @@ a.tier-badge:hover {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--md3-space-2);
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   font-size: var(--md3-label-md);
   color: var(--md3-on-surface-variant);
