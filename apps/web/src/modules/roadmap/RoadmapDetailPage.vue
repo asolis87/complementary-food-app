@@ -672,25 +672,25 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
 /* ── Foods Grid ─────────────────────────────────────────── */
 .foods-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--md3-space-2);
 }
 
 @media (min-width: 480px) {
   .foods-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 768px) {
   .foods-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
   .foods-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -702,6 +702,7 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
   border-radius: var(--md3-rounded-lg);
   border: 1px solid var(--md3-outline-variant);
   transition: all var(--md3-transition-fast);
+  min-width: 0;
 }
 
 .food-info-left {
@@ -709,6 +710,7 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
   align-items: center;
   gap: var(--md3-space-2);
   min-width: 0;
+  flex: 1;
 }
 
 .food-icon-wrapper {
@@ -737,6 +739,7 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
   font-family: var(--md3-font-label);
   font-size: var(--md3-label-sm);
   font-weight: var(--md3-weight-semibold);
+  flex-shrink: 0;
 }
 
 .status-badge-icon {
