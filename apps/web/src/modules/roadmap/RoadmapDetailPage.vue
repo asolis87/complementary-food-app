@@ -429,8 +429,8 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
 }
 
 .stat-circle {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   background: var(--md3-primary-container);
   color: var(--md3-on-primary-container);
@@ -444,17 +444,17 @@ function foodStatusLabel(status: RoadmapFood['status']): string {
 
 .stat-number {
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-md);
+  font-size: var(--md3-title-lg);
   font-weight: var(--md3-weight-bold);
   line-height: 1;
 }
 
 .stat-circle-label {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   font-family: var(--md3-font-label);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 1px;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
 }
 
 .stat-icon {
