@@ -14,7 +14,9 @@ import {
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
+  getMealSlotsForAge,
 } from './dashboard.js'
+import { MealType } from '../types/diary.js'
 
 describe('BALANCE_TIPS', () => {
   it('is an array of 8 curated tips', () => {
@@ -120,5 +122,84 @@ describe('suggestion configuration constants', () => {
     expect(MEAL_TYPES_FOR_SLOTS).toContain('LUNCH')
     expect(MEAL_TYPES_FOR_SLOTS).toContain('DINNER')
     expect(MEAL_TYPES_FOR_SLOTS).toContain('SNACK')
+  })
+})
+
+// ponytail: age-aware meal slots (T-00-01) — minimal boundary table
+describe('getMealSlotsForAge', () => {
+  it('returns 3 meals for newborns (0m)', () => {
+    const slots = getMealSlotsForAge(0)
+    expect(slots).toHaveLength(3)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 3 meals at 9m (boundary, just below 10m window)', () => {
+    const slots = getMealSlotsForAge(9)
+    expect(slots).toHaveLength(3)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 4 meals at 10m (cross into 1-snack window)', () => {
+    const slots = getMealSlotsForAge(10)
+    expect(slots).toHaveLength(4)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.DINNER,
+      MealType.SNACK_1,
+    ])
+  })
+
+  it('returns 4 meals at 12m (last month of 1-snack window)', () => {
+    const slots = getMealSlotsForAge(12)
+    expect(slots).toHaveLength(4)
+    expect(slots.map((s) => s.mealType)).toContain(MealType.SNACK_1)
+    expect(slots.map((s) => s.mealType)).not.toContain(MealType.SNACK_2)
+  })
+
+  it('returns 5 meals at 13m (cross into 2-snack window)', () => {
+    const slots = getMealSlotsForAge(13)
+    expect(slots).toHaveLength(5)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.SNACK_1,
+      MealType.LUNCH,
+      MealType.SNACK_2,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 5 meals at 23m (end of 2-snack window)', () => {
+    const slots = getMealSlotsForAge(23)
+    expect(slots).toHaveLength(5)
+    expect(slots.map((s) => s.mealType)).toContain(MealType.SNACK_2)
+  })
+
+  it('orders SNACK_1 after BREAKFAST and before LUNCH chronologically', () => {
+    const slots = getMealSlotsForAge(13)
+    const idxBreakfast = slots.findIndex((s) => s.mealType === MealType.BREAKFAST)
+    const idxSnack1 = slots.findIndex((s) => s.mealType === MealType.SNACK_1)
+    const idxLunch = slots.findIndex((s) => s.mealType === MealType.LUNCH)
+    expect(idxBreakfast).toBeLessThan(idxSnack1)
+    expect(idxSnack1).toBeLessThan(idxLunch)
+  })
+
+  it('uses "Comida" (not "Almuerzo") as LUNCH label', () => {
+    const slots = getMealSlotsForAge(13)
+    const lunch = slots.find((s) => s.mealType === MealType.LUNCH)
+    expect(lunch?.label).toBe('Comida')
+  })
+
+  it('treats negative or non-finite months as the 3-meal case (no crash)', () => {
+    expect(() => getMealSlotsForAge(-1)).not.toThrow()
+    expect(getMealSlotsForAge(-1)).toHaveLength(3)
   })
 })

@@ -104,7 +104,7 @@
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MealType } from '@pakulab/shared'
-import { DASHBOARD_MEAL_SLOTS } from '@pakulab/shared'
+import { getMealSlotsForAge } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useDashboardData, useDashboardActions } from '@/shared/composables/useDashboard.js'
@@ -234,14 +234,16 @@ const errorStatusCode = computed(() => {
 })
 
 const todayMealSlots = computed(() => {
-  // Convert todayLogs into meal slots by merging with DASHBOARD_MEAL_SLOTS
+  // Age-aware meal slots (10-23m feature): single source of truth via getMealSlotsForAge.
+  // Returns 3 slots for <10m, 4 for 10-12m, 5 for ≥13m.
+  const ageMonths = dashboardData.value?.baby?.ageInMonths ?? 0
   const logs = dashboardData.value?.todayLogs ?? []
-  
-  return DASHBOARD_MEAL_SLOTS.map((def) => {
+
+  return getMealSlotsForAge(ageMonths).map((def) => {
     // Find logs for this meal type
     const mealLogs = logs.filter(log => log.mealType === def.mealType)
     const isRegistered = mealLogs.length > 0
-    
+
     return {
       mealType: def.mealType,
       label: def.label,

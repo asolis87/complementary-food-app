@@ -13,6 +13,15 @@ export enum MealType {
   SNACK = 'SNACK',
 }
 
+/** Age stage for the 10–23m feature. Single source of truth used by
+ *  `getMealSlotsForAge`, `STAGE_TIPS`, and the dashboard cutover banner.
+ *  Not a Prisma enum — derived in shared from the integer age. */
+export type AgeStage =
+  | 'SIX_TO_NINE_MONTHS'
+  | 'TEN_TO_TWELVE_MONTHS'
+  | 'THIRTEEN_TO_SEVENTEEN_MONTHS'
+  | 'EIGHTEEN_TO_TWENTY_THREE_MONTHS'
+
 /** Reaction type — maps to the ReactionType Prisma enum (trimmed: ALLERGIC, GAS, RASH removed) */
 export enum ReactionType {
   LIKED = 'LIKED',

@@ -97,6 +97,7 @@ export {
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
   FOOD_GROUP_LABELS_DASHBOARD,
+  getMealSlotsForAge,
 } from './constants/dashboard.js'
 export type { MealSlotDef } from './constants/dashboard.js'
 
