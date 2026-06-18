@@ -1,0 +1,71 @@
+# SDD state for etapa-10-23-meses
+change: etapa-10-23-meses
+status: explore
+created: 2026-06-18
+active_change_source: user_request
+
+preflight:
+  execution_mode: interactive
+  artifact_store: openspec
+  chained_pr_strategy: auto-forecast
+  review_budget_lines: 400
+  product_decisions:
+    allergen_tier: PRO
+    plate_stage_tag: in_scope
+    stage_transition_ux: soft_cutover_banner
+    perceptive_feeding: dashboard_expandable_card
+
+phases:
+  explore:
+    status: complete
+    artifact: explore.md
+    completed_at: 2026-06-18
+  proposal:
+    status: complete
+    artifact: proposal.md
+    completed_at: 2026-06-18
+  spec:
+    status: complete
+    artifact: specs/req-{01..06}-*.md
+    completed_at: 2026-06-18
+    index: spec.md
+  design:
+    status: complete
+    artifact: design.md
+    completed_at: 2026-06-18
+  tasks:
+    status: complete
+    artifact: tasks.md
+    completed_at: 2026-06-18
+    total_tasks: 52
+    pr_forecast: 7
+    tasks_per_bloque:
+      bloque_0: 12
+      bloque_1: 3
+      bloque_2: 5
+      bloque_3: 5
+      bloque_4: 19
+      bloque_5: 8
+  apply:
+    status: not_started
+    artifact: apply-progress.md
+  verify:
+    status: not_started
+    artifact: verify-report.md
+  sync:
+    status: not_started
+  archive:
+    status: not_started
+
+action_context:
+  mode: workspace-planning
+  workspace_root: /Users/alvasolis/DEV/poc/complementary-food
+  allowed_edit_roots:
+    - apps/api/src/
+    - apps/web/src/
+    - packages/shared/src/
+    - prisma/
+    - openspec/changes/etapa-10-23-meses/
+  warnings: []
+
+next_recommended: proposal
