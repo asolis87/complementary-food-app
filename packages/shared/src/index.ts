@@ -11,6 +11,7 @@ export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from './types/food.js'
 
 export { MealType, ReactionType, StoolType, SymptomType, REACTION_TYPE_LABELS, STOOL_LABELS, SYMPTOM_LABELS } from './types/diary.js'
 export type {
+  AgeStage,
   MealLogFood,
   MealLog,
   CreateMealLogPayload,
@@ -91,13 +92,13 @@ export type { MealKey, DayKey } from './constants/mealType.js'
 export {
   BALANCE_TIPS,
   DASHBOARD_CACHE_TTL,
-  DASHBOARD_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
   FOOD_GROUP_LABELS_DASHBOARD,
   getMealSlotsForAge,
+  LEGACY_MEAL_SLOTS,
 } from './constants/dashboard.js'
 export type { MealSlotDef } from './constants/dashboard.js'
 

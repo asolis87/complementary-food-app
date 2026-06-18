@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest'
 import {
   BALANCE_TIPS,
   DASHBOARD_CACHE_TTL,
-  DASHBOARD_MEAL_SLOTS,
+  LEGACY_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
@@ -77,14 +77,14 @@ describe('DASHBOARD_CACHE_TTL', () => {
   })
 })
 
-describe('DASHBOARD_MEAL_SLOTS', () => {
+describe('LEGACY_MEAL_SLOTS', () => {
   it('is an array of 4 meal slots', () => {
-    expect(Array.isArray(DASHBOARD_MEAL_SLOTS)).toBe(true)
-    expect(DASHBOARD_MEAL_SLOTS).toHaveLength(4)
+    expect(Array.isArray(LEGACY_MEAL_SLOTS)).toBe(true)
+    expect(LEGACY_MEAL_SLOTS).toHaveLength(4)
   })
 
   it('each slot has label, icon, and mealType', () => {
-    for (const slot of DASHBOARD_MEAL_SLOTS) {
+    for (const slot of LEGACY_MEAL_SLOTS) {
       expect(slot).toHaveProperty('mealType')
       expect(slot).toHaveProperty('label')
       expect(slot).toHaveProperty('icon')
@@ -94,7 +94,7 @@ describe('DASHBOARD_MEAL_SLOTS', () => {
   })
 
   it('contains BREAKFAST, LUNCH, DINNER, and SNACK slots', () => {
-    const mealTypes = DASHBOARD_MEAL_SLOTS.map((s) => s.mealType)
+    const mealTypes = LEGACY_MEAL_SLOTS.map((s) => s.mealType)
     expect(mealTypes).toContain('BREAKFAST')
     expect(mealTypes).toContain('LUNCH')
     expect(mealTypes).toContain('DINNER')
@@ -153,16 +153,20 @@ describe('getMealSlotsForAge', () => {
     expect(slots.map((s) => s.mealType)).toEqual([
       MealType.BREAKFAST,
       MealType.LUNCH,
-      MealType.DINNER,
       MealType.SNACK_1,
+      MealType.DINNER,
     ])
   })
 
-  it('returns 4 meals at 12m (last month of 1-snack window)', () => {
+  it('returns 4 meals at 12m (last month of 1-snack window) in chronological order', () => {
     const slots = getMealSlotsForAge(12)
     expect(slots).toHaveLength(4)
-    expect(slots.map((s) => s.mealType)).toContain(MealType.SNACK_1)
-    expect(slots.map((s) => s.mealType)).not.toContain(MealType.SNACK_2)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.SNACK_1,
+      MealType.DINNER,
+    ])
   })
 
   it('returns 5 meals at 13m (cross into 2-snack window)', () => {

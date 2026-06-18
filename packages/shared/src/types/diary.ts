@@ -13,8 +13,8 @@ export enum MealType {
   SNACK = 'SNACK',
 }
 
-/** Age stage for the 10–23m feature. Single source of truth used by
- *  `getMealSlotsForAge`, `STAGE_TIPS`, and the dashboard cutover banner.
+/** Age stage for the 10–23m feature. Reserved for `STAGE_TIPS` (T-00-02)
+ *  and the cutover banner (T-00-07/T-00-08); not yet consumed in PR-1.
  *  Not a Prisma enum — derived in shared from the integer age. */
 export type AgeStage =
   | 'SIX_TO_NINE_MONTHS'

@@ -78,8 +78,10 @@ export interface MealSlotDef {
   icon: string
 }
 
-// ponytail: keep icon style consistent with the legacy SNACK ('🍪') so 5-meal
-// downstream code reads naturally. SNACK_1 is morning (apple), SNACK_2 afternoon.
+// ponytail: 4-meal layout places SNACK_1 between LUNCH and DINNER (afternoon
+// merienda) per la guía p.5; 5-meal adds a mid-morning SNACK_1 and pushes
+// the afternoon one to SNACK_2. SNACK_1 is unlabeled in the 4-meal layout
+// because there's only one colación at that stage.
 const SLOTS_3_MEALS: readonly MealSlotDef[] = [
   { mealType: MealType.BREAKFAST, label: 'Desayuno', icon: '🌅' },
   { mealType: MealType.LUNCH, label: 'Comida', icon: '☀️' },
@@ -87,8 +89,10 @@ const SLOTS_3_MEALS: readonly MealSlotDef[] = [
 ] as const
 
 const SLOTS_4_MEALS: readonly MealSlotDef[] = [
-  ...SLOTS_3_MEALS,
+  { mealType: MealType.BREAKFAST, label: 'Desayuno', icon: '🌅' },
+  { mealType: MealType.LUNCH, label: 'Comida', icon: '☀️' },
   { mealType: MealType.SNACK_1, label: 'Colación', icon: '🍎' },
+  { mealType: MealType.DINNER, label: 'Cena', icon: '🌙' },
 ] as const
 
 const SLOTS_5_MEALS: readonly MealSlotDef[] = [
@@ -105,10 +109,9 @@ const SLOTS_5_MEALS: readonly MealSlotDef[] = [
  * know which meal types apply for a baby of `months` old.
  *
  * Stages per the clinical guide (pág. 5):
- *   < 10m  → 3 main meals (BREAKFAST, LUNCH, DINNER)
- *   10–12m → + SNACK_1 (afternoon colación per la guía, but exposed as
- *           `SNACK_1` for forward compat; UI labels it "Colación")
- *   ≥ 13m  → + SNACK_1 and SNACK_2 in chronological order
+ *   < 10m  → 3 main meals (BREAKFAST, LUNCH, DINNER) in chronological order
+ *   10–12m → + SNACK_1 afternoon colación (merienda) between LUNCH and DINNER
+ *   ≥ 13m  → + SNACK_1 mid-morning + SNACK_2 afternoon, both labeled with number
  *
  * Negatives / non-finite numbers fall through to the 3-meal case (no throw).
  */
@@ -118,7 +121,12 @@ export function getMealSlotsForAge(months: number): readonly MealSlotDef[] {
   return SLOTS_5_MEALS
 }
 
-export const DASHBOARD_MEAL_SLOTS: readonly MealSlotDef[] = [
+/**
+ * @deprecated use `getMealSlotsForAge(ageMonths)` instead. This constant
+ * remains exported for the legacy `/api/dashboard` `mealSlots` field until
+ * the API service migrates to the age-aware path (tracked in PR-2).
+ */
+export const LEGACY_MEAL_SLOTS: readonly MealSlotDef[] = [
   { mealType: 'BREAKFAST' as MealType, label: 'Desayuno', icon: '🌅' },
   { mealType: 'LUNCH' as MealType, label: 'Almuerzo', icon: '☀️' },
   { mealType: 'DINNER' as MealType, label: 'Cena', icon: '🌙' },
