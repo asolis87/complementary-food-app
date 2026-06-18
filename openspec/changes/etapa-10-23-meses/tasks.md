@@ -116,6 +116,18 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Depends on**: T-00-01
 - **DEFERRED — reason**: `MenuWeekPage` uses its own data model with lowercase keys (`'desayuno' | 'comida' | 'cena'`) and `menuStore.getPlate(dayKey, mealKey)` doesn't support `SNACK_1`/`SNACK_2`. Adding snack menu slots requires: new menu store handlers, new picker dialog flow, new export logic. This is a Bloque 4 task, not Bloque 0. The dashboard and diary get the 10-23m upgrade first; the menu upgrade is a separate scope. Tracked for Bloque 4 as a new task (T-04-MENU-SNACKS) — open question to resolve before scheduling.
 
+### T-XX-DIARY-PICKER-AGE-AWARE: Update diary meal-type picker (NEW, Bloque 0.5)
+
+- **Why**: 4R reliability C1. The diary's `AddMealModal.vue:226` and `EditLogModal.vue:301` still emit `MealType.SNACK` (the legacy enum value). The new dashboard's `getMealSlotsForAge` returns `SNACK_1` / `SNACK_2` slots but never `SNACK`. For any baby ≥10m, a colación logged via the diary is **invisible on the dashboard** because `logs.filter(log => log.mealType === def.mealType)` uses strict equality.
+- **Scope**:
+  - `AddMealModal.vue:223-228`: replace the 4-option hardcoded list with `getMealSlotsForAge(activeBaby.ageInMonths).map(...)` so 6-9m sees no snack option, 10-12m sees `SNACK_1`, 13+ sees `SNACK_1` + `SNACK_2`.
+  - `EditLogModal.vue:301`: same change.
+  - `autoSelectMealType` (AddMealModal:261): age-aware (no auto-pick of SNACK for <10m babies).
+  - Historical `SNACK` data: pick a policy. Recommend one-time backfill in a migration (SNACK → SNACK_1 or SNACK_2 based on `registeredTime`).
+- **Tests**: integration test (Playwright E2E or component test once the web harness is set up) that drives the diary modal for a 14m baby, picks the second-snack option, and asserts the dashboard card flips to "Registrado".
+- **Depends on**: T-00-01 (getMealSlotsForAge), T-00-04 (dashboard consumer)
+- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Can land as Bloque 0.5 before the next release or bundled with PR-2.
+
 ### T-00-06: Update `DiaryPage.vue` timeline order ✅ (already correct)
 
 - **Spec**: REQ-A4
