@@ -5,7 +5,7 @@
  * Spec: REQ-DASH-BIZ-06 (cache strategy TTLs)
  */
 
-import type { MealType } from '../types/diary.js'
+import { MealType } from '../types/diary.js'
 import type { FoodGroup } from '../types/food.js'
 
 // ── Curated Balance Tips ──────────────────────────────────────────────────────
@@ -78,7 +78,55 @@ export interface MealSlotDef {
   icon: string
 }
 
-export const DASHBOARD_MEAL_SLOTS: readonly MealSlotDef[] = [
+// ponytail: 4-meal layout places SNACK_1 between LUNCH and DINNER (afternoon
+// merienda) per la guía p.5; 5-meal adds a mid-morning SNACK_1 and pushes
+// the afternoon one to SNACK_2. SNACK_1 is unlabeled in the 4-meal layout
+// because there's only one colación at that stage.
+const SLOTS_3_MEALS: readonly MealSlotDef[] = [
+  { mealType: MealType.BREAKFAST, label: 'Desayuno', icon: '🌅' },
+  { mealType: MealType.LUNCH, label: 'Comida', icon: '☀️' },
+  { mealType: MealType.DINNER, label: 'Cena', icon: '🌙' },
+] as const
+
+const SLOTS_4_MEALS: readonly MealSlotDef[] = [
+  { mealType: MealType.BREAKFAST, label: 'Desayuno', icon: '🌅' },
+  { mealType: MealType.LUNCH, label: 'Comida', icon: '☀️' },
+  { mealType: MealType.SNACK_1, label: 'Colación', icon: '🍎' },
+  { mealType: MealType.DINNER, label: 'Cena', icon: '🌙' },
+] as const
+
+const SLOTS_5_MEALS: readonly MealSlotDef[] = [
+  { mealType: MealType.BREAKFAST, label: 'Desayuno', icon: '🌅' },
+  { mealType: MealType.SNACK_1, label: 'Colación 1', icon: '🍎' },
+  { mealType: MealType.LUNCH, label: 'Comida', icon: '☀️' },
+  { mealType: MealType.SNACK_2, label: 'Colación 2', icon: '🍪' },
+  { mealType: MealType.DINNER, label: 'Cena', icon: '🌙' },
+] as const
+
+/**
+ * Age-aware meal slot configuration. Single source of truth for all UI
+ * surfaces (dashboard, menu, diary) and for any backend filter that needs to
+ * know which meal types apply for a baby of `months` old.
+ *
+ * Stages per the clinical guide (pág. 5):
+ *   < 10m  → 3 main meals (BREAKFAST, LUNCH, DINNER) in chronological order
+ *   10–12m → + SNACK_1 afternoon colación (merienda) between LUNCH and DINNER
+ *   ≥ 13m  → + SNACK_1 mid-morning + SNACK_2 afternoon, both labeled with number
+ *
+ * Negatives / non-finite numbers fall through to the 3-meal case (no throw).
+ */
+export function getMealSlotsForAge(months: number): readonly MealSlotDef[] {
+  if (!Number.isFinite(months) || months < 10) return SLOTS_3_MEALS
+  if (months < 13) return SLOTS_4_MEALS
+  return SLOTS_5_MEALS
+}
+
+/**
+ * @deprecated use `getMealSlotsForAge(ageMonths)` instead. This constant
+ * remains exported for the legacy `/api/dashboard` `mealSlots` field until
+ * the API service migrates to the age-aware path (tracked in PR-2).
+ */
+export const LEGACY_MEAL_SLOTS: readonly MealSlotDef[] = [
   { mealType: 'BREAKFAST' as MealType, label: 'Desayuno', icon: '🌅' },
   { mealType: 'LUNCH' as MealType, label: 'Almuerzo', icon: '☀️' },
   { mealType: 'DINNER' as MealType, label: 'Cena', icon: '🌙' },

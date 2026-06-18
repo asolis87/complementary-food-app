@@ -13,7 +13,7 @@ import {
   getBalanceSeverity,
   BALANCE_TIPS,
   FOOD_GROUP_LABELS_DASHBOARD,
-  DASHBOARD_MEAL_SLOTS,
+  LEGACY_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   ALLERGEN_AGE_THRESHOLDS,
@@ -129,8 +129,10 @@ export async function getTodayLogs(
     notes: log.notes,
   }))
 
-  // Build meal slots from DASHBOARD_MEAL_SLOTS
-  const mealSlots: MealSlot[] = DASHBOARD_MEAL_SLOTS.map((slot) => {
+  // ponytail: API still uses the legacy 4-slot shape until PR-2 migrates
+  // to getMealSlotsForAge(ageMonths). Web ignores this field and rebuilds
+  // locally, so the legacy shape is dead data for the web for now.
+  const mealSlots: MealSlot[] = LEGACY_MEAL_SLOTS.map((slot) => {
     const slotLogs = logs.filter((l) => l.mealType === slot.mealType)
     const isRegistered = slotLogs.length > 0
     const registeredTime =

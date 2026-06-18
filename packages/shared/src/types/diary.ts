@@ -13,6 +13,15 @@ export enum MealType {
   SNACK = 'SNACK',
 }
 
+/** Age stage for the 10–23m feature. Reserved for `STAGE_TIPS` (T-00-02)
+ *  and the cutover banner (T-00-07/T-00-08); not yet consumed in PR-1.
+ *  Not a Prisma enum — derived in shared from the integer age. */
+export type AgeStage =
+  | 'SIX_TO_NINE_MONTHS'
+  | 'TEN_TO_TWELVE_MONTHS'
+  | 'THIRTEEN_TO_SEVENTEEN_MONTHS'
+  | 'EIGHTEEN_TO_TWENTY_THREE_MONTHS'
+
 /** Reaction type — maps to the ReactionType Prisma enum (trimmed: ALLERGIC, GAS, RASH removed) */
 export enum ReactionType {
   LIKED = 'LIKED',

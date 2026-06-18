@@ -84,7 +84,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { MealSlot, MealType } from '@pakulab/shared'
-import { DASHBOARD_MEAL_SLOTS } from '@pakulab/shared'
 import MealSlotIcon from '@/shared/components/MealSlotIcon.vue'
 
 const props = defineProps<{
@@ -97,22 +96,10 @@ defineEmits<{
   edit: [mealType: MealType]
 }>()
 
-/** Merge the static slot definitions with API slot data */
-const mealSlots = computed<MealSlot[]>(() => {
-  return DASHBOARD_MEAL_SLOTS.map((def) => {
-    const apiSlot = props.mealSlots.find((s) => s.mealType === def.mealType)
-    if (apiSlot) return apiSlot
-    // Fallback: create a pending slot from the static definition
-    return {
-      mealType: def.mealType,
-      label: def.label,
-      icon: def.icon,
-      isRegistered: false,
-      registeredTime: null,
-      foodCount: 0,
-    }
-  })
-})
+// ponytail: parent (DashboardPage) is the source of truth for slot configuration
+// via getMealSlotsForAge(ageMonths). Card just renders what it gets — no static
+// merge that would re-introduce the legacy 4-slot layout for 6-9m babies.
+const mealSlots = computed<MealSlot[]>(() => props.mealSlots)
 
 const hasSlots = computed(() => props.mealSlots && props.mealSlots.length > 0)
 </script>
