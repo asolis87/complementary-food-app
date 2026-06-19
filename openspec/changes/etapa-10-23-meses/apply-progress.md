@@ -49,7 +49,7 @@ Applied 3 fixes inline in commit `c4fee90`:
 
 **Follow-up tasks created** (not blocking PR-1):
 
-- `T-XX-DIARY-PICKER-AGE-AWARE` (Bloque 0.5): fix the diary picker to emit `SNACK_1`/`SNACK_2` so logs are visible on the dashboard. Critical regression: 10-23m colación logs are currently invisible because the diary still emits `SNACK` and the dashboard has no `SNACK` slot. 4R reliability C1.
+- `T-XX-DIARY-PICKER-AGE-AWARE` (PR-1.5): fix the diary picker to emit `SNACK_1`/`SNACK_2` so logs are visible on the dashboard. Critical regression: 10-23m colación logs are currently invisible because the diary still emits `SNACK` and the dashboard has no `SNACK` slot. 4R reliability C1.
 - `T-00-08-API-DASHBOARD-AGE` (Bloque 2 / PR-2): migrate API service to `getMealSlotsForAge(babyAgeMonths)`. 4R reliability C5.
 - Observability debt (R1-R13, 4R resilience): backoff-aware polling, Sentry integration, SLO counters, version-skew detection. Project-wide; not PR-1 scope.
 - E2E test for the dashboard wiring (4R reliability C3): needs the web vitest harness first (project-wide gap, not PR-1).
@@ -76,7 +76,7 @@ Applied 3 fixes inline in commit `c4fee90`:
 
 ## Remaining tasks (PR-1 status)
 
-PR-1 work-unit: T-00-01 ✅ + T-00-04 ✅ + T-00-06 ✅ (no change needed) = 3/3 core tasks done. T-00-05 deferred (menu snack support is Bloque 4 work). 4R criticals addressed in commit `c4fee90`. New follow-up task `T-XX-DIARY-PICKER-AGE-AWARE` (Bloque 0.5) created for the diary picker age-awareness regression.
+PR-1 work-unit: T-00-01 ✅ + T-00-04 ✅ + T-00-06 ✅ (no change needed) = 3/3 core tasks done. T-00-05 deferred (menu snack support is Bloque 4 work). 4R criticals addressed in commit `c4fee90`. New follow-up task `T-XX-DIARY-PICKER-AGE-AWARE` (PR-1.5) created for the diary picker age-awareness regression.
 
 PR-1 is ready to open. 3 commits on `feat/etapa-10-23-meses-pr1-foundations`:
 
@@ -89,7 +89,7 @@ Estimated code LOC: ~190 net (code only, not SDD docs). SDD docs: ~3253 lines. T
 Manual QA checklist for PR-1:
 
 - [ ] Bebé de 8 meses en dashboard ve 3 cards (Desayuno, Comida, Cena)
-- [ ] Bebé de 10 meses en dashboard ve 4 cards (Desayuno, Comida, Cena, Colación)
+- [ ] Bebé de 10 meses en dashboard ve 4 cards (Desayuno, Comida, Colación, Cena) — orden cronológico post-fix en c4fee90
 - [ ] Bebé de 14 meses en dashboard ve 5 cards (Desayuno, Colación 1, Comida, Colación 2, Cena)
 - [ ] Bitácora de bebé 11m con SNACK_1 log lo muestra en posición 2
 - [ ] LUNCH label dice "Comida" (no "Almuerzo")

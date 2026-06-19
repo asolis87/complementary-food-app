@@ -21,7 +21,7 @@
 | Estimated changed lines (migrations + seed) | ~150 |
 | 400-line budget risk | High (change completo excede budget) |
 | Chained PRs recommended | Yes (auto-forecast) |
-| Suggested split | 6-7 PRs (ver §PR Forecast abajo) |
+| Suggested split | 8 PRs (ver §PR Forecast abajo) |
 | Delivery strategy | auto-forecast |
 | Review workload guard | Apply debe respetar budget; si un PR excede 400 líneas, dividir |
 
@@ -32,6 +32,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR | Bloques | Tasks | LOC est. | Risk |
 |----|---------|-------|---------:|------|
 | PR-1 | 0 (foundations) | T-00-01, T-00-04, T-00-05, T-00-06 | ~130 | Low |
+| PR-1.5 | 0.5 (diary integration regression) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low (4R reliability C1 follow-up) |
 | PR-2 | 0 (UI complementaria) | T-00-02, T-00-07, T-00-08, T-00-09, T-00-10, T-00-11, T-00-12 | ~310 | Low |
 | PR-3 | 1 (seed) | T-01-01, T-01-02, T-01-03 | ~90 | Low (validación nutriólogo) |
 | PR-4 | 2 + 4-D2 (allergens) | T-02-01..05, T-04-01..04 | ~370 | Medium (PRO gate) |
@@ -39,7 +40,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR-6 | 4-C1+C2 + 5 (plate) | T-00-03, T-04-05..10, T-05-01..08 | ~390 | Medium (migration) |
 | PR-7 | 4-E1+E2 (suggestions) | T-04-16..20 | ~180 | Low |
 
-**Total**: 7 PRs, ~1700 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
+**Total**: 8 PRs (PR-1 → PR-1.5 → PR-2 → ... → PR-7), ~1730 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
 
 ---
 
@@ -116,7 +117,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Depends on**: T-00-01
 - **DEFERRED — reason**: `MenuWeekPage` uses its own data model with lowercase keys (`'desayuno' | 'comida' | 'cena'`) and `menuStore.getPlate(dayKey, mealKey)` doesn't support `SNACK_1`/`SNACK_2`. Adding snack menu slots requires: new menu store handlers, new picker dialog flow, new export logic. This is a Bloque 4 task, not Bloque 0. The dashboard and diary get the 10-23m upgrade first; the menu upgrade is a separate scope. Tracked for Bloque 4 as a new task (T-04-MENU-SNACKS) — open question to resolve before scheduling.
 
-### T-XX-DIARY-PICKER-AGE-AWARE: Update diary meal-type picker (NEW, Bloque 0.5)
+### T-XX-DIARY-PICKER-AGE-AWARE: Update diary meal-type picker (NEW, PR-1.5)
 
 - **Why**: 4R reliability C1. The diary's `AddMealModal.vue:226` and `EditLogModal.vue:301` still emit `MealType.SNACK` (the legacy enum value). The new dashboard's `getMealSlotsForAge` returns `SNACK_1` / `SNACK_2` slots but never `SNACK`. For any baby ≥10m, a colación logged via the diary is **invisible on the dashboard** because `logs.filter(log => log.mealType === def.mealType)` uses strict equality.
 - **Scope**:
@@ -126,7 +127,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
   - Historical `SNACK` data: pick a policy. Recommend one-time backfill in a migration (SNACK → SNACK_1 or SNACK_2 based on `registeredTime`).
 - **Tests**: integration test (Playwright E2E or component test once the web harness is set up) that drives the diary modal for a 14m baby, picks the second-snack option, and asserts the dashboard card flips to "Registrado".
 - **Depends on**: T-00-01 (getMealSlotsForAge), T-00-04 (dashboard consumer)
-- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Can land as Bloque 0.5 before the next release or bundled with PR-2.
+- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Lands as **PR-1.5** before PR-2.
 
 ### T-00-06: Update `DiaryPage.vue` timeline order ✅ (already correct)
 
