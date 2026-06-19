@@ -21,7 +21,7 @@
 | Estimated changed lines (migrations + seed) | ~150 |
 | 400-line budget risk | High (change completo excede budget) |
 | Chained PRs recommended | Yes (auto-forecast) |
-| Suggested split | 8 PRs (ver §PR Forecast abajo) |
+| Suggested split | 9 PRs (ver §PR Forecast abajo) |
 | Delivery strategy | auto-forecast |
 | Review workload guard | Apply debe respetar budget; si un PR excede 400 líneas, dividir |
 
@@ -32,7 +32,9 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR | Bloques | Tasks | LOC est. | Risk |
 |----|---------|-------|---------:|------|
 | PR-1 | 0 (foundations) | T-00-01, T-00-04, T-00-05, T-00-06 | ~130 | Low |
-| PR-1.5 | 0.5 (diary integration regression) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low (4R reliability C1 follow-up) |
+| PR-1.5 | 0.5 (diary integration regression rename) | (rename only) | ~0 (docs) | Low (4R reliability C1 follow-up) |
+| PR-1.6 | 0.5b (web vitest harness) | T-XX-WEB-TESTS-HARNESS | ~60 | Low (deps + config + 2 smoke tests) |
+| PR-1.7 | 0.5 (diary picker age-aware, real fix) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low |
 | PR-2 | 0 (UI complementaria) | T-00-02, T-00-07, T-00-08, T-00-09, T-00-10, T-00-11, T-00-12 | ~310 | Low |
 | PR-3 | 1 (seed) | T-01-01, T-01-02, T-01-03 | ~90 | Low (validación nutriólogo) |
 | PR-4 | 2 + 4-D2 (allergens) | T-02-01..05, T-04-01..04 | ~370 | Medium (PRO gate) |
@@ -40,7 +42,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR-6 | 4-C1+C2 + 5 (plate) | T-00-03, T-04-05..10, T-05-01..08 | ~390 | Medium (migration) |
 | PR-7 | 4-E1+E2 (suggestions) | T-04-16..20 | ~180 | Low |
 
-**Total**: 8 PRs (PR-1 → PR-1.5 → PR-2 → ... → PR-7), ~1730 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
+**Total**: 9 PRs (PR-1 → PR-1.5 → PR-1.6 → PR-1.7 → PR-2 → ... → PR-7), ~1820 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
 
 ---
 
@@ -127,7 +129,38 @@ Foundations: pure functions en shared + updates a consumers existentes.
   - Historical `SNACK` data: pick a policy. Recommend one-time backfill in a migration (SNACK → SNACK_1 or SNACK_2 based on `registeredTime`).
 - **Tests**: integration test (Playwright E2E or component test once the web harness is set up) that drives the diary modal for a 14m baby, picks the second-snack option, and asserts the dashboard card flips to "Registrado".
 - **Depends on**: T-00-01 (getMealSlotsForAge), T-00-04 (dashboard consumer)
-- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Lands as **PR-1.5** before PR-2.
+- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Lands as **PR-1.7** after the harness lands (PR-1.6) so the integration test can run in CI.
+
+### T-XX-WEB-TESTS-HARNESS: Set up vitest harness for `apps/web` (NEW, PR-1.6)
+
+- **Why**: `apps/web` had no vitest setup. Adding one is a strict prerequisite for the T-XX-DIARY-PICKER-AGE-AWARE integration test (PR-1.7) and any future web component test.
+- **Scope**:
+  - Add `vitest@^2.1`, `@vue/test-utils@^2.4`, `happy-dom@^15` to `apps/web` devDependencies.
+  - `apps/web/vitest.config.ts` (new) extends `vite.config.ts` with `test: { environment: 'happy-dom', globals: false }` and excludes pre-existing broken tests.
+  - `apps/web/env.d.ts` adds `declare module '*.vue'` ambient declaration (vite/client does not ship one in this setup).
+  - Scripts in `apps/web/package.json`: `test`, `test:run`, `test:watch`.
+  - Two smoke tests under `apps/web/src/__tests__/`: `harness.test.ts` (sanity) and `AppButton.test.ts` (component mount + props + emit + loading + disabled).
+- **Tests**: harness.test.ts (1) + AppButton.test.ts (6) = 7/7 passing.
+- **Depends on**: nothing.
+- **Blocker for**: T-XX-DIARY-PICKER-AGE-AWARE (PR-1.7) integration test, and any future web test additions.
+
+### T-XX-WEB-TESTS-FIX: Fix pre-existing broken tests in `apps/web` (NEW, follow-up)
+
+- **Why**: PR-1.6's vitest harness discovered 9 pre-existing test files (50 tests) that were already broken before the harness existed — they were not typecheked or executed in CI. PR-1.6 excludes them so the harness can ship clean. They are tracked here for a follow-up PR.
+- **Scope** (all under `apps/web/src/`):
+  - `modules/dashboard/components/AllergenAlertsCard.test.ts`
+  - `modules/dashboard/components/DashboardErrorBoundary.test.ts`
+  - `modules/dashboard/components/DashboardHeader.test.ts`
+  - `modules/dashboard/components/DashboardSkeleton.test.ts`
+  - `modules/menus/MenuWeekPage.test.ts`
+  - `modules/menus/components/MenuExportFrame.test.ts`
+  - `shared/stores/authStore.email.test.ts`
+  - `shared/stores/dashboardStore.test.ts`
+  - `shared/stores/menuStore.test.ts`
+- **Symptoms observed (representative)**: `MenuExportFrame` overflow-badge and dot rendering expectations mismatch the current template (expects 2/3 dots, gets 0); likely template drift since the tests were written. Other files need audit.
+- **Approach**: open the broken files, re-read the SFC they target, update the test expectations to match current contract. NOT a refactor — just realign tests to actual behavior, then re-enable them in `vitest.config.ts` `exclude` list.
+- **Estimated scope**: ~50-150 LOC of test updates across 9 files, plus the `exclude` list removal. Fits a single PR well under the 400-LOC budget.
+- **TBD**: schedule this as PR-1.8 or another slot. Not blocking the 10-23m epic but blocks any honest `apps/web` coverage metric.
 
 ### T-00-06: Update `DiaryPage.vue` timeline order ✅ (already correct)
 
