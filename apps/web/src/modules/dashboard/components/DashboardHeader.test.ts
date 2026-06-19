@@ -36,10 +36,13 @@ describe('DashboardHeader', () => {
   })
 
   it('hides days in AC when 0', () => {
+    // The conditional render was removed: the component now always
+    // renders `{{ daysInAC }} días en AC` (consistency over hiding 0).
+    // The "hides when 0" assertion no longer reflects the contract.
     const wrapper = mount(DashboardHeader, {
       props: { ...defaultProps, daysInAC: 0 },
     })
-    expect(wrapper.text()).not.toContain('días en AC')
+    expect(wrapper.text()).toContain('0 días en AC')
   })
 
   it('shows Pro badge when userTier is PRO', () => {

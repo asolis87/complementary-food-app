@@ -9,10 +9,10 @@
     <div class="baby-capsule">
       <div class="baby-avatar">
         <span class="baby-emoji" aria-hidden="true">👶</span>
-        <span class="baby-name">{{ babyName }}</span>
+        <span class="baby-name" aria-label="Nombre del bebé">{{ babyName }}</span>
       </div>
       <span class="separator">·</span>
-      <span class="baby-meta">{{ babyAgeMonths }} meses</span>
+      <span class="baby-meta" aria-label="Edad del bebé">{{ babyAgeMonths }} meses</span>
       <span class="separator">·</span>
       <span class="baby-meta">{{ daysInAC }} días en AC</span>
       <span v-if="isPro" class="pro-badge" aria-label="Plan Pro activo">
