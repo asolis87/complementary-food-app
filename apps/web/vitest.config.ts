@@ -6,6 +6,7 @@ export default mergeConfig(viteConfig, {
   test: {
     environment: 'happy-dom',
     globals: false,
+    forbidOnly: !!process.env.CI,
     include: ['src/**/*.{test,spec}.ts'],
     // Pre-existing broken tests excluded from the harness scope.
     // Tracked as T-XX-WEB-TESTS-FIX in openspec/changes/etapa-10-23-meses/tasks.md.

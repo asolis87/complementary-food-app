@@ -15,6 +15,7 @@
     "db:migrate-free": "npx tsx prisma/scripts/migrate-free-to-expired.ts",
     "lint": "pnpm --recursive lint",
     "format": "prettier --write .",
+    "test": "pnpm --recursive test:run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
