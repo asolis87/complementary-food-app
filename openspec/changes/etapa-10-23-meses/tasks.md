@@ -21,7 +21,7 @@
 | Estimated changed lines (migrations + seed) | ~150 |
 | 400-line budget risk | High (change completo excede budget) |
 | Chained PRs recommended | Yes (auto-forecast) |
-| Suggested split | 8 PRs (ver §PR Forecast abajo) |
+| Suggested split | 10 PRs (ver §PR Forecast abajo) |
 | Delivery strategy | auto-forecast |
 | Review workload guard | Apply debe respetar budget; si un PR excede 400 líneas, dividir |
 
@@ -32,7 +32,12 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR | Bloques | Tasks | LOC est. | Risk |
 |----|---------|-------|---------:|------|
 | PR-1 | 0 (foundations) | T-00-01, T-00-04, T-00-05, T-00-06 | ~130 | Low |
-| PR-1.5 | 0.5 (diary integration regression) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low (4R reliability C1 follow-up) |
+| PR-1.5 | 0.5 (docs rename) | (renames T-XX-DIARY-PICKER-AGE-AWARE from Bloque 0.5 to PR-1.5) | ~5 | Low |
+| PR-1.6a | 0 (test harness) | T-XX-WEB-TESTS-HARNESS (harness only) | ~105 | Low |
+| PR-1.6b | 0 (test harness) | T-XX-WEB-TESTS-HARNESS (forbidOnly + root test) | ~10 | Low |
+| PR-1.6c | 0 (test harness) | T-XX-WEB-TESTS-HARNESS (CI workflow + tasks forecast) | ~115 | Low |
+| PR-1.7 | 0.5 (diary integration) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low (4R reliability C1 follow-up) |
+| PR-1.8 | 0 (test debt) | T-XX-WEB-TESTS-FIX | ~250 | Low (silent rot cleanup) |
 | PR-2 | 0 (UI complementaria) | T-00-02, T-00-07, T-00-08, T-00-09, T-00-10, T-00-11, T-00-12 | ~310 | Low |
 | PR-3 | 1 (seed) | T-01-01, T-01-02, T-01-03 | ~90 | Low (validación nutriólogo) |
 | PR-4 | 2 + 4-D2 (allergens) | T-02-01..05, T-04-01..04 | ~370 | Medium (PRO gate) |
@@ -40,7 +45,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR-6 | 4-C1+C2 + 5 (plate) | T-00-03, T-04-05..10, T-05-01..08 | ~390 | Medium (migration) |
 | PR-7 | 4-E1+E2 (suggestions) | T-04-16..20 | ~180 | Low |
 
-**Total**: 8 PRs (PR-1 → PR-1.5 → PR-2 → ... → PR-7), ~1730 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
+**Total**: 10 PRs (PR-1 → PR-1.5 → PR-1.6a → PR-1.6b → PR-1.6c → PR-1.7 → PR-1.8 → PR-2 → ... → PR-7), ~1820 LOC. PR-1.6 was split into 3 chained PRs to stay under the 400-line pre-PR review gate (the gentle-ai 4R gate compares the PR diff against `main` rather than the explicit `--base`, so chained PRs is the only way to ship harness + lockfile + CI without exceeding 400 lines per PR). Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
 
 ---
 
@@ -126,8 +131,8 @@ Foundations: pure functions en shared + updates a consumers existentes.
   - `autoSelectMealType` (AddMealModal:261): age-aware (no auto-pick of SNACK for <10m babies).
   - Historical `SNACK` data: pick a policy. Recommend one-time backfill in a migration (SNACK → SNACK_1 or SNACK_2 based on `registeredTime`).
 - **Tests**: integration test (Playwright E2E or component test once the web harness is set up) that drives the diary modal for a 14m baby, picks the second-snack option, and asserts the dashboard card flips to "Registrado".
-- **Depends on**: T-00-01 (getMealSlotsForAge), T-00-04 (dashboard consumer)
-- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Lands as **PR-1.5** before PR-2.
+- **Depends on**: T-00-01 (getMealSlotsForAge), T-00-04 (dashboard consumer), T-XX-WEB-TESTS-HARNESS (needs a working test harness to write the integration test)
+- **Blocker for**: nothing (it's a regression that was always there; PR-1 just made it more visible by changing the slot shape). Lands as **PR-1.7** after PR-1.6c (CI green required).
 
 ### T-00-06: Update `DiaryPage.vue` timeline order ✅ (already correct)
 
@@ -209,6 +214,46 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Tests** (3): retorna tip de etapa correcta, no immediate repeat, cambia con edad
 - **TDD**: pure function test
 - **Depends on**: T-00-02
+
+---
+
+### T-XX-WEB-TESTS-HARNESS: Add vitest harness to `apps/web` ✅ (chained PR-1.6a + PR-1.6b + PR-1.6c, all merged)
+
+- **Why**: `apps/web` had no test runner, no test config, and no `*.vue` ambient. This made it impossible to write the integration test for `T-XX-DIARY-PICKER-AGE-AWARE` and any other component test. PR-1.6a/b/c ship the harness as 3 chained PRs to stay under the 400-line pre-PR review gate.
+- **Scope (PR-1.6a)** — minimal harness:
+  - `apps/web/package.json`: devDeps `vitest@^2.1`, `@vue/test-utils@^2.4`, `happy-dom@^20.10.6` (CVE-patched, not 15.x). Scripts `test` / `test:run` / `test:watch`.
+  - `apps/web/vitest.config.ts`: extends `vite.config.ts` via `mergeConfig`. `environment: 'happy-dom'`, `globals: false`, `include: ['src/**/*.{test,spec}.ts']`, `exclude` list for 9 pre-existing broken files.
+  - `apps/web/env.d.ts`: `declare module '*.vue'` ambient.
+  - `apps/web/src/__tests__/harness.test.ts`: 1 sanity test.
+  - `apps/web/src/__tests__/AppButton.test.ts`: 6 component tests (slot, variant/size, disabled, loading, emit, no-emit-when-disabled).
+  - `pnpm-lock.yaml` deliberately NOT in PR-1.6a — regenerated in PR-1.6b.
+- **Scope (PR-1.6b)** — safety belt + root test:
+  - `apps/api/vitest.config.ts`: `forbidOnly: !!process.env.CI` (with `@ts-expect-error` because vitest 2.x's `UserConfig['test']` resolves to vite's `InlineConfig`).
+  - `apps/web/vitest.config.ts`: same `forbidOnly` line (no `@ts-expect-error` because `mergeConfig` infers the second arg as vitest's `UserConfig`).
+  - `apps/api/tsconfig.json`: include `vitest.config.ts`.
+  - `package.json` (root): `test: "pnpm --recursive test:run"`.
+- **Scope (PR-1.6c)** — CI + forecast:
+  - `.github/workflows/test.yml`: Node 20, pnpm 9, frozen lockfile, builds shared, typecheck, test, `CI=true`. Trigger: PRs to `staging` + `release/**`. concurrency cancel-in-progress.
+  - `openspec/changes/etapa-10-23-meses/tasks.md`: forecast 8 → 10 PRs, new PR-1.6a/b/c/8 rows.
+- **Tests**: 9 files / 65/65 tests passing after the 3 PRs land. vue-tsc clean. CI green required before PR-1.7.
+- **Blocker for**: T-XX-DIARY-PICKER-AGE-AWARE (PR-1.7) needs a working test harness to write the integration test.
+
+### T-XX-WEB-TESTS-FIX: Fix 9 pre-existing broken web test files (PR-1.8)
+
+- **Why**: When the vitest harness was first wired up, 9 test files (50 tests) were already broken before this change. They are excluded via `vitest.config.ts` `exclude` and tracked here so the silent-rot trap is at least named. PR-1.8 cleans them up.
+- **Files (excluded from PR-1.6a, scheduled for PR-1.8)**:
+  - `apps/web/src/modules/dashboard/components/AllergenAlertsCard.test.ts`
+  - `apps/web/src/modules/dashboard/components/DashboardErrorBoundary.test.ts`
+  - `apps/web/src/modules/dashboard/components/DashboardHeader.test.ts`
+  - `apps/web/src/modules/dashboard/components/DashboardSkeleton.test.ts`
+  - `apps/web/src/modules/menus/MenuWeekPage.test.ts`
+  - `apps/web/src/modules/menus/components/MenuExportFrame.test.ts`
+  - `apps/web/src/shared/stores/authStore.email.test.ts`
+  - `apps/web/src/shared/stores/dashboardStore.test.ts`
+  - `apps/web/src/shared/stores/menuStore.test.ts`
+- **Scope (TBD per file)**: open each test file, see what it imports, fix import paths / missing mocks / type errors / pre-existing component changes. Likely mostly stale imports after refactors + missing mocks for stores.
+- **Tests**: each fixed file must pass individually AND as part of `pnpm test`. After PR-1.8, remove the 9 entries from `vitest.config.ts` `exclude`.
+- **Blocker for**: nothing, but blocking `apps/web` from being a real test-target for Bloque 2-5 work.
 
 ---
 
