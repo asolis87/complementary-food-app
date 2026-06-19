@@ -185,6 +185,7 @@ import type { Food, CreateMealLogPayload } from '@pakulab/shared'
 import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
 import { normalizeAccents } from '../../../shared/utils/text.js'
+import { autoSelectMealTypeForAge, getMealTypeOptions } from '../mealTypeOptions.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -192,6 +193,7 @@ const props = defineProps<{
   modelValue: boolean
   babyProfileId: string
   date: string
+  ageInMonths: number
 }>()
 
 const emit = defineEmits<{
@@ -206,7 +208,7 @@ const foodStore = useFoodStore()
 
 // ── State ─────────────────────────────────────────────────────────────────
 
-const selectedMealType = ref<MealType>(autoSelectMealType())
+const selectedMealType = ref<MealType>(autoSelectMealTypeForAge(props.ageInMonths, new Date().getHours()))
 const selectedTime = ref<string>(currentTime())
 const searchQuery = ref('')
 const debouncedQuery = ref('')
@@ -220,12 +222,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Meal type options ─────────────────────────────────────────────────────
 
-const mealTypes: { value: MealType; label: string; icon: string }[] = [
-  { value: MealType.BREAKFAST, label: 'Desayuno', icon: 'wb_sunny' },
-  { value: MealType.LUNCH,     label: 'Comida',   icon: 'lunch_dining' },
-  { value: MealType.SNACK,     label: 'Colación', icon: 'nutrition' },
-  { value: MealType.DINNER,    label: 'Cena',     icon: 'bedtime' },
-]
+const mealTypes = computed(() => getMealTypeOptions(props.ageInMonths))
 
 // ── Reaction options ──────────────────────────────────────────────────────
 
@@ -255,14 +252,6 @@ const canSubmit = computed(
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-
-function autoSelectMealType(): MealType {
-  const hour = new Date().getHours()
-  if (hour >= 7 && hour < 11)  return MealType.BREAKFAST
-  if (hour >= 11 && hour < 15) return MealType.LUNCH
-  if (hour >= 15 && hour < 18) return MealType.SNACK
-  return MealType.DINNER
-}
 
 function currentTime(): string {
   const now = new Date()
@@ -301,7 +290,7 @@ function close() {
 }
 
 function resetForm() {
-  selectedMealType.value = autoSelectMealType()
+  selectedMealType.value = autoSelectMealTypeForAge(props.ageInMonths, new Date().getHours())
   selectedTime.value = currentTime()
   searchQuery.value = ''
   debouncedQuery.value = ''

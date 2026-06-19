@@ -254,12 +254,14 @@ import { useDashboardStore } from '../../../shared/stores/dashboardStore.js'
 import { useUiStore } from '../../../shared/stores/uiStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
 import { normalizeAccents } from '../../../shared/utils/text.js'
+import { getMealTypeOptions } from '../mealTypeOptions.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
 const props = defineProps<{
   entry: MealLog
   open: boolean
+  ageInMonths: number
 }>()
 
 const emit = defineEmits<{
@@ -295,12 +297,7 @@ let foodDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Meal type options ─────────────────────────────────────────────────────
 
-const mealTypes: { value: MealType; label: string; icon: string }[] = [
-  { value: MealType.BREAKFAST, label: 'Desayuno', icon: 'wb_sunny' },
-  { value: MealType.LUNCH,     label: 'Comida',   icon: 'lunch_dining' },
-  { value: MealType.SNACK,     label: 'Colación', icon: 'nutrition' },
-  { value: MealType.DINNER,    label: 'Cena',     icon: 'bedtime' },
-]
+const mealTypes = computed(() => getMealTypeOptions(props.ageInMonths))
 
 // ── Reaction options ──────────────────────────────────────────────────────
 

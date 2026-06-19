@@ -475,6 +475,7 @@
       v-model="showAddModal"
       :baby-profile-id="activeProfileId"
       :date="diaryStore.selectedDate"
+      :age-in-months="ageInMonths"
       @logged="onLogged"
     />
 
@@ -482,6 +483,7 @@
       v-if="editingEntry"
       :entry="editingEntry"
       :open="showEditModal"
+      :age-in-months="ageInMonths"
       @update:open="showEditModal = $event"
       @updated="onEntryUpdated"
     />
@@ -553,6 +555,21 @@ function onEntryUpdated() {
 // ── Derived ────────────────────────────────────────────────────────────────
 
 const activeProfileId = computed(() => profileStore.activeProfile?.id ?? '')
+
+/**
+ * Age of the active baby in completed months, derived from `birthDate`.
+ * Used by the diary modals to render age-aware meal type pickers
+ * (see T-XX-DIARY-PICKER-AGE-AWARE). Falls back to 0 if no active
+ * profile, which renders the 3-meal layout (safe default).
+ */
+const ageInMonths = computed(() => {
+  const birth = profileStore.activeProfile?.birthDate
+  if (!birth) return 0
+  const b = new Date(birth)
+  if (Number.isNaN(b.getTime())) return 0
+  const now = new Date()
+  return (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth())
+})
 
 const entriesForDate = computed(() => diaryStore.entriesForDate)
 
