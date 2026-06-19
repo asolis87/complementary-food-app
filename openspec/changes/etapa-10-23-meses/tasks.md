@@ -21,7 +21,7 @@
 | Estimated changed lines (migrations + seed) | ~150 |
 | 400-line budget risk | High (change completo excede budget) |
 | Chained PRs recommended | Yes (auto-forecast) |
-| Suggested split | 9 PRs (ver §PR Forecast abajo) |
+| Suggested split | 10 PRs (ver §PR Forecast abajo) |
 | Delivery strategy | auto-forecast |
 | Review workload guard | Apply debe respetar budget; si un PR excede 400 líneas, dividir |
 
@@ -33,8 +33,9 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 |----|---------|-------|---------:|------|
 | PR-1 | 0 (foundations) | T-00-01, T-00-04, T-00-05, T-00-06 | ~130 | Low |
 | PR-1.5 | 0.5 (diary integration regression rename) | (rename only) | ~0 (docs) | Low (4R reliability C1 follow-up) |
-| PR-1.6 | 0.5b (web vitest harness) | T-XX-WEB-TESTS-HARNESS | ~60 | Low (deps + config + 2 smoke tests) |
+| PR-1.6 | 0.5b (web vitest harness + CI workflow + forbidOnly) | T-XX-WEB-TESTS-HARNESS | ~600 | Low (deps + config + CI + 2 smoke tests) |
 | PR-1.7 | 0.5 (diary picker age-aware, real fix) | T-XX-DIARY-PICKER-AGE-AWARE | ~30 | Low |
+| PR-1.8 | 0.5c (re-enable pre-existing broken web tests) | T-XX-WEB-TESTS-FIX | ~50-150 | Low (test realignment, no refactor) |
 | PR-2 | 0 (UI complementaria) | T-00-02, T-00-07, T-00-08, T-00-09, T-00-10, T-00-11, T-00-12 | ~310 | Low |
 | PR-3 | 1 (seed) | T-01-01, T-01-02, T-01-03 | ~90 | Low (validación nutriólogo) |
 | PR-4 | 2 + 4-D2 (allergens) | T-02-01..05, T-04-01..04 | ~370 | Medium (PRO gate) |
@@ -42,7 +43,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR-6 | 4-C1+C2 + 5 (plate) | T-00-03, T-04-05..10, T-05-01..08 | ~390 | Medium (migration) |
 | PR-7 | 4-E1+E2 (suggestions) | T-04-16..20 | ~180 | Low |
 
-**Total**: 9 PRs (PR-1 → PR-1.5 → PR-1.6 → PR-1.7 → PR-2 → ... → PR-7), ~1820 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
+**Total**: 10 PRs (PR-1 → PR-1.5 → PR-1.6 → PR-1.7 → PR-1.8 → PR-2 → ... → PR-7), ~1970 LOC. Si al apply se observa que algún PR excede 400 líneas netas, se subdivide (estrategia auto-forecast).
 
 ---
 
@@ -160,7 +161,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Symptoms observed (representative)**: `MenuExportFrame` overflow-badge and dot rendering expectations mismatch the current template (expects 2/3 dots, gets 0); likely template drift since the tests were written. Other files need audit.
 - **Approach**: open the broken files, re-read the SFC they target, update the test expectations to match current contract. NOT a refactor — just realign tests to actual behavior, then re-enable them in `vitest.config.ts` `exclude` list.
 - **Estimated scope**: ~50-150 LOC of test updates across 9 files, plus the `exclude` list removal. Fits a single PR well under the 400-LOC budget.
-- **TBD**: schedule this as PR-1.8 or another slot. Not blocking the 10-23m epic but blocks any honest `apps/web` coverage metric.
+- **Schedule**: **PR-1.8** (see PR Forecast table above). Lands after PR-1.7 once the diary picker integration test is in CI, so we have a known-good signal that the harness still works.
 
 ### T-00-06: Update `DiaryPage.vue` timeline order ✅ (already correct)
 

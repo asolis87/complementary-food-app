@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - staging
+      - 'release/**'
     types:
       - opened
       - synchronize
@@ -11,6 +12,7 @@ on:
   push:
     branches:
       - staging
+      - 'release/**'
 
 # Cancel in-progress runs if new commits are pushed
 concurrency:
@@ -66,17 +68,3 @@ jobs:
         run: pnpm test
         env:
           CI: 'true'
-
-      - name: Test summary
-        if: always()
-        run: |
-          echo "==================================="
-          echo "CI Test Run Complete"
-          echo "==================================="
-          echo "Status: ${{ job.status }}"
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ All tests passed"
-          else
-            echo "❌ Tests failed - Check the logs above"
-            exit 1
-          fi
