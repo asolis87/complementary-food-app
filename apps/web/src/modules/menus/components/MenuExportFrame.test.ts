@@ -359,16 +359,13 @@ describe('MenuExportFrame', () => {
       expect(wrapper.emitted('error')![0]).toEqual(['Canvas failed'])
     })
 
-    it('emits error event when ref is null', async () => {
-      const wrapper = mountComponent()
-
-      // Force ref to null by unmounting
-      wrapper.unmount()
-
-      // Try to capture after unmount
-      // We need to test this differently since we can't easily trigger it
-      // The component handles null ref internally
-      expect(wrapper.emitted('error')).toBeFalsy()
-    })
+    // ponytail: a no-op test that unmounts the wrapper and asserts
+    // no error event was emitted is worse than no test — it suggests
+    // coverage of the null-ref branch that does not actually exist.
+    // The component handles a null exportRef internally (see
+    // MenuExportFrame.vue capture() guard) but there is no
+    // user-reachable way to trigger it; if we ever add one, the test
+    // should call wrapper.vm.capture() against a stubbed null ref,
+    // not rely on unmount.
   })
 })

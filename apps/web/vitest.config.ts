@@ -8,10 +8,12 @@ export default mergeConfig(viteConfig, {
     environment: 'happy-dom',
     globals: false,
     include: ['src/**/*.{test,spec}.ts'],
-    // PR-1.6a excluded 9 pre-existing broken files. PR-1.8a un-excludes
-    // 4 of them (mechanical, no contract drift); the remaining 5
-    // (component-template rotation that the scout under-counted) are
-    // tracked separately in T-XX-WEB-TESTS-FIX-b (PR-1.8b).
+    // Pre-existing broken test files excluded from the harness scope.
+    // Tracked in T-XX-WEB-TESTS-FIX (openspec/changes/etapa-10-23-meses/tasks.md).
+    // The 4 files removed from this list in PR-1.8a (DashboardHeader,
+    // DashboardSkeleton, MenuExportFrame, authStore.email) are now
+    // passing. The 5 remaining are blocked on component-template
+    // rotation that needs a fresh scout pass before they can ship.
     exclude: [
       'src/modules/dashboard/components/AllergenAlertsCard.test.ts',
       'src/modules/dashboard/components/DashboardErrorBoundary.test.ts',

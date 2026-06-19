@@ -13,7 +13,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
 import type { AuthUser } from '@pakulab/shared'
 
 // Mock the api client
@@ -47,10 +46,12 @@ vi.mock('better-auth/client', () => ({
 import { useAuthStore } from './authStore.js'
 import { apiClient, ApiError } from '@/shared/api/client.js'
 
-const mockApiClient = apiClient as ReturnType<typeof vi.fn> & {
-  get: ReturnType<typeof vi.fn>
-  post: ReturnType<typeof vi.fn>
-}
+// ponytail: vi.mocked(apiClient) is the idiomatic Vitest way to
+// derive the mock type from the module mock — survives a future
+// api-client refactor (e.g. fetch wrapper, additional methods).
+// The previous hand-rolled `ReturnType<typeof vi.fn> & { get, post }`
+// cast broke silently when the mock shape drifted.
+const mockApiClient = vi.mocked(apiClient)
 
 function createMockUser(overrides: Partial<AuthUser> = {}): AuthUser {
   return {
@@ -70,6 +71,10 @@ describe('Auth Store — Email Verification', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    // The store builds redirectTo from import.meta.env.VITE_AUTH_REDIRECT_URL
+    // (with a window.location.origin fallback). Stub the env to a known
+    // value so the test assertion is independent of the runner.
+    vi.stubEnv('VITE_AUTH_REDIRECT_URL', 'https://app.example.com/auth')
   })
 
   describe('emailVerified computed', () => {
@@ -113,7 +118,7 @@ describe('Auth Store — Email Verification', () => {
   })
 
   describe('verifyEmail action', () => {
-    it('calls POST /auth/verify-email with token and refreshes session', async () => {
+    it('calls POST /auth/verify-email and clears loading on success', async () => {
       const store = useAuthStore()
       const token = 'test-verification-token'
 
@@ -154,16 +159,16 @@ describe('Auth Store — Email Verification', () => {
       await store.forgotPassword(email)
 
       // BetterAuth endpoint: payload includes redirectTo so the email
-      // link lands back on the app's reset-password page. We assert
-      // the path and the email field; the exact redirectTo origin
-      // depends on the runtime (window.location.origin), so we only
-      // assert the suffix that is always the same.
+      // link lands back on the app's reset-password page. The
+      // redirectTo origin is stubbed in beforeEach so the assertion
+      // is independent of the runner.
       expect(mockApiClient.post).toHaveBeenCalledWith(
         '/auth/request-password-reset',
-        expect.objectContaining({ email }),
+        expect.objectContaining({
+          email,
+          redirectTo: 'https://app.example.com/auth/reset-password',
+        }),
       )
-      const [, payload] = mockApiClient.post.mock.calls[0]!
-      expect((payload as { redirectTo: string }).redirectTo).toMatch(/\/auth\/reset-password$/)
     })
 
     it('sets generic error on failure (enumeration prevention)', async () => {
@@ -224,7 +229,7 @@ describe('Auth Store — Email Verification', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/auth/verify-email/resend', {})
     })
 
-    it('sets generic error and throws on rate limit (429)', async () => {
+    it('sets generic error and throws on network failure', async () => {
       const store = useAuthStore()
       const networkError = new Error('Network down')
 
