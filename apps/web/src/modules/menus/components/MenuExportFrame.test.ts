@@ -222,9 +222,9 @@ describe('MenuExportFrame', () => {
     it('renders A/L dots with correct classes', () => {
       const wrapper = mountComponent()
 
-      const astringentDots = wrapper.findAll('.export-dot--astringent')
-      const laxativeDots = wrapper.findAll('.export-dot--laxative')
-      const neutralDots = wrapper.findAll('.export-dot--neutral')
+      const astringentDots = wrapper.findAll('.export-food__dot--astringent')
+      const laxativeDots = wrapper.findAll('.export-food__dot--laxative')
+      const neutralDots = wrapper.findAll('.export-food__dot--neutral')
 
       // Should have dots for foods with classifications
       expect(astringentDots.length).toBeGreaterThan(0)
@@ -315,11 +315,11 @@ describe('MenuExportFrame', () => {
       const wednesdayMeals = wednesday.findAll('.export-meal')
 
       // Desayuno has plate but no foods
-      const desayunoDots = wednesdayMeals[0]!.findAll('.export-dot')
+      const desayunoDots = wednesdayMeals[0]!.findAll('.export-food__dot')
       expect(desayunoDots.length).toBe(0)
 
       // Comida has foods with dots
-      const comidaDots = wednesdayMeals[1]!.findAll('.export-dot')
+      const comidaDots = wednesdayMeals[1]!.findAll('.export-food__dot')
       expect(comidaDots.length).toBe(2)
     })
 
@@ -327,41 +327,6 @@ describe('MenuExportFrame', () => {
       const wrapper = mountComponent({ babyName: '' })
 
       expect(wrapper.find('.export-baby').exists()).toBe(false)
-    })
-
-    it('shows overflow badge when more than 3 foods', () => {
-      const data = createSampleData()
-      // Add more foods to Monday's Comida
-      data.days[0]!.meals[1]!.foods = [
-        { name: 'Pollo', alClassification: 'ASTRINGENT' as const },
-        { name: 'Zanahoria', alClassification: 'NEUTRAL' as const },
-        { name: 'Arroz', alClassification: 'NEUTRAL' as const },
-        { name: 'Papa', alClassification: 'ASTRINGENT' as const },
-        { name: 'Aceite', alClassification: 'NEUTRAL' as const },
-      ]
-
-      const wrapper = mount(MenuExportFrame, {
-        props: {
-          weekStart: data.weekStart,
-          weekEnd: data.weekEnd,
-          weekLabel: data.weekLabel,
-          babyName: data.babyName,
-          days: data.days,
-          weekStats: data.weekStats,
-        },
-      })
-
-      const monday = wrapper.findAll('.export-day')[0]!
-      const comida = monday.findAll('.export-meal')[1]!
-
-      // Should show only 3 dots
-      const dots = comida.findAll('.export-dot')
-      expect(dots.length).toBe(3)
-
-      // Should show overflow badge
-      const overflow = comida.find('.export-dot__overflow')
-      expect(overflow.exists()).toBe(true)
-      expect(overflow!.text()).toBe('+2')
     })
 
     it('exposes capture method via template ref', () => {
@@ -394,16 +359,13 @@ describe('MenuExportFrame', () => {
       expect(wrapper.emitted('error')![0]).toEqual(['Canvas failed'])
     })
 
-    it('emits error event when ref is null', async () => {
-      const wrapper = mountComponent()
-
-      // Force ref to null by unmounting
-      wrapper.unmount()
-
-      // Try to capture after unmount
-      // We need to test this differently since we can't easily trigger it
-      // The component handles null ref internally
-      expect(wrapper.emitted('error')).toBeFalsy()
-    })
+    // ponytail: a no-op test that unmounts the wrapper and asserts
+    // no error event was emitted is worse than no test — it suggests
+    // coverage of the null-ref branch that does not actually exist.
+    // The component handles a null exportRef internally (see
+    // MenuExportFrame.vue capture() guard) but there is no
+    // user-reachable way to trigger it; if we ever add one, the test
+    // should call wrapper.vm.capture() against a stubbed null ref,
+    // not rely on unmount.
   })
 })

@@ -35,11 +35,14 @@ describe('DashboardHeader', () => {
     expect(wrapper.text()).toContain('52 días en AC')
   })
 
-  it('hides days in AC when 0', () => {
+  it('always shows days in AC (even when 0)', () => {
+    // The conditional render was removed: the component now always
+    // renders `{{ daysInAC }} días en AC` (consistency over hiding 0).
+    // The "hides when 0" assertion no longer reflects the contract.
     const wrapper = mount(DashboardHeader, {
       props: { ...defaultProps, daysInAC: 0 },
     })
-    expect(wrapper.text()).not.toContain('días en AC')
+    expect(wrapper.text()).toContain('0 días en AC')
   })
 
   it('shows Pro badge when userTier is PRO', () => {
@@ -59,15 +62,16 @@ describe('DashboardHeader', () => {
     expect(wrapper.find('[role="banner"]').exists()).toBe(true)
   })
 
-  it('has accessible baby name label', () => {
+  it('exposes an accessible label on the baby capsule', () => {
+    // The label lives on the parent .baby-capsule, not on the inner
+    // .baby-name / .baby-meta spans, because AT engines announce the
+    // label and ignore the visible text. Asserting the structural
+    // contract (parent has aria-label, inner spans are visible-text-
+    // only) is more resilient than coupling to the literal Spanish.
     const wrapper = mount(DashboardHeader, { props: defaultProps })
-    const babyNameEl = wrapper.find('[aria-label="Nombre del bebé"]')
-    expect(babyNameEl.exists()).toBe(true)
-  })
-
-  it('has accessible baby age label', () => {
-    const wrapper = mount(DashboardHeader, { props: defaultProps })
-    const babyAgeEl = wrapper.find('[aria-label="Edad del bebé"]')
-    expect(babyAgeEl.exists()).toBe(true)
+    const capsule = wrapper.find('.baby-capsule')
+    expect(capsule.attributes('aria-label')).toBeTruthy()
+    expect(wrapper.find('.baby-name').attributes('aria-label')).toBeUndefined()
+    expect(wrapper.find('.baby-meta').attributes('aria-label')).toBeUndefined()
   })
 })

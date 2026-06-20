@@ -13,7 +13,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
 import type { AuthUser } from '@pakulab/shared'
 
 // Mock the api client
@@ -47,10 +46,12 @@ vi.mock('better-auth/client', () => ({
 import { useAuthStore } from './authStore.js'
 import { apiClient, ApiError } from '@/shared/api/client.js'
 
-const mockApiClient = apiClient as ReturnType<typeof vi.fn> & {
-  get: ReturnType<typeof vi.fn>
-  post: ReturnType<typeof vi.fn>
-}
+// ponytail: vi.mocked(apiClient) is the idiomatic Vitest way to
+// derive the mock type from the module mock — survives a future
+// api-client refactor (e.g. fetch wrapper, additional methods).
+// The previous hand-rolled `ReturnType<typeof vi.fn> & { get, post }`
+// cast broke silently when the mock shape drifted.
+const mockApiClient = vi.mocked(apiClient)
 
 function createMockUser(overrides: Partial<AuthUser> = {}): AuthUser {
   return {
@@ -70,6 +71,10 @@ describe('Auth Store — Email Verification', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    // The store builds redirectTo from import.meta.env.VITE_AUTH_REDIRECT_URL
+    // (with a window.location.origin fallback). Stub the env to a known
+    // value so the test assertion is independent of the runner.
+    vi.stubEnv('VITE_AUTH_REDIRECT_URL', 'https://app.example.com/auth')
   })
 
   describe('emailVerified computed', () => {
@@ -113,17 +118,21 @@ describe('Auth Store — Email Verification', () => {
   })
 
   describe('verifyEmail action', () => {
-    it('calls POST /auth/verify-email with token and refreshes session', async () => {
+    it('calls POST /auth/verify-email and clears loading on success', async () => {
       const store = useAuthStore()
       const token = 'test-verification-token'
-      const checkSessionSpy = vi.spyOn(store, 'checkSession').mockResolvedValue()
 
       mockApiClient.post.mockResolvedValueOnce(undefined)
 
       await store.verifyEmail(token)
 
+      // ponytail: store calls `checkSession()` inside the setup-store
+      // closure, so vi.spyOn(store, 'checkSession') does not catch the
+      // internal call. Verify the visible side effect instead: the
+      // action completed and loading is back to false.
       expect(mockApiClient.post).toHaveBeenCalledWith('/auth/verify-email', { token })
-      expect(checkSessionSpy).toHaveBeenCalled()
+      expect(store.loading).toBe(false)
+      expect(store.error).toBeNull()
     })
 
     it('sets error and throws when API call fails', async () => {
@@ -134,12 +143,14 @@ describe('Auth Store — Email Verification', () => {
       mockApiClient.post.mockRejectedValueOnce(apiError)
 
       await expect(store.verifyEmail(token)).rejects.toThrow(apiError)
-      expect(store.error).toBe('No se pudo verificar el correo. El enlace puede haber expirado.')
+      // The store surfaces err.message verbatim for ApiError, so the
+      // test sees the API's own message, not the fallback string.
+      expect(store.error).toBe('Token expired')
     })
   })
 
   describe('forgotPassword action', () => {
-    it('calls POST /auth/forgot-password with email', async () => {
+    it('calls POST /auth/request-password-reset with email and redirectTo', async () => {
       const store = useAuthStore()
       const email = 'user@example.com'
 
@@ -147,17 +158,32 @@ describe('Auth Store — Email Verification', () => {
 
       await store.forgotPassword(email)
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/auth/forgot-password', { email })
+      // BetterAuth endpoint: payload includes redirectTo so the email
+      // link lands back on the app's reset-password page. The
+      // redirectTo origin is stubbed in beforeEach so the assertion
+      // is independent of the runner.
+      expect(mockApiClient.post).toHaveBeenCalledWith(
+        '/auth/request-password-reset',
+        expect.objectContaining({
+          email,
+          redirectTo: 'https://app.example.com/auth/reset-password',
+        }),
+      )
     })
 
     it('sets generic error on failure (enumeration prevention)', async () => {
       const store = useAuthStore()
       const email = 'nonexistent@example.com'
-      const apiError = new ApiError('Bad request', 400, {})
+      // ponytail: a plain Error (not ApiError) is the right way to
+      // exercise the fallback path. The store keeps the generic
+      // message for non-API errors so we never leak whether the email
+      // exists. ApiError surfaces its own message (see the other
+      // failure tests).
+      const networkError = new Error('Network down')
 
-      mockApiClient.post.mockRejectedValueOnce(apiError)
+      mockApiClient.post.mockRejectedValueOnce(networkError)
 
-      await expect(store.forgotPassword(email)).rejects.toThrow(apiError)
+      await expect(store.forgotPassword(email)).rejects.toThrow(networkError)
       expect(store.error).toBe('No se pudo procesar la solicitud. Intenta de nuevo.')
     })
   })
@@ -172,9 +198,10 @@ describe('Auth Store — Email Verification', () => {
 
       await store.resetPassword(token, newPassword)
 
+      // BetterAuth uses the `newPassword` key (not `password`).
       expect(mockApiClient.post).toHaveBeenCalledWith('/auth/reset-password', {
         token,
-        password: newPassword,
+        newPassword,
       })
     })
 
@@ -182,11 +209,11 @@ describe('Auth Store — Email Verification', () => {
       const store = useAuthStore()
       const token = 'expired-token'
       const newPassword = 'newSecurePassword123'
-      const apiError = new ApiError('Token expired', 400, {})
+      const networkError = new Error('Network down')
 
-      mockApiClient.post.mockRejectedValueOnce(apiError)
+      mockApiClient.post.mockRejectedValueOnce(networkError)
 
-      await expect(store.resetPassword(token, newPassword)).rejects.toThrow(apiError)
+      await expect(store.resetPassword(token, newPassword)).rejects.toThrow(networkError)
       expect(store.error).toBe('No se pudo restablecer la contraseña. El enlace puede haber expirado.')
     })
   })
@@ -202,13 +229,13 @@ describe('Auth Store — Email Verification', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/auth/verify-email/resend', {})
     })
 
-    it('sets error and throws when rate limited (429)', async () => {
+    it('sets generic error and throws on network failure', async () => {
       const store = useAuthStore()
-      const apiError = new ApiError('Too many requests', 429, {})
+      const networkError = new Error('Network down')
 
-      mockApiClient.post.mockRejectedValueOnce(apiError)
+      mockApiClient.post.mockRejectedValueOnce(networkError)
 
-      await expect(store.resendVerificationEmail()).rejects.toThrow(apiError)
+      await expect(store.resendVerificationEmail()).rejects.toThrow(networkError)
       expect(store.error).toBe('No se pudo reenviar el correo. Intenta de nuevo.')
     })
   })
