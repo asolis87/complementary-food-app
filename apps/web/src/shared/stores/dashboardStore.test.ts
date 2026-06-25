@@ -18,7 +18,7 @@ import type { DashboardData, SuggestedFood, AllergenAlert, RoadmapProgress, Bala
 import { MealType } from '@pakulab/shared'
 
 // Mock the api client
-const mockGet = vi.fn()
+const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }))
 vi.mock('@/shared/api/client.js', () => ({
   apiClient: {
     get: mockGet,
@@ -169,10 +169,15 @@ describe('dashboardStore', () => {
   // ── refreshDashboard ────────────────────────────────────────────────────────
 
   it('refreshDashboard clears state and re-fetches', async () => {
+    vi.useFakeTimers()
+
     // First fetch
     mockGet.mockResolvedValueOnce({ data: createMockDashboardData() })
     await store.fetchDashboard(VALID_BABY_ID)
     const firstFetchTime = store.lastFetched
+
+    // Advance time so the refreshed timestamp is guaranteed to differ
+    vi.advanceTimersByTime(5)
 
     // Second fetch (refresh)
     const newData = createMockDashboardData({ userTier: 'FREE' })
@@ -181,6 +186,8 @@ describe('dashboardStore', () => {
 
     expect(store.dashboardData).toEqual(newData)
     expect(store.lastFetched).not.toBe(firstFetchTime)
+
+    vi.useRealTimers()
   })
 
   // ── clearCache ──────────────────────────────────────────────────────────────

@@ -34,7 +34,7 @@
         </button>
 
         <button
-          v-if="showGoHome"
+          v-if="showGoHomeButton"
           class="home-btn"
           @click="handleGoHome"
         >
