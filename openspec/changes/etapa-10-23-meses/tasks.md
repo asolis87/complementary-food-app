@@ -257,6 +257,20 @@ Foundations: pure functions en shared + updates a consumers existentes.
 
 ---
 
+### T-XX-BACKFILL-SNACK-SAFETY: Safety/idempotency tests for backfill-snack-to-snack1.ts ✅
+
+- **Why**: The backfill script (`prisma/scripts/backfill-snack-to-snack1.ts`) rewrites historical `MealType.SNACK` rows to `SNACK_1`. Safety and idempotency must be verified without touching a production database.
+- **Files**: `prisma/scripts/backfill-snack-to-snack1.ts`, `prisma/scripts/backfill-snack-to-snack1.test.ts`, `prisma/vitest.config.ts`
+- **Deliverable**:
+  - Minimal refactor of the script into exported pure/testable functions (`parseArgs`, `runBackfill`) while preserving CLI behavior via `main()`.
+  - `BackfillResult` return type so tests can assert on counts and sample without parsing `console.log`.
+  - Guard `main()` execution with `import.meta.url === process.argv[1]` so importing the module in tests does not trigger the CLI.
+  - Vitest config under `prisma/vitest.config.ts` so the script test runs without crossing `apps/api` `rootDir`.
+- **Tests** (13): dry-run default (no writes), `--apply` rewrites only SNACK→SNACK_1, idempotency, deleted rows excluded, non-SNACK rows untouched, argument parsing fail-closed, dry-run sample, apply skips sample, self-check throws on remaining rows.
+- **TDD**: strict TDD — tests written first, script refactored to pass, triangulated with edge cases.
+
+---
+
 ## Bloque 1 — Seed audit 10-23m
 
 ### T-01-01: Agregar 6 alimentos al seed con `needsValidation: true`
