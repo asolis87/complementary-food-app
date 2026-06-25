@@ -1,6 +1,6 @@
 # SDD state for etapa-10-23-meses
 change: etapa-10-23-meses
-status: explore
+status: apply
 created: 2026-06-18
 active_change_source: user_request
 
@@ -38,7 +38,15 @@ phases:
     artifact: tasks.md
     completed_at: 2026-06-18
     total_tasks: 52
-    pr_forecast: 7
+    pr_forecast: 10
+    completed_prs:
+      - PR-1
+      - PR-1.5
+      - PR-1.6a
+      - PR-1.6b
+      - PR-1.6c
+      - PR-1.7
+      - PR-1.8a
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -47,8 +55,10 @@ phases:
       bloque_4: 19
       bloque_5: 8
   apply:
-    status: not_started
+    status: in_progress
     artifact: apply-progress.md
+    current_pr: PR-1.8b
+    next_pr: PR-2
   verify:
     status: not_started
     artifact: verify-report.md
@@ -68,4 +78,4 @@ action_context:
     - openspec/changes/etapa-10-23-meses/
   warnings: []
 
-next_recommended: proposal
+next_recommended: apply

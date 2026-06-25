@@ -2,7 +2,7 @@
  * AllergenAlertsCard component tests.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { computed } from 'vue'
@@ -51,17 +51,17 @@ describe('AllergenAlertsCard', () => {
     expect(wrapper.text()).toContain('🥚')
   })
 
-  it('renders minimum age info', () => {
+  it('does not render minimum age info in compact view', () => {
     const wrapper = mount(AllergenAlertsCard, {
       props: { allergens: [normalAllergen] },
       global: {
         stubs: { TierGate: { template: '<div><slot /></div>' } },
       },
     })
-    expect(wrapper.text()).toContain('Desde 6 meses')
+    expect(wrapper.text()).not.toContain('Desde 6 meses')
   })
 
-  it('renders closing_window allergen with urgency marker', () => {
+  it('does not apply urgency modifier to closing_window allergen in compact view', () => {
     const wrapper = mount(AllergenAlertsCard, {
       props: { allergens: [urgentAllergen] },
       global: {
@@ -69,7 +69,7 @@ describe('AllergenAlertsCard', () => {
       },
     })
     const urgentItem = wrapper.find('.allergen-item--urgent')
-    expect(urgentItem.exists()).toBe(true)
+    expect(urgentItem.exists()).toBe(false)
   })
 
   it('emits viewGuide on button click', async () => {
@@ -79,7 +79,7 @@ describe('AllergenAlertsCard', () => {
         stubs: { TierGate: { template: '<div><slot /></div>' } },
       },
     })
-    await wrapper.find('.btn-guide').trigger('click')
+    await wrapper.find('.btn-intro').trigger('click')
     expect(wrapper.emitted('viewGuide')).toHaveLength(1)
     expect(wrapper.emitted('viewGuide')![0]).toEqual(['huevo'])
   })
