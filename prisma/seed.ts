@@ -21,7 +21,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-interface FoodSeed {
+export interface FoodSeed {
   name: string;
   group: 'FRUIT' | 'VEGETABLE' | 'PROTEIN' | 'CEREAL_TUBER' | 'HEALTHY_FAT';
   alClassification: 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL';
@@ -846,6 +846,24 @@ const proteins: FoodSeed[] = [
       'Excelente fuente de omega-3, vitamina D y calcio (si se comen los huesos blandos). Alérgeno. Baja en mercurio. Escurrir bien. Machacar con tenedor.',
     needsValidation: false,
   },
+  // ── BLOQUE 1 (PR-3): 10-23m AGE AUDIT ──
+  // The 6 foods below (yogurt, queso panela, frijol negro, lenteja, garbanzo, hígado de pollo)
+  // are the target foods for Bloque 1 (10-23 months feeding stage) as defined in the etapa-10-23-meses change.
+  //
+  // CLINICAL DECISION: ageMonths values (6-8m) intentionally follow the Protocolo Beikost /
+  // Dra. Paulina Trueba Villaseñor guide (see docs/Guia de alimentos_Pau Trueba.pdf).
+  // The original spec proposed 10-12m ages, but that was OBSOLETE and has been corrected.
+  //
+  // VALIDATION STATUS: needsValidation: false is intentional. These foods were validated
+  // during the 154-food catalog expansion and are safe for the indicated ages per clinical guidance.
+  //
+  // DEFERRED FEATURES (later Bloques):
+  // - isIronRich field (REQ-A3: iron-rich food markers) — schema field does not exist yet
+  // - warningTags field (REQ-A1: choking hazard warnings for garbanzo) — schema field does not exist yet
+  //
+  // Integrity test: prisma/scripts/seed-audit.test.ts anchors these values against accidental changes.
+  // ── END BLOQUE 1 AUDIT ──
+
   {
     name: 'Huevo (yema cocida)',
     group: 'PROTEIN',
@@ -1803,7 +1821,7 @@ const healthyFats: FoodSeed[] = [
 // ============================================================
 // COMBINED CATALOG
 // ============================================================
-const foods: FoodSeed[] = [
+export const foods: FoodSeed[] = [
   ...fruits,
   ...vegetables,
   ...proteins,
