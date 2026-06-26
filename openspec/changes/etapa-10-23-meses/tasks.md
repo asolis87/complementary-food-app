@@ -271,43 +271,35 @@ Foundations: pure functions en shared + updates a consumers existentes.
 
 ---
 
-## Bloque 1 — Seed audit 10-23m
+## Bloque 1 — Seed audit 10-23m (PR-3) ✅ RE-SCOPED
 
-### T-01-01: Agregar 6 alimentos al seed con `needsValidation: true`
+> **REALITY UPDATE (PR-3, 2026-06-26)**: This block's original plan (written 2026-06-18) was made OBSOLETE by the later 154-food catalog expansion (`feat/food-catalog-pediatrician-guide`). The 6 "new" foods ALREADY EXIST in `prisma/seed.ts`. The original spec also assumed schema fields (`isIronRich`, `warningTags`, `DAIRY` group, `allergenType` as `MILK` enum) that DO NOT EXIST in the current schema — those belong to later Bloques (3/5 migrations). PR-3 was therefore re-scoped to **audit documentation + a DB-free integrity test**, with NO food data changes.
+>
+> **Clinical/product decisions (user, authoritative)**:
+> 1. `ageMonths` KEPT at the seed's current 6-8m values — they follow the Protocolo Beikost / Dra. Trueba guide (`docs/Guia de alimentos_Pau Trueba.pdf`). The spec's 10-12m proposal is obsolete.
+> 2. `needsValidation` KEPT at `false` — the 6 foods were validated during the catalog expansion. Not re-flagged.
 
-- **Spec**: REQ-2-A1
+### T-01-01: ~~Agregar 6 alimentos~~ → Document existing 6 foods ✅ (PR-3)
+
+- **Spec**: REQ-2-A1 (re-scoped)
 - **Files**: `prisma/seed.ts`
-- **Deliverable**: 6 nuevos alimentos:
-  - Yogur natural (sin azúcar), `ageMonths: 10`, `foodGroup: PROTEIN`, `isAllergen: true`, `allergenType: 'MILK'`
-  - Queso fresco, `ageMonths: 10`, `foodGroup: PROTEIN`, `isAllergen: true`, `allergenType: 'MILK'`
-  - Frijol negro cocido, `ageMonths: 10`, `foodGroup: PROTEIN`, `isIronRich: true`
-  - Lenteja cocida, `ageMonths: 10`, `foodGroup: PROTEIN`, `isIronRich: true`
-  - Garbanzo cocido, `ageMonths: 12`, `foodGroup: PROTEIN`, `warningTags: ['CHOKING_HAZARD_UNDER_5Y']` (si entero)
-  - Hígado de pollo cocido, `ageMonths: 10`, `foodGroup: PROTEIN`, `isIronRich: true`
-- **Tests** (2): nombres únicos (constraint), todos con `needsValidation: true`
-- **TDD**: integration test que ejecuta seed y verifica filas
+- **OBSOLETE**: the 6 foods already exist — 'Yogurt natural entero (sin azúcar)', 'Queso panela'/'Queso requesón'/'Queso cottage' (the spec's "queso fresco" maps to 3 cheeses), 'Frijol negro cocido', 'Lenteja cocida', 'Garbanzo cocido', 'Hígado de pollo cocido'. All `group: PROTEIN`, `needsValidation: false`, `ageMonths` 6-8m.
+- **DEFERRED to later Bloques** (schema fields don't exist yet): `isIronRich` (REQ-A3) and `warningTags` (REQ-A1, garbanzo choking) → Bloque 3 (PR-5). `allergenType` is a `String` (`'dairy'`), not a `MILK` enum. No `DAIRY` group (PROTEIN covers dairy).
+- **Done**: documented the 6 foods + clinical rationale in a seed.ts audit comment block.
 
-### T-01-02: Audit section en seed.ts
+### T-01-02: Audit section en seed.ts ✅ (PR-3)
 
 - **Spec**: REQ-2-B1
 - **Files**: `prisma/seed.ts`
-- **Deliverable**:
-  - Sección `// 10-23M AUDIT FIXES` con comentarios por cada cambio
-  - Backfill de `ageMonths` para alimentos mal categorizados (lista inicial: aguacate, mango, plátano)
-- **Tests** (1): cada alimento en audit section tiene comentario explicativo
-- **TDD**: integration test que verifica que las filas actualizadas quedan con `ageMonths` correcto
+- **Done**: added a `// ── BLOQUE 1 (PR-3): 10-23m AGE AUDIT ──` comment block documenting that the 6 foods' `ageMonths` (6-8m) follow Protocolo Beikost / Dra. Trueba (not the obsolete 10-12m), that `needsValidation: false` is intentional, and that `isIronRich`/`warningTags` are deferred.
+- **Note**: the proposed `ageMonths` backfill for aguacate/mango/plátano was NOT needed — the catalog expansion already categorized them. No data changes made.
 
-### T-01-03: Seed integrity test
+### T-01-03: Seed integrity test ✅ (PR-3)
 
-- **Spec**: REQ-2-A1
-- **Files**: `apps/api/test/seed-integrity.test.ts` (new)
-- **Deliverable**: test que ejecuta el seed y verifica:
-  - 6 nuevos alimentos insertados
-  - Todos con `needsValidation: true`
-  - Alimentos con `isAllergen: true` tienen `allergenType` no-null
-  - Alimentos con `isIronRich: true` están en seed (≥3)
-- **Tests**: 1-2 integration tests
-- **TDD**: test primero, seed ajustarse al test
+- **Spec**: REQ-2-A1 (re-scoped)
+- **Files**: `prisma/scripts/seed-audit.test.ts` (new — DB-free, not `apps/api/test/`)
+- **Done**: DB-free test importing the exported `foods` array and asserting the 6 target foods exist with their current `group`/`isAllergen`/`allergenType`/`ageMonths`/`needsValidation` (snapshot-locked so accidental changes are caught), the 3-cheese cluster, and a no-duplicate-names guard. 10 tests. `foods` and `FoodSeed` are now exported from `seed.ts`.
+- **Verified**: prisma 24/24, api 381/381.
 
 ---
 
