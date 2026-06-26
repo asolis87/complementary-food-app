@@ -49,6 +49,7 @@ phases:
       - PR-1.8a
       - PR-1.8b
       - PR-1.8c
+      - PR-2
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -60,12 +61,13 @@ phases:
     status: in_progress
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-2
+    next_pr: PR-3
     in_progress_branch: null
     notes:
-      - PR-1.8b (web tests, PR #72, merge 243f882) merged to release/etapa-10-23-meses.
       - PR-1.8c (backfill safety/idempotency, PR #73, merge 50f6c82) merged to release/etapa-10-23-meses.
-      - PR-2 (Bloque 0 UI complementaria) is the next slice — T-00-02, T-00-07..12. ~310 LOC, under the 400-line budget, no chained PRs needed.
+      - PR-2 (Bloque 0 UI complementaria, PR #75, merge 3539e50) merged — T-00-02, T-00-07..12 + DashboardPage wiring. 4R review fixed dead-banner, multi-profile keys, safeStorage resilience. web 244/244, shared 127/127 green.
+      - PR-3 (Bloque 1 seed audit 10-23m) is the next slice — T-01-01, T-01-02, T-01-03. ~90 LOC. Adds 6 foods with needsValidation:true awaiting nutritionist sign-off.
+      - DEFERRED follow-ups from PR-2 4R: useStageTip has no UI consumer yet; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
     status: not_started
     artifact: verify-report.md
