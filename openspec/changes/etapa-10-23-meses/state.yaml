@@ -47,6 +47,8 @@ phases:
       - PR-1.6c
       - PR-1.7
       - PR-1.8a
+      - PR-1.8b
+      - PR-1.8c
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -57,12 +59,13 @@ phases:
   apply:
     status: in_progress
     artifact: apply-progress.md
-    current_pr: PR-1.8c-backfill-snack-safety
+    current_pr: null
     next_pr: PR-2
-    in_progress_branch: test/etapa-10-23-meses-backfill-snack-safety
+    in_progress_branch: null
     notes:
-      - In-progress surgical slice for T-XX-BACKFILL-SNACK-SAFETY (guard hardening + regression test).
-      - Not listed in completed_prs; branch renamed from test/etapa-10-23-meses-backfill-safety.
+      - PR-1.8b (web tests, PR #72, merge 243f882) merged to release/etapa-10-23-meses.
+      - PR-1.8c (backfill safety/idempotency, PR #73, merge 50f6c82) merged to release/etapa-10-23-meses.
+      - PR-2 (Bloque 0 UI complementaria) is the next slice — T-00-02, T-00-07..12. ~310 LOC, under the 400-line budget, no chained PRs needed.
   verify:
     status: not_started
     artifact: verify-report.md
