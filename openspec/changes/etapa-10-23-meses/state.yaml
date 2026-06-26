@@ -51,6 +51,7 @@ phases:
       - PR-1.8c
       - PR-2
       - PR-3
+      - PR-4
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -62,14 +63,15 @@ phases:
     status: in_progress
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-4
+    next_pr: PR-5
     in_progress_branch: null
     notes:
-      - PR-2 (Bloque 0 UI complementaria, PR #75, merge 3539e50) merged — T-00-02, T-00-07..12 + DashboardPage wiring. 4R review fixed dead-banner, multi-profile keys, safeStorage resilience.
-      - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED. The 6 foods already existed (154-food catalog expansion); did audit comments + DB-free integrity test instead. NO food data changed. Clinical decisions:keep ageMonths (Beikost), keep needsValidation:false. prisma 24/24, api 381/381 green.
-      - STALE-PLAN WARNING — tasks.md was written 2026-06-18, BEFORE the 154-food catalog expansion. Bloque 1 was largely already done. Bloques 2-5 MAY also be partially-done or assume schema fields that do not exist. MUST verify actual code/schema state before implementing any further bloque (do an sdd-explore first, like PR-3).
-      - PR-4 = Bloque 2 (allergens backend, T-02-01..05) per plan — but VERIFY first whether allergen derivation already exists in apps/api. Schema today has NO isIronRich/warningTags/DAIRY (those need Bloque 3/5 migrations).
-      - DEFERRED PR-2 4R follow-ups still open:useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
+      - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
+      - PR-4 (Bloque 2 allergens backend, PR #79, merge 4804dad) merged — GET /api/allergens/status (PRO), derived from FoodLog+Food, no new table. 4R review fixed celery silent-drop (now explicit exclude + log.warn for unmapped), deterministic ordering, isAllergen-bounded query, boundary tests. ALLERGEN_TYPE_MAPPING bridges seed English→shared Spanish keys. fish/shellfish split into pescado/mariscos in TOP_ALLERGENS. api 415/415, shared 127/127 green.
+      - STALE-PLAN WARNING — tasks.md was written 2026-06-18, before the 154-food catalog expansion. Bloque 1 was largely already done. VERIFY actual code/schema before each further bloque (sdd-explore first).
+      - PR-5 = Bloque 3 (WarningTag enum + schema migration, T-03-01..05). VERIFIED 2026-06-26 the schema has NO warningTags/isIronRich/PlateStage yet — this is real migration work. This bloque UNBLOCKS warningTags (deferred from PR-3/PR-4 garbanzo choking) and is a prereq for Bloque 4 warning UI + Bloque 1 REQ-A3 isIronRich.
+      - DEFERRED PR-4 follow-ups — move ALLERGEN_TYPE_MAPPING to @pakulab/shared so the dashboard can consume it; dashboard has a PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the new pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock. Consider tackling the shared-mapping move WITH PR-5 (same domain).
+      - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
     status: not_started
     artifact: verify-report.md
