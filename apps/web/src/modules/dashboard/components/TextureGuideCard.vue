@@ -11,7 +11,7 @@
         <h2 class="card-title">Guía de texturas</h2>
       </div>
       <span v-if="!loading && currentStage" class="stage-badge">
-        {{ currentStage.stage }}
+        {{ currentStage.ageRange }}
       </span>
     </div>
 
@@ -28,34 +28,47 @@
     </div>
 
     <!-- Content state -->
-    <div v-else-if="currentStage" class="texture-content">
-      <div class="texture-highlight">
-        <span class="material-symbols-outlined texture-icon" aria-hidden="true">
-          {{ currentStage.icon }}
-        </span>
-        <div class="texture-title-group">
-          <h3 class="texture-title">{{ currentStage.title }}</h3>
-          <p class="texture-subtitle">Ideal para los {{ babyAgeMonths }} meses</p>
+    <div v-else class="texture-content">
+      <!-- All 5 stages -->
+      <div
+        v-for="(stage, index) in ALL_STAGES"
+        :key="stage.id"
+        class="stage-item"
+        :class="{
+          'stage-current': isCurrentStage(index),
+          'stage-future': isFutureStage(index)
+        }"
+      >
+        <div class="stage-header">
+          <span class="material-symbols-outlined stage-icon" aria-hidden="true">
+            {{ stage.icon }}
+          </span>
+          <div class="stage-title-group">
+            <h3 class="stage-title">{{ stage.ageRange }}</h3>
+            <p class="stage-subtitle">{{ stage.title }}</p>
+          </div>
+          <span v-if="isFutureStage(index)" class="future-badge">Próximamente</span>
         </div>
+
+        <!-- Show details only for current stage -->
+        <ul v-if="isCurrentStage(index)" class="texture-details" role="list">
+          <li
+            v-for="(tip, idx) in stage.tips"
+            :key="idx"
+            class="detail-item"
+            role="listitem"
+          >
+            <span class="material-symbols-outlined check-icon" aria-hidden="true">done</span>
+            <span class="detail-text">{{ tip }}</span>
+          </li>
+        </ul>
       </div>
 
-      <ul class="texture-details" role="list">
-        <li
-          v-for="(tip, idx) in currentStage.tips"
-          :key="idx"
-          class="detail-item"
-          role="listitem"
-        >
-          <span class="material-symbols-outlined check-icon" aria-hidden="true">done</span>
-          <span class="detail-text">{{ tip }}</span>
-        </li>
-      </ul>
-
-      <!-- Warning callout -->
-      <div class="safety-callout">
+      <!-- Warning callout (shown only once at the end) -->
+      <div v-if="currentStage" class="safety-callout">
         <span class="material-symbols-outlined safety-icon" aria-hidden="true">gavel</span>
         <p class="safety-text">
-          Asegurate de que los alimentos estén bien cocidos y sean blandos al tacto. ¡Acompañá siempre a tu bebé mientras come!
+          Asegúrate de que los alimentos estén bien cocidos y sean blandos al tacto. ¡Acompaña siempre a tu bebé mientras come!
         </p>
       </div>
     </div>
@@ -71,73 +84,101 @@ const props = defineProps<{
 }>()
 
 interface TextureStage {
-  stage: string
+  id: string
+  ageRange: string
   title: string
   icon: string
   tips: string[]
+  minAge: number
+  maxAge: number
 }
 
-const currentStage = computed<TextureStage | null>(() => {
-  const age = props.babyAgeMonths
-
-  if (age < 6) {
-    return {
-      stage: 'Lactancia',
-      title: 'Lactancia Exclusiva',
-      icon: 'water_drop',
-      tips: [
-        'Solo leche materna o de fórmula.',
-        'El estómago y reflejos de tu bebé aún se están preparando.',
-        'No introduzcas sólidos antes de los 6 meses sin indicación médica.'
-      ]
-    }
-  } else if (age === 6) {
-    return {
-      stage: 'Fase 1: Inicio',
-      title: 'Purés suaves y Bastones grandes',
-      icon: 'restaurant',
-      tips: [
-        'Consistencia: Purés bien lisos y sin grumos, tirando a líquidos.',
-        'BLW: Bastones del tamaño de un dedo de adulto (para que lo agarre con su mano).',
-        'Textura blanda: Que puedas aplastarlo fácilmente con tus dedos índice y pulgar.'
-      ]
-    }
-  } else if (age >= 7 && age <= 8) {
-    return {
-      stage: 'Fase 2: Transición',
-      title: 'Machacados y Grumos suaves',
-      icon: 'flatware',
-      tips: [
-        'Consistencia: Alimentos pisados con tenedor, purés espesos con grumos blandos.',
-        'BLW: Trozos más pequeños pero blandos para estimular el agarre palmar.',
-        'Fomentá la masticación: El bebé empieza a mover la comida con su lengua.'
-      ]
-    }
-  } else if (age >= 9 && age <= 11) {
-    return {
-      stage: 'Fase 3: Pinza digital',
-      title: 'Trozos pequeños y sólidos blandos',
-      icon: 'nutrition',
-      tips: [
-        'Consistencia: Alimentos picados o cortados en cubitos chiquitos (corte pinza).',
-        'Motricidad: Practica agarrar trozos usando sus dedos pulgar e índice.',
-        'Variedad: Ideal para fideos cortos muy cocidos, legumbres enteras tiernas y vegetales.'
-      ]
-    }
-  } else {
-    // 12+ months
-    return {
-      stage: 'Fase 4: Mesa familiar',
-      title: 'Textura Familiar Adaptada',
-      icon: 'family_history',
-      tips: [
-        'Consistencia: Comida familiar adaptada en tamaño y baja en sal/azúcares.',
-        'Evitar riesgos: Nada de alimentos redondos enteros (uvas picadas al sesgo, tomates cherry cortados en 4).',
-        'Masticación madura: Puede morder y triturar texturas más complejas.'
-      ]
-    }
+// All 5 stages as constants
+const ALL_STAGES: TextureStage[] = [
+  {
+    id: 'stage-6m',
+    ageRange: '6m',
+    title: 'Purés suaves y Bastones grandes',
+    icon: 'restaurant',
+    tips: [
+      'Consistencia: Purés bien lisos y sin grumos, tirando a líquidos.',
+      'BLW: Bastones del tamaño de un dedo de adulto (para que lo agarre con su mano).',
+      'Textura blanda: Que puedas aplastarlo fácilmente con tus dedos índice y pulgar.'
+    ],
+    minAge: 6,
+    maxAge: 6
+  },
+  {
+    id: 'stage-7-9m',
+    ageRange: '7-9m',
+    title: 'Machacados y Grumos suaves',
+    icon: 'flatware',
+    tips: [
+      'Consistencia: Alimentos pisados con tenedor, purés espesos con grumos blandos.',
+      'BLW: Trozos más pequeños pero blandos para estimular el agarre palmar.',
+      'Fomenta la masticación: El bebé empieza a mover la comida con su lengua.'
+    ],
+    minAge: 7,
+    maxAge: 9
+  },
+  {
+    id: 'stage-10-12m',
+    ageRange: '10-12m',
+    title: 'Trozos pequeños y sólidos blandos',
+    icon: 'nutrition',
+    tips: [
+      'Consistencia: Alimentos picados o cortados en cubitos chiquitos (corte pinza).',
+      'Motricidad: Practica agarrar trozos usando sus dedos pulgar e índice.',
+      'Variedad: Ideal para fideos cortos muy cocidos, legumbres enteras tiernas y vegetales.'
+    ],
+    minAge: 10,
+    maxAge: 12
+  },
+  {
+    id: 'stage-13-17m',
+    ageRange: '13-17m',
+    title: 'Textura Familiar Adaptada',
+    icon: 'family_history',
+    tips: [
+      'Consistencia: Comida familiar adaptada en tamaño y baja en sal/azúcares.',
+      'Evitar riesgos: Nada de alimentos redondos enteros (uvas picadas al sesgo, tomates cherry cortados en 4).',
+      'Masticación madura: Puede morder y triturar texturas más complejas.'
+    ],
+    minAge: 13,
+    maxAge: 17
+  },
+  {
+    id: 'stage-18-23m',
+    ageRange: '18-23m',
+    title: 'Texturas Complejas',
+    icon: 'cake',
+    tips: [
+      'Consistencia: Comida regular de la familia con supervisión.',
+      'Masticación avanzada: Mayor habilidad para morder, masticar y tragar.',
+      'Incluir variedad: Introduce texturas más firmes y complejas gradualmente.'
+    ],
+    minAge: 18,
+    maxAge: 23
   }
+]
+
+const currentStageIndex = computed(() => {
+  const age = props.babyAgeMonths
+  return ALL_STAGES.findIndex(stage => age >= stage.minAge && age <= stage.maxAge)
 })
+
+const currentStage = computed(() => {
+  const idx = currentStageIndex.value
+  return idx >= 0 ? ALL_STAGES[idx] : null
+})
+
+function isCurrentStage(stageIndex: number): boolean {
+  return stageIndex === currentStageIndex.value
+}
+
+function isFutureStage(stageIndex: number): boolean {
+  return stageIndex > currentStageIndex.value
+}
 </script>
 
 <style scoped>
@@ -191,43 +232,74 @@ const currentStage = computed<TextureStage | null>(() => {
   gap: var(--md3-space-4);
 }
 
-.texture-highlight {
+.stage-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--md3-space-3);
-  background: var(--md3-surface-container-low);
   padding: var(--md3-space-3);
   border-radius: var(--md3-rounded-lg);
   border: 1px solid var(--md3-outline-variant);
+  background: var(--md3-surface-container-low);
+  transition: opacity 0.2s, background 0.2s;
 }
 
-.texture-icon {
-  font-size: 2.25rem !important;
-  color: var(--md3-primary);
+.stage-item.stage-current {
+  border-color: var(--md3-primary);
   background: var(--md3-primary-container);
-  padding: var(--md3-space-2);
-  border-radius: var(--md3-rounded-md);
 }
 
-.texture-title-group {
+.stage-item.stage-future {
+  opacity: 0.5;
+  background: var(--md3-surface-container-lowest);
+}
+
+.stage-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-3);
+}
+
+.stage-icon {
+  font-size: 2rem !important;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+}
+
+.stage-item.stage-future .stage-icon {
+  color: var(--md3-on-surface-variant);
+}
+
+.stage-title-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.texture-title {
+.stage-title {
   margin: 0;
   font-family: var(--md3-font-headline);
-  font-size: var(--md3-title-md);
+  font-size: var(--md3-title-sm);
   font-weight: var(--md3-weight-bold);
   color: var(--md3-on-surface);
 }
 
-.texture-subtitle {
+.stage-subtitle {
   margin: 0;
   font-family: var(--md3-font-body);
   font-size: var(--md3-body-sm);
   color: var(--md3-on-surface-variant);
+}
+
+.future-badge {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-xs);
+  font-weight: var(--md3-weight-bold);
+  background-color: var(--md3-surface-container-high);
+  color: var(--md3-on-surface-variant);
+  padding: 2px 8px;
+  border-radius: var(--md3-rounded-full);
+  flex-shrink: 0;
 }
 
 .texture-details {

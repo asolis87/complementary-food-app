@@ -5,7 +5,7 @@
  * Spec: REQ-DASH-BIZ-06 (cache strategy TTLs)
  */
 
-import { MealType } from '../types/diary.js'
+import { MealType, type AgeStage } from '../types/diary.js'
 import type { FoodGroup } from '../types/food.js'
 
 // ── Curated Balance Tips ──────────────────────────────────────────────────────
@@ -27,6 +27,54 @@ export const BALANCE_TIPS: readonly string[] = [
   'Las proteínas ayudan al crecimiento del bebé.',
   'Los tubérculos son fáciles de preparar y nutritivos.',
 ] as const
+
+// ── Stage-Specific Tips ───────────────────────────────────────────────────────
+
+/**
+ * Curated feeding tips per age stage based on the clinical guide
+ * (Guía de alimentos, Pau Trueba).
+ * NEVER generate these dynamically — always pull from this list.
+ *
+ * Spec: REQ-D1
+ */
+
+// 6-9 months tips (3 main meals, reflejo de protrusión desaparece, iniciar en silla)
+const TIPS_6_9: readonly string[] = [
+  'Alimenta despacio y con paciencia, sin forzar.',
+  'Mantén contacto visual durante las comidas.',
+  'Coloca la cuchara a media lengua, no en los labios.',
+  'Ofrece 1 cucharada (15g) por grupo, aumentando gradualmente.',
+  'Las arcadas son normales y no significan asfixia ni rechazo.',
+  'Inicia sentado en la silla de alimentación, en posición recta.',
+] as const
+
+// 10-12 months tips (4 comidas, + desayuno formalizado + colación)
+const TIPS_10_12: readonly string[] = [
+  'Cada alimento nuevo necesita 10-15 exposiciones para ser aceptado.',
+  'Ofrece el mismo alimento varias veces sin presionar.',
+  'Experimenta con diferentes preparaciones y sabores.',
+  'El agua se ofrece en vaso abierto o popote, no en mamila.',
+  'Desde los 8 meses puedes usar condimentos, pero nunca sal ni azúcar.',
+  'Evita miel, leche entera de vaca y azúcar añadida antes de los 24 meses.',
+] as const
+
+// 13-23 months tips (comida/cena + 2 colaciones)
+// The clinical guide groups 13-23m as ONE block — do NOT invent differences.
+const TIPS_13_23: readonly string[] = [
+  'Identifica las señales de hambre y saciedad del bebé.',
+  'Minimiza las distracciones durante las comidas.',
+  'Ofrece hasta 4 cucharadas (60g) por grupo en cada comida.',
+  'Orden en la mesa: leche → alimentos → agua.',
+  'Evita alimentos redondos enteros como uvas o frutos secos por riesgo de atragantamiento.',
+  'Sigue ofreciendo variedad de texturas, colores y sabores.',
+] as const
+
+export const STAGE_TIPS: Record<AgeStage, readonly string[]> = {
+  SIX_TO_NINE_MONTHS: TIPS_6_9,
+  TEN_TO_TWELVE_MONTHS: TIPS_10_12,
+  THIRTEEN_TO_SEVENTEEN_MONTHS: TIPS_13_23,
+  EIGHTEEN_TO_TWENTY_THREE_MONTHS: TIPS_13_23,
+} as const
 
 // ── Cache TTL Configuration ───────────────────────────────────────────────────
 
