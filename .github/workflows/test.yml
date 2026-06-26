@@ -50,6 +50,9 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @pakulab/shared build
 
+      - name: Generate Prisma client
+        run: pnpm --filter api db:generate
+
       - name: Typecheck
         run: pnpm typecheck
 

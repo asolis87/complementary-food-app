@@ -56,27 +56,43 @@
 // comment block above, not in a separate wiki page. Reading the
 // preamble is the only way to know which enum value maps to which.
 
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 import { MealType, PrismaClient } from '@prisma/client'
 
-type Mode = 'dry-run' | 'apply'
+export type Mode = 'dry-run' | 'apply'
 
-function parseArgs(argv: readonly string[]): Mode {
+export type BackfillResult = {
+  mode: Mode
+  matchedCount: number
+  updatedCount: number
+  remainingCount: number
+  sample?: Array<{
+    id: string
+    userId: string
+    babyProfileId: string
+    date: Date
+    time: string | null
+    createdAt: Date
+  }>
+}
+
+export function parseArgs(argv: readonly string[]): Mode {
   if (argv.includes('--apply')) return 'apply'
   return 'dry-run' // default safe
 }
 
-async function runBackfill(prisma: PrismaClient, mode: Mode): Promise<void> {
-  console.log(`[backfill] mode=${mode}`)
-
+export async function runBackfill(
+  prisma: Pick<PrismaClient, 'foodLog'>,
+  mode: Mode,
+): Promise<BackfillResult> {
   // 1. Count rows that match the legacy value.
-  const count = await prisma.foodLog.count({
+  const matchedCount = await prisma.foodLog.count({
     where: { mealType: MealType.SNACK, deletedAt: null },
   })
-  console.log(`[backfill] foodLog rows with mealType=SNACK (not soft-deleted): ${count}`)
 
-  if (count === 0) {
-    console.log('[backfill] nothing to do. ✓')
-    return
+  if (matchedCount === 0) {
+    return { mode, matchedCount, updatedCount: 0, remainingCount: 0 }
   }
 
   if (mode === 'dry-run') {
@@ -96,54 +112,90 @@ async function runBackfill(prisma: PrismaClient, mode: Mode): Promise<void> {
       orderBy: { createdAt: 'desc' },
       take: 10,
     })
-    console.log(`[backfill] sample (most recent ${sample.length}):`)
-    for (const row of sample) {
-      console.log(
-        `  - id=${row.id}  user=${row.userId}  baby=${row.babyProfileId}  ` +
-          `date=${row.date.toISOString().slice(0, 10)}  time=${row.time ?? '∅'}  ` +
-          `createdAt=${row.createdAt.toISOString()}`
-      )
-    }
-    console.log('[backfill] dry-run: no rows updated. Re-run with --apply to commit.')
-    return
+
+    return { mode, matchedCount, updatedCount: 0, remainingCount: matchedCount, sample }
   }
 
   // 2. Apply: rewrite all matching rows in one statement.
   // updateMany is a single SQL UPDATE; safe under concurrent writes
   // because we filter on the same predicate we just counted.
-  const result = await prisma.foodLog.updateMany({
+  const updateResult = await prisma.foodLog.updateMany({
     where: { mealType: MealType.SNACK, deletedAt: null },
     data: { mealType: MealType.SNACK_1 },
   })
-  console.log(`[backfill] updated ${result.count} rows (SNACK → SNACK_1). ✓`)
 
   // 3. Self-verify: re-count. Should be 0.
-  const remaining = await prisma.foodLog.count({
+  const remainingCount = await prisma.foodLog.count({
     where: { mealType: MealType.SNACK, deletedAt: null },
   })
-  if (remaining !== 0) {
+
+  if (remainingCount !== 0) {
     // ponytail: this is the kind of fail-loud that matters. If the
     // count after the update is non-zero, either a concurrent writer
     // slipped a SNACK in between, or the predicate is wrong. Either
     // way, do not silently claim success.
     throw new Error(
-      `[backfill] self-check failed: ${remaining} SNACK rows remain after the update. ` +
-        `Inspect concurrent writes or re-run the script.`
+      `[backfill] self-check failed: ${remainingCount} SNACK rows remain after the update. ` +
+        `Inspect concurrent writes or re-run the script.`,
     )
   }
+
+  return {
+    mode,
+    matchedCount,
+    updatedCount: updateResult.count,
+    remainingCount,
+  }
+}
+
+function formatSampleRow(row: NonNullable<BackfillResult['sample']>[number]): string {
+  return (
+    `  - id=${row.id}  user=${row.userId}  baby=${row.babyProfileId}  ` +
+    `date=${row.date.toISOString().slice(0, 10)}  time=${row.time ?? '∅'}  ` +
+    `createdAt=${row.createdAt.toISOString()}`
+  )
 }
 
 async function main(): Promise<void> {
   const mode = parseArgs(process.argv.slice(2))
   const prisma = new PrismaClient()
   try {
-    await runBackfill(prisma, mode)
+    console.log(`[backfill] mode=${mode}`)
+    const result = await runBackfill(prisma, mode)
+
+    console.log(
+      `[backfill] foodLog rows with mealType=SNACK (not soft-deleted): ${result.matchedCount}`,
+    )
+
+    if (result.matchedCount === 0) {
+      console.log('[backfill] nothing to do. ✓')
+      return
+    }
+
+    if (mode === 'dry-run') {
+      if (result.sample && result.sample.length > 0) {
+        console.log(`[backfill] sample (most recent ${result.sample.length}):`)
+        for (const row of result.sample) {
+          console.log(formatSampleRow(row))
+        }
+      }
+      console.log('[backfill] dry-run: no rows updated. Re-run with --apply to commit.')
+      return
+    }
+
+    console.log(`[backfill] updated ${result.updatedCount} rows (SNACK → SNACK_1). ✓`)
   } finally {
     await prisma.$disconnect()
   }
 }
 
-main().catch((err) => {
-  console.error('[backfill] failed:', err)
-  process.exit(1)
-})
+const isMainModule =
+  process.argv[1] !== undefined &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1])
+
+if (isMainModule) {
+  main().catch((err) => {
+    console.error('[backfill] failed:', err)
+    process.exit(1)
+  })
+}

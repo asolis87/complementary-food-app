@@ -142,3 +142,62 @@ The AllergenAlertsCard age text/urgent styling and the MenuWeekPage inline deskt
 ### Status
 
 PR-1.8b kept test/config repair scope. UI ideas deferred to a follow-up product slice. Target tests passing. Full `apps/web` Vitest suite green. `vue-tsc --noEmit` clean. No exclusions remain in `vitest.config.ts`. Diagnostic config removed. Ready for verify phase.
+
+---
+
+## Backfill safety/idempotency slice (NEW)
+
+### Scope
+
+Add unit tests for `prisma/scripts/backfill-snack-to-snack1.ts` with a minimal refactor to make the script testable. No production DB access. This is a small autonomous slice before PR-2.
+
+### TDD Cycle Evidence
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| T-XX-BACKFILL-SNACK-SAFETY | `prisma/scripts/backfill-snack-to-snack1.test.ts` | Unit | N/A (new script, no prior tests) | ✅ 13 tests written first | ✅ 13/13 pass | ✅ 13 cases covering dry-run, apply, idempotency, deleted/non-SNACK rows, argument parsing, sample behavior, self-check | ✅ Script split into exported `parseArgs`/`runBackfill` and CLI `main()`; logs moved to `main()`; `main()` guarded by `import.meta.url` check |
+
+### Files changed
+
+| File | Change | LOC |
+|------|--------|----:|
+| `prisma/scripts/backfill-snack-to-snack1.ts` | Exported `parseArgs`, `runBackfill`, `BackfillResult`; `runBackfill` returns result object; `main()` handles console output; added `isMainModule` guard | +110 / -66 |
+| `prisma/scripts/backfill-snack-to-snack1.test.ts` | 13 safety/idempotency tests with mocked Prisma client | +220 |
+| `prisma/vitest.config.ts` | Dedicated vitest config for `prisma/scripts/**/*.test.ts` | +13 |
+| `openspec/changes/etapa-10-23-meses/tasks.md` | Added `T-XX-BACKFILL-SNACK-SAFETY` marked complete | +15 |
+| `openspec/changes/etapa-10-23-meses/apply-progress.md` | This section | +20 |
+
+### Verification
+
+```bash
+# Targeted script test (run from prisma/)
+cd prisma
+../apps/api/node_modules/.bin/vitest run --config vitest.config.ts
+# Result: Test Files 1 passed (1), Tests 13 passed (13)
+
+# Broader API suite (run from apps/api)
+cd apps/api
+npx --no-install vitest run
+# Result: Test Files 24 passed (24), Tests 381 passed (381)
+
+# Typecheck apps/api
+npx --no-install tsc -p tsconfig.json --noEmit
+# Result: clean
+```
+
+Also verified:
+- `packages/shared` tests: 9 files, 122 tests passed.
+- `apps/web` tests: 19 files, 201 tests passed.
+
+### Deviations from design
+
+None — this slice was not in the original design; it is a safety test follow-up for the backfill script introduced with the diary picker fix.
+
+### Issues found
+
+- The first refactor imported `PrismaClient` as a type-only import, which broke `main()` at runtime. Fixed by importing it as a value.
+- Placing the test under `apps/api/src/scripts/` caused a TypeScript `rootDir` error because the production script lives in `prisma/scripts/`. Resolved by co-locating the test with the script and adding a dedicated `prisma/vitest.config.ts`.
+
+### Status
+
+Slice complete. 13 new tests green. No production DB required. Ready for verify phase or next batch (PR-2).
