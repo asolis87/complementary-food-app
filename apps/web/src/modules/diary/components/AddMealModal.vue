@@ -157,6 +157,33 @@
 
         </div>
 
+        <!-- ── Water Reminder Panel ───────────────────────────────────── -->
+        <div
+          v-if="showWaterReminder"
+          class="water-reminder-panel"
+          data-testid="water-reminder"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="water-reminder-header">
+            <span class="material-symbols-outlined water-icon" aria-hidden="true">water_drop</span>
+            <h3 class="water-reminder-title">Guía sobre el agua</h3>
+            <button
+              class="water-reminder-close"
+              data-testid="water-reminder-close"
+              aria-label="Cerrar guía del agua"
+              @click="dismissWaterReminder"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+          <ul class="water-reminder-list">
+            <li>Ofrece agua en vaso abierto o popote (NO mamila, NO vaso entrenador, NO vaso 360°).</li>
+            <li>Después de los alimentos, no durante (orden: leche → alimentos → agua).</li>
+            <li>No reemplaces la leche con agua.</li>
+          </ul>
+        </div>
+
         <!-- ── Footer ─────────────────────────────────────────────────── -->
         <div class="modal-footer">
           <button class="btn-secondary" @click="close">Cancelar</button>
@@ -186,6 +213,7 @@ import { useDiaryStore } from '../../../shared/stores/diaryStore.js'
 import { useFoodStore } from '../../../shared/stores/foodStore.js'
 import { normalizeAccents } from '../../../shared/utils/text.js'
 import { autoSelectMealTypeForAge, getMealTypeOptions } from '../mealTypeOptions.js'
+import { safeGetItem, safeSetItem } from '../../../shared/utils/safeStorage.js'
 
 // ── Props & Emits ─────────────────────────────────────────────────────────
 
@@ -217,6 +245,10 @@ const selectedReaction = ref<ReactionType | null>(null)
 const notes = ref('')
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
+
+// Water reminder state (session-scoped)
+const WATER_REMINDER_KEY = 'pakulab_water_reminder_dismissed'
+const showWaterReminder = ref<boolean>(false)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -289,6 +321,11 @@ function close() {
   emit('update:modelValue', false)
 }
 
+function dismissWaterReminder() {
+  showWaterReminder.value = false
+  safeSetItem(sessionStorage, WATER_REMINDER_KEY, 'true')
+}
+
 function resetForm() {
   selectedMealType.value = autoSelectMealTypeForAge(props.ageInMonths, new Date().getHours())
   selectedTime.value = currentTime()
@@ -299,6 +336,9 @@ function resetForm() {
   notes.value = ''
   submitError.value = null
   submitting.value = false
+  // Check if water reminder should be shown (once per session, safe access)
+  const dismissed = safeGetItem(sessionStorage, WATER_REMINDER_KEY)
+  showWaterReminder.value = dismissed !== 'true'
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -314,6 +354,7 @@ watch(
       }
     }
   },
+  { immediate: true },
 )
 
 // ── Submit ────────────────────────────────────────────────────────────────
@@ -766,6 +807,78 @@ async function submit() {
 .notes-input::placeholder {
   color: var(--md3-on-surface-variant);
   opacity: 0.7;
+}
+
+/* ─── Water Reminder Panel ──────────────────────────────────────── */
+.water-reminder-panel {
+  background: var(--md3-tertiary-container);
+  border-radius: var(--md3-rounded-lg);
+  padding: var(--md3-space-4);
+  flex-shrink: 0;
+}
+
+.water-reminder-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-bottom: var(--md3-space-2);
+}
+
+.water-icon {
+  font-size: 1.25rem;
+  color: var(--md3-on-tertiary-container);
+}
+
+.water-reminder-title {
+  flex: 1;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-tertiary-container);
+  margin: 0;
+}
+
+.water-reminder-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--md3-on-tertiary-container);
+  padding: var(--md3-space-1);
+  border-radius: var(--md3-rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--md3-transition-fast);
+  opacity: 0.8;
+}
+
+.water-reminder-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 1;
+}
+
+.water-reminder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--md3-space-2);
+}
+
+.water-reminder-list li {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-tertiary-container);
+  padding-left: var(--md3-space-3);
+  position: relative;
+}
+
+.water-reminder-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  font-weight: var(--md3-weight-bold);
 }
 
 /* ─── Footer buttons ────────────────────────────────────────────── */

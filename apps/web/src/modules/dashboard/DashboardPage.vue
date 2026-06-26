@@ -45,9 +45,17 @@
         :user-tier="dashboardData.userTier"
       />
 
+      <!-- Stage Transition Banner (10-23m feature) -->
+      <StageTransitionBanner
+        v-if="detectedTransition && !transitionDismissed"
+        :transition="detectedTransition"
+        @show-texture-guide="handleShowTextureGuide"
+        @dismiss="handleDismissTransition"
+      />
+
       <!-- Bento Grid -->
       <div class="bento-grid" id="main-content">
-        <!-- Col 1: Today's logs + Texture Guide (full width on mobile, col-1 on desktop) -->
+        <!-- Col 1: Today's logs + Texture Guide + Perceptive Feeding (full width on mobile, col-1 on desktop) -->
         <div class="bento-col-1">
           <TodayLogsCard
             :meal-slots="todayMealSlots"
@@ -56,10 +64,14 @@
             @edit="handleEdit"
           />
 
-          <TextureGuideCard
-            :baby-age-months="dashboardData?.baby?.ageInMonths ?? 0"
-            :loading="loading"
-          />
+          <div ref="textureGuideCardRef">
+            <TextureGuideCard
+              :baby-age-months="dashboardData?.baby?.ageInMonths ?? 0"
+              :loading="loading"
+            />
+          </div>
+
+          <PerceptiveFeedingCard />
         </div>
 
         <!-- Col 2: Suggestions (stacked on mobile, col-2 on desktop) -->
@@ -103,12 +115,14 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { MealType } from '@pakulab/shared'
+import type { MealType, AgeStage } from '@pakulab/shared'
 import { getMealSlotsForAge } from '@pakulab/shared'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useDashboardData, useDashboardActions } from '@/shared/composables/useDashboard.js'
 import { useOnlineStatus } from '@/shared/composables/useOnlineStatus.js'
+import { useStageTransition, buildLastSeenKey } from '@/shared/composables/useStageTransition.js'
+import { safeSetItem } from '@/shared/utils/safeStorage.js'
 import DashboardHeader from './components/DashboardHeader.vue'
 import TodayLogsCard from './components/TodayLogsCard.vue'
 import TextureGuideCard from './components/TextureGuideCard.vue'
@@ -116,6 +130,8 @@ import AllergenAlertsCard from './components/AllergenAlertsCard.vue'
 import BalanceInsightCard from './components/BalanceInsightCard.vue'
 import DashboardSkeleton from './components/DashboardSkeleton.vue'
 import DashboardErrorBoundary from './components/DashboardErrorBoundary.vue'
+import StageTransitionBanner from './components/StageTransitionBanner.vue'
+import PerceptiveFeedingCard from './components/PerceptiveFeedingCard.vue'
 
 // ── Lazy-loaded heavy components (improves LCP) ──────────────────────────
 
@@ -173,6 +189,10 @@ const { isOnline } = useOnlineStatus()
 // ── Local state ──────────────────────────────────────────────────────────
 
 const dataLoaded = ref(false)
+const stageTransitionEvaluated = ref(false)
+const detectedTransition = ref<AgeStage | null>(null)
+const transitionDismissed = ref(false)
+const textureGuideCardRef = ref<HTMLElement | null>(null)
 
 // ── Screen reader announcements ──────────────────────────────────────────
 
@@ -254,6 +274,45 @@ const todayMealSlots = computed(() => {
     }
   })
 })
+
+// ── Stage Transition Detection (10-23m feature) ─────────────────────────
+// Dismiss handler (closure to access dismiss function from composable).
+// Declared BEFORE the watcher because `{ immediate: true }` runs the callback
+// synchronously during setup, and the callback may assign this variable.
+let dismissHandler: (() => void) | null = null
+
+// FIX: lastSeen writer — persist age AFTER evaluation, so crossing can be detected
+watch(
+  () => ({
+    age: dashboardData.value?.baby?.ageInMonths,
+    babyId: dashboardData.value?.baby?.id,
+  }),
+  ({ age: currentAge, babyId }) => {
+    if (stageTransitionEvaluated.value) return // Only evaluate once
+    if (!currentAge || currentAge <= 0) return // Wait for real age
+    if (!babyId) return // Wait for baby ID
+
+    // Evaluate transition (reads OLD lastSeen from localStorage, per-baby)
+    const { transition, dismissed, dismiss } = useStageTransition(currentAge, babyId)
+    detectedTransition.value = transition.value ?? null
+    transitionDismissed.value = dismissed.value ?? false
+
+    // CRITICAL: Write current age AFTER reading transition (order matters)
+    const lastSeenKey = buildLastSeenKey(babyId)
+    safeSetItem(localStorage, lastSeenKey, String(currentAge))
+
+    stageTransitionEvaluated.value = true
+
+    // Store dismiss function for event handler
+    if (detectedTransition.value) {
+      dismissHandler = () => {
+        dismiss(detectedTransition.value!)
+        transitionDismissed.value = true
+      }
+    }
+  },
+  { immediate: true }
+)
 
 // ── Real-time refresh: polling + visibility/focus handlers ────────────────
 
@@ -375,6 +434,19 @@ function handleViewFullRoadmap(): void {
 
 function handleViewWeeklyDetail(): void {
   void router.push({ name: 'diary' })
+}
+
+function handleShowTextureGuide(): void {
+  // Scroll to TextureGuideCard
+  if (textureGuideCardRef.value) {
+    textureGuideCardRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+function handleDismissTransition(): void {
+  if (dismissHandler) {
+    dismissHandler()
+  }
 }
 </script>
 
