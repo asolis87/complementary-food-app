@@ -91,6 +91,7 @@ export type { MealKey, DayKey } from './constants/mealType.js'
 // Dashboard constants
 export {
   BALANCE_TIPS,
+  STAGE_TIPS,
   DASHBOARD_CACHE_TTL,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,

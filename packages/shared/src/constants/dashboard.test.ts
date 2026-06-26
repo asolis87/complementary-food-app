@@ -15,8 +15,9 @@ import {
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
   getMealSlotsForAge,
+  STAGE_TIPS,
 } from './dashboard.js'
-import { MealType } from '../types/diary.js'
+import { MealType, type AgeStage } from '../types/diary.js'
 
 describe('BALANCE_TIPS', () => {
   it('is an array of 8 curated tips', () => {
@@ -205,5 +206,76 @@ describe('getMealSlotsForAge', () => {
   it('treats negative or non-finite months as the 3-meal case (no crash)', () => {
     expect(() => getMealSlotsForAge(-1)).not.toThrow()
     expect(getMealSlotsForAge(-1)).toHaveLength(3)
+  })
+})
+
+// ponytail: STAGE_TIPS tests (T-00-02, REQ-D1)
+describe('STAGE_TIPS', () => {
+  it('has an entry for every AgeStage key', () => {
+    const requiredKeys: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of requiredKeys) {
+      expect(STAGE_TIPS).toHaveProperty(stage)
+    }
+  })
+
+  it('each stage has 5-6 tips (spec: 4-6, using full range)', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      expect(tips.length).toBeGreaterThanOrEqual(5)
+      expect(tips.length).toBeLessThanOrEqual(6)
+    }
+  })
+
+  it('no stage has empty or whitespace-only tip strings', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      for (const tip of tips) {
+        expect(tip.trim()).not.toBe('')
+        expect(typeof tip).toBe('string')
+      }
+    }
+  })
+
+  it('THIRTEEN_TO_SEVENTEEN_MONTHS and EIGHTEEN_TO_TWENTY_THREE_MONTHS have identical tip arrays (product decision)', () => {
+    const tips13_17 = STAGE_TIPS['THIRTEEN_TO_SEVENTEEN_MONTHS']
+    const tips18_23 = STAGE_TIPS['EIGHTEEN_TO_TWENTY_THREE_MONTHS']
+
+    // Deep equality assertion
+    expect(tips13_17).toEqual(tips18_23)
+  })
+
+  it('no duplicate tips within a single stage array (triangulation)', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      const uniqueTips = [...new Set(tips)]
+      expect(uniqueTips.length).toBe(tips.length)
+    }
   })
 })
