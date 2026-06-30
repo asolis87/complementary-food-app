@@ -35,6 +35,17 @@ export const AL_CLASSIFICATION_LABELS: Record<ALClassification, string> = {
   NEUTRAL: 'Neutro',
 }
 
+/** Human-readable Spanish (es-MX tuteo) labels for warning tags */
+export const WARNING_TAG_LABELS: Record<WarningTag, string> = {
+  PROHIBITED_UNDER_24M: 'No recomendado antes de los 2 años',
+  CHOKING_HAZARD_UNDER_5Y: 'Riesgo de atragantamiento en menores de 5 años',
+  PROHIBITED_PEDIATRIC: 'No recomendado en toda la edad pediátrica',
+  REQUIRES_PREPARATION: 'Requiere preparación específica (cocción/corte)',
+}
+
+/** Canonical pediatric safety disclaimer shown alongside warning tags (es-MX tuteo) */
+export const WARNING_DISCLAIMER = 'Si tienes dudas, consulta a tu pediatra.'
+
 /** Food item as returned by the API */
 export interface Food {
   id: string

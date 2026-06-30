@@ -24,6 +24,7 @@ export interface PlateItemSummary {
     group: FoodGroup
     alClassification: ALClassification
     isAllergen: boolean
+    warningTags: readonly import('./food.js').WarningTag[]
   }
 }
 
