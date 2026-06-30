@@ -8,7 +8,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client'
-import { TOP_ALLERGENS, CLOSING_WINDOW_AGE_MONTHS, ageInMonths } from '@pakulab/shared'
+import { TOP_ALLERGENS, CLOSING_WINDOW_AGE_MONTHS, ageInMonths, ALLERGEN_TYPE_MAPPING } from '@pakulab/shared'
 import { ForbiddenError } from '../../shared/errors/index.js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,26 +39,7 @@ interface FoodLogForAllergen {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/**
- * Mapping from seed Food.allergenType (English) to TOP_ALLERGENS key (Spanish).
- *
- * The seed contains 10 distinct allergenType values. We map 9 priority allergens.
- * - Mapped (9): dairy, egg, peanut, fish, shellfish, soy, gluten, tree_nuts, sesame
- * - Explicitly excluded (1): celery (apio is not a spec priority allergen)
- *
- * Decision 1: This mapping normalizes seed English → Spanish TOP_ALLERGENS keys.
- */
-export const ALLERGEN_TYPE_MAPPING: Record<string, string> = {
-  dairy: 'leche',
-  egg: 'huevo',
-  peanut: 'cacahuate',
-  fish: 'pescado',
-  shellfish: 'mariscos',
-  soy: 'soya',
-  gluten: 'gluten',
-  tree_nuts: 'nueces',
-  sesame: 'ajonjoli',
-}
+// ALLERGEN_TYPE_MAPPING moved to @pakulab/shared (T-03-04, PR-5)
 
 /**
  * Seed-side allergenType values that are intentionally excluded (not priority allergens).

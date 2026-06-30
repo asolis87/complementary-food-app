@@ -9,11 +9,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
-import { CLOSING_WINDOW_AGE_MONTHS } from '@pakulab/shared'
+import { CLOSING_WINDOW_AGE_MONTHS, ALLERGEN_TYPE_MAPPING } from '@pakulab/shared'
 import {
   computeAllergenStatus,
   getStatus,
-  ALLERGEN_TYPE_MAPPING,
 } from './allergens.service.js'
 import { ForbiddenError } from '../../shared/errors/index.js'
 

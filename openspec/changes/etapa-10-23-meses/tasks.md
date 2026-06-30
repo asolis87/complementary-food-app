@@ -41,7 +41,7 @@ Tasks se agrupan en PRs por bloque funcional. Si un PR excede 400 líneas, se su
 | PR-2 | 0 (UI complementaria) | T-00-02, T-00-07, T-00-08, T-00-09, T-00-10, T-00-11, T-00-12 | ~310 | Low |
 | PR-3 | 1 (seed) | T-01-01, T-01-02, T-01-03 | ~90 | Low (validación nutriólogo) |
 | PR-4 | 2 + 4-D2 (allergens) | T-02-01..05, T-04-01..04 | ~370 | Medium (PRO gate) |
-| PR-5 | 3 + 4-B3 (warnings) | T-03-01..05, T-04-11..15 | ~210 | Low (informativo) |
+| PR-5 | 3 + 4-B3 (warnings + allergen-mapping move) | T-03-01..04, T-04-11..15 | ~250 | Low (informativo, bundled domain) |
 | PR-6 | 4-C1+C2 + 5 (plate) | T-00-03, T-04-05..10, T-05-01..08 | ~390 | Medium (migration) |
 | PR-7 | 4-E1+E2 (suggestions) | T-04-16..20 | ~180 | Low |
 
@@ -360,69 +360,92 @@ Foundations: pure functions en shared + updates a consumers existentes.
 
 ---
 
-## Bloque 3 — Schema migration (WarningTag)
+## Bloque 3 — Schema migration (WarningTag) + ALLERGEN_TYPE_MAPPING move
 
-### T-03-01: Add `WarningTag` enum to schema
-
-- **Spec**: REQ-4-A1
-- **Files**: `prisma/schema.prisma`
-- **Deliverable**:
-
-  ```prisma
-  enum WarningTag {
-    PROHIBITED_UNDER_24M
-    CHOKING_HAZARD_UNDER_5Y
-    PROHIBITED_PEDIATRIC
-    REQUIRES_PREPARATION
-  }
-  ```
-
-  - `model Food` agregar `warningTags WarningTag[] @default([])`
-- **Tests**: regenerar Prisma client, verificar tipos
-
-### T-03-02: Create migration SQL
+### T-03-01: Add `WarningTag` enum to schema + shared types mirror (TDD: RED)
 
 - **Spec**: REQ-4-A1
-- **Files**: `prisma/migrations/XXXX_warning_tags/migration.sql` (new)
+- **Files**: `prisma/schema.prisma`, `packages/shared/src/types/food.ts`, `packages/shared/src/types/food.test.ts` (new)
+- **TDD cycle**:
+  1. RED: Write test `packages/shared/src/types/food.test.ts` asserting `WARNING_TAGS` array has 4 values and `WarningTag` type is assignable to each. Test fails (types don't exist).
+  2. GREEN: Add `WARNING_TAGS` const array and `WarningTag` union type to `packages/shared/src/types/food.ts`. Add `warningTags: readonly WarningTag[]` to `Food` interface. Tests pass.
+  3. GREEN: Add Prisma enum to `prisma/schema.prisma`: `enum WarningTag { PROHIBITED_UNDER_24M CHOKING_HAZARD_UNDER_5Y PROHIBITED_PEDIATRIC REQUIRES_PREPARATION }` and `warningTags WarningTag[] @default([])` to `model Food`. Run `pnpm --filter api prisma generate` to regenerate client.
+  4. TRIANGULATE: Add test asserting `WARNING_TAGS` matches Prisma enum values exactly (import from generated client, compare). Add test asserting empty array default compiles.
+  5. REFACTOR: None needed (pure type addition).
 - **Deliverable**:
+  - Prisma enum with 4 values: `PROHIBITED_UNDER_24M`, `CHOKING_HAZARD_UNDER_5Y`, `PROHIBITED_PEDIATRIC`, `REQUIRES_PREPARATION`.
+  - Shared types: `WARNING_TAGS` const array, `WarningTag` union type, `Food.warningTags` field.
+  - Schema convention followed: Prisma enum mirrored into shared types (same pattern as `FoodGroup`, `ALClassification`).
+- **Tests** (4): WARNING_TAGS length 4, WarningTag assignability, Prisma-shared sync, default [] compiles.
+- **LOC est.**: ~25 (10 schema + 10 types + 5 test).
 
-  ```sql
-  CREATE TYPE "WarningTag" AS ENUM (...);
-  ALTER TABLE "Food" ADD COLUMN "warningTags" "WarningTag"[] NOT NULL DEFAULT '{}';
-  ```
+### T-03-02: Create migration SQL (TDD: GREEN — migration is additive SQL, test via apply)
 
-- **Tests**: aplicar migración en test DB, verificar que alimentos existentes tienen `warningTags = []`
-
-### T-03-03: Mirror enum in shared types
-
-- **Spec**: REQ-4-A1
-- **Files**: `packages/shared/src/types/food.ts`
+- **Spec**: REQ-4-A1 (non-destructive constraint)
+- **Files**: `prisma/migrations/XXXX_warning_tags/migration.sql` (generated), `prisma/scripts/migration-non-destructive.test.ts` (new)
+- **TDD cycle**:
+  1. RED: Write DB-free test `prisma/scripts/migration-non-destructive.test.ts` asserting generated SQL contains `CREATE TYPE "WarningTag"`, `ALTER TABLE "Food" ADD COLUMN "warningTags"`, `NOT NULL DEFAULT '{}'`, and does NOT contain `DROP`, `ALTER COLUMN` (destructive), or `DELETE`. Test fails (migration doesn't exist).
+  2. GREEN: Run `pnpm --filter api prisma migrate dev --name warning_tags --create-only`. Prisma generates the migration SQL. Apply it via `pnpm --filter api prisma migrate dev`. Test passes (reads the generated file, asserts additive-only SQL).
+  3. TRIANGULATE: Add test asserting migration is idempotent (applying twice doesn't error). Use Prisma's `migrate resolve --applied` simulation or a read-only SQL parse.
+  4. REFACTOR: None (SQL is generated).
 - **Deliverable**:
-  - `WARNING_TAGS` const array
-  - `WarningTag` union type
-  - Update `Food` interface para incluir `warningTags: readonly WarningTag[]`
-- **Tests** (2): tipos compilan, export del index
-- **Depends on**: T-03-01
+  - Migration SQL: `CREATE TYPE "WarningTag" AS ENUM ('PROHIBITED_UNDER_24M', 'CHOKING_HAZARD_UNDER_5Y', 'PROHIBITED_PEDIATRIC', 'REQUIRES_PREPARATION');` and `ALTER TABLE "Food" ADD COLUMN "warningTags" "WarningTag"[] NOT NULL DEFAULT '{}';`.
+  - DB-free test asserting additive-only SQL (no destructive ops).
+- **Tests** (3): SQL contains CREATE TYPE, SQL contains ADD COLUMN with default, SQL has no DROP/DELETE/destructive ALTER.
+- **Non-destructive verified**: Existing Food rows get `warningTags = []` default, no data loss.
+- **Precedent**: `prisma/scripts/seed-audit.test.ts` (PR-3) is DB-free, imports seed array. This test imports the migration file as text, asserts SQL shape.
+- **LOC est.**: ~20 (5 SQL + 15 test).
+- **Depends on**: T-03-01 (schema must declare enum before migration).
 
-### T-03-04: Backfill `warningTags` en seed
+### T-03-03: Backfill `warningTags` in seed.ts (TDD: RED → GREEN → TRIANGULATE)
 
-- **Spec**: REQ-4-A2
-- **Files**: `prisma/seed.ts`
+- **Spec**: REQ-4-A2 (clinical data from PDF page 7)
+- **Files**: `prisma/seed.ts`, `prisma/scripts/seed-audit.test.ts` (extend existing)
+- **Clinical data source**: `docs/Guia de alimentos_Pau Trueba.pdf` page 7 ("SUGERENCIAS Y DATOS"). Authoritative. No invented content.
+- **TDD cycle**:
+  1. RED: Extend `prisma/scripts/seed-audit.test.ts` with a new test suite `describe('WarningTag backfill', ...)` asserting:
+     - "Leche de vaca entera" has `warningTags: ['PROHIBITED_UNDER_24M']`.
+     - "Miel" has `warningTags: ['PROHIBITED_UNDER_24M']`.
+     - "Uvas (sin semilla, en cuartos)" has `warningTags: ['CHOKING_HAZARD_UNDER_5Y']`.
+     - "Cacahuate tostado" (peanuts) has `warningTags: ['CHOKING_HAZARD_UNDER_5Y']`.
+     - "Garbanzo cocido" is flagged in test comment as "NOT on PDF page 7 verbatim; defer to product confirmation or omit tag". Test fails (foods don't have tags yet).
+  2. GREEN: Update `prisma/seed.ts` with a `// ── BLOQUE 3 (PR-5): WARNING TAGS BACKFILL ──` comment block. Map foods to tags using ONLY PDF page 7 data:
+     - PROHIBITED_UNDER_24M: leche de vaca entera, yogur griego, miel, azúcar, edulcorantes, embutidos (jamón, salchicha), bebidas vegetales (almendras, coco, soya), jugos, gelatinas, dulces, chocolate, galletas con azúcar.
+     - CHOKING_HAZARD_UNDER_5Y: frutos secos (nueces, almendras, cacahuate), pescado con espinas, palomitas, redondos enteros (uvas, arándanos, pasas, cerezas, aceitunas), duros en trozo (jícama cruda, zanahoria cruda, manzana cruda).
+     - PROHIBITED_PEDIATRIC: café, té (cafeína), ultraprocesados (explicitly called out on page 7).
+     - REQUIRES_PREPARATION: derived for "duros en trozo" foods that need specific prep (e.g., manzana → cook or grate; zanahoria → cook). Use sparingly, only when PDF guidance explicitly mentions prep.
+     - GARBANZO: NOT on page 7 verbatim. Add comment: `// NOTE: garbanzo CHOKING_HAZARD deferred per seed.ts:862; not on PDF page 7. Confirm with product/clinical team.` DO NOT tag garbanzo yet.
+  3. TRIANGULATE: Add test asserting foods without tags keep `warningTags: []` (e.g., "Aguacate", "Plátano"). Add test asserting multi-tag foods work (e.g., if a food needs both CHOKING + REQUIRES_PREPARATION).
+  4. REFACTOR: Extract tag assignment into a helper `assignWarningTag(foodName, tags)` if backfill grows large. Keep it inline for now (under 20 assignments expected).
 - **Deliverable**:
-  - Sección `// WARNING TAGS BACKFILL` con backfill de los alimentos relevantes
-  - Ejemplos: Leche vaca entera → `[PROHIBITED_UNDER_24M]`, Miel → `[PROHIBITED_UNDER_24M]`, Uvas → `[CHOKING_HAZARD_UNDER_5Y]`, Maní → `[CHOKING_HAZARD_UNDER_5Y]`
-- **Tests** (2): alimentos con tag correcto, alimentos sin tag mantienen `[]`
-- **TDD**: integration test verifica backfill
-- **Depends on**: T-03-02
+  - Seed backfill block with clinical source citation: `// Source: docs/Guia de alimentos_Pau Trueba.pdf page 7`.
+  - ~15-20 food tag assignments based on PDF page 7.
+  - Test coverage: 6-8 assertions (sample of prohibited, choking, pediatric, and zero-tag foods).
+- **Tests** (8): PROHIBITED_UNDER_24M (leche, miel, azúcar), CHOKING_HAZARD_UNDER_5Y (uvas, nueces, cacahuate), PROHIBITED_PEDIATRIC (café), no-tag foods (aguacate), garbanzo flagged for confirmation.
+- **LOC est.**: ~40 (30 seed + 10 test).
+- **Depends on**: T-03-02 (migration applied, enum exists in DB).
 
-### T-03-05: Migration non-destructive test
+### T-03-04: Move ALLERGEN_TYPE_MAPPING to @pakulab/shared (TDD: RED → GREEN → REFACTOR)
 
-- **Spec**: REQ-4-A1
-- **Files**: `apps/api/test/migrations.test.ts` (new) o similar
-- **Deliverable**: test que aplica la migración sobre una DB con alimentos pre-existentes, verifica que ningún alimento se pierde y que `warningTags = []` por default
-- **Tests**: 1-2
-- **TDD**: test primero
-- **Depends on**: T-03-02
+- **Spec**: PR-4 deferred follow-up (state.yaml line 73), same domain as PR-5 (both touch shared food/allergen types).
+- **Files**: `packages/shared/src/constants/allergens.ts` (new), `apps/api/src/modules/allergens/allergens.service.ts`, `apps/api/src/modules/allergens/allergens.service.test.ts`
+- **Why bundle with PR-5**: Both PR-4 allergens backend and PR-5 warnings touch shared food metadata. Moving the mapping unblocks future dashboard consumption of allergen names without duplicating the English→Spanish bridge. Low risk (~15 LOC move + 2 test updates), same domain.
+- **TDD cycle**:
+  1. RED: Write test `packages/shared/src/constants/allergens.test.ts` asserting `ALLERGEN_TYPE_MAPPING` is exported, has 9 keys (dairy, egg, peanut, fish, shellfish, soy, gluten, tree_nuts, sesame), and values match `TOP_ALLERGENS` keys. Test fails (constant doesn't exist in shared).
+  2. GREEN: Copy `ALLERGEN_TYPE_MAPPING` from `apps/api/src/modules/allergens/allergens.service.ts` to `packages/shared/src/constants/allergens.ts`. Export it. Update `apps/api/src/modules/allergens/allergens.service.ts` to import from `@pakulab/shared`. Tests pass.
+  3. TRIANGULATE: Add test asserting celery is NOT in the mapping (explicit exclusion). Add test asserting values are unique (no duplicate Spanish keys).
+  4. REFACTOR: Remove old constant block from `allergens.service.ts`. Update `allergens.service.test.ts` to import from shared. Run `pnpm turbo test` to confirm no breaks.
+- **Deliverable**:
+  - `packages/shared/src/constants/allergens.ts` with `ALLERGEN_TYPE_MAPPING` (9 entries) and clinical comment block.
+  - `apps/api/src/modules/allergens/allergens.service.ts` imports from `@pakulab/shared`.
+  - No behavior change (pure move).
+- **Tests** (5): mapping exists in shared, 9 keys, no celery, unique values, api imports from shared and tests still pass.
+- **LOC est.**: ~20 (5 new file + 10 comment + 5 refactor).
+- **Depends on**: none (independent, but bundled for domain coherence).
+
+---
+
+**PR-5 subtotal (T-03-01..04)**: ~105 LOC (schema 10 + types 10 + tests 20 + migration 5 + test 15 + seed 30 + test 10 + shared move 5). Under 400-line budget even with UI tasks below.
 
 ---
 
@@ -465,55 +488,122 @@ Foundations: pure functions en shared + updates a consumers existentes.
 
 ### Sub-bloque 4.2 (B3 — Warnings UI)
 
-#### T-04-11: Warning badge en `FoodSearchPage.vue`
+#### T-04-11: `WarningBadge.vue` shared component (TDD: RED → GREEN → TRIANGULATE)
+
+- **Spec**: REQ-4-B1, REQ-4-B3 (reusable badge + tooltip)
+- **Files**: `apps/web/src/shared/components/atoms/WarningBadge.vue` (new), `apps/web/src/shared/components/atoms/WarningBadge.test.ts` (new)
+- **Why extract first**: T-04-12..14 all need the same badge logic (icon + tooltip with tag description + pediatra disclaimer). Extracting a shared atom cuts duplication and ensures consistent copy/styling. Follows Atomic Design (atoms are smallest reusable UI elements).
+- **TDD cycle**:
+  1. RED: Write test `WarningBadge.test.ts` asserting:
+     - Renders ⚠️ icon when `tags` prop is non-empty.
+     - Does NOT render when `tags` prop is empty.
+     - Tooltip shows Spanish description for `PROHIBITED_UNDER_24M` (e.g., "No recomendado antes de los 2 años. Riesgo de botulismo.").
+     - Tooltip shows Spanish description for `CHOKING_HAZARD_UNDER_5Y` (e.g., "Riesgo de atragantamiento en menores de 5 años. Ofrecer cortado/machacado según edad.").
+     - Tooltip always ends with "Si tienes dudas, consulta a tu pediatra." (es-MX TUTEO, not voseo). Test fails (component doesn't exist).
+  2. GREEN: Create `WarningBadge.vue` with:
+     - Props: `tags: readonly WarningTag[]`.
+     - Computed `showBadge`: `tags.length > 0`.
+     - Computed `tooltipText`: map each tag to Spanish description + append pediatra disclaimer.
+     - Template: conditional render of ⚠️ icon (red) with tooltip.
+     - Copy (es-MX TUTEO):
+       - `PROHIBITED_UNDER_24M`: "No recomendado antes de los 2 años. Consulta la guía de preparación."
+       - `CHOKING_HAZARD_UNDER_5Y`: "Riesgo de atragantamiento en menores de 5 años. Ofrece cortado o machacado según edad."
+       - `PROHIBITED_PEDIATRIC`: "No recomendado en toda la edad pediátrica. Evita su consumo."
+       - `REQUIRES_PREPARATION`: "Requiere preparación específica (cocción, corte). Consulta la guía de texturas."
+       - Footer (all): "Si tienes dudas, consulta a tu pediatra."
+  3. TRIANGULATE: Add test for multi-tag food (e.g., `[CHOKING_HAZARD_UNDER_5Y, REQUIRES_PREPARATION]`) — tooltip shows both descriptions. Add test for unknown tag (graceful fallback to generic warning).
+  4. REFACTOR: Extract tag→description map into a `WARNING_TAG_DESCRIPTIONS` const if it grows. Keep inline for now (4 tags, ~10 lines).
+- **Deliverable**:
+  - Reusable atom component with props-based rendering.
+  - Spanish copy (es-MX TUTEO) for all 4 tags + pediatra disclaimer.
+  - Red icon (⚠️) with tooltip (hover/tap).
+- **Tests** (6): render with tag, no render without tag, PROHIBITED_UNDER_24M copy, CHOKING_HAZARD_UNDER_5Y copy, multi-tag, pediatra disclaimer present.
+- **LOC est.**: ~40 (30 component + 10 test).
+- **Depends on**: T-03-01 (WarningTag type exists in shared).
+
+#### T-04-12: Integrate `WarningBadge` in `FoodSearchPage.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-B1
-- **Files**: `apps/web/src/modules/foods/FoodSearchPage.vue`
-- **Deliverable**:
-  - Icono ⚠️ rojo en card de alimento con `warningTags.length > 0`
-  - Tooltip con descripción del riesgo (no solo código)
-  - Tooltip incluye "Si tenés dudas, consultá a tu pediatra"
-- **Tests** (2): render con tag, render sin tag
-- **TDD**: render
-- **Depends on**: T-03-04 (seed backfill), T-03-03 (types)
+- **Files**: `apps/web/src/modules/foods/FoodSearchPage.vue`, `apps/web/src/modules/foods/FoodSearchPage.test.ts` (extend or new)
+- **TDD cycle**:
+  1. RED: Write test asserting food card with `warningTags: ['PROHIBITED_UNDER_24M']` renders `WarningBadge` component. Food card without tags does NOT render badge. Test fails (badge not integrated).
+  2. GREEN: Import `WarningBadge` in `FoodSearchPage.vue`. Add `<WarningBadge :tags="food.warningTags" />` to each food card. Test passes.
+  3. REFACTOR: None (pure integration).
+- **Deliverable**: Food cards in search results show badge when food has tags.
+- **Tests** (2): renders badge for tagged food, no badge for clean food.
+- **LOC est.**: ~10 (5 template + 5 test).
+- **Depends on**: T-04-11 (WarningBadge component), T-03-03 (seed backfill so test data exists).
 
-#### T-04-12: Warning panel en `FoodSearchModal.vue`
+#### T-04-13: Integrate `WarningBadge` + warning panel in `FoodSearchModal.vue` (TDD: RED → GREEN → TRIANGULATE)
 
 - **Spec**: REQ-4-B2
-- **Files**: `apps/web/src/modules/foods/FoodSearchModal.vue`
-- **Deliverable**:
-  - Panel rojo debajo del detalle con lista de riesgos
-  - Tooltip mentions "consultá a tu pediatra"
-  - Alimento sigue siendo agregable (no bloquea, AD-02)
-- **Tests** (3): render con panel, agregar sin error, copy de tooltip
-- **TDD**: render + interaction
-- **Depends on**: T-04-11
+- **Files**: `apps/web/src/modules/foods/FoodSearchModal.vue`, `apps/web/src/modules/foods/FoodSearchModal.test.ts` (extend or new)
+- **TDD cycle**:
+  1. RED: Write test asserting modal for food with `warningTags: ['CHOKING_HAZARD_UNDER_5Y']` renders:
+     - Badge at top (via `WarningBadge`).
+     - Warning panel (red background) below food detail with list of tag descriptions (same Spanish copy as badge tooltip but in panel format).
+     - "Agregar al plato" button is NOT disabled (AD-02: informative, not blocking). Test fails (panel doesn't exist).
+  2. GREEN: Add `WarningBadge` to modal header. Add conditional panel `<div v-if="food.warningTags.length > 0" class="warning-panel">...</div>` with:
+     - List of tag descriptions (reuse same Spanish copy as `WarningBadge`, or call a shared `getWarningDescription(tag)` util).
+     - Red background, icon, "Advertencia de seguridad" header.
+     - Pediatra disclaimer at bottom.
+     - Button remains enabled. Test passes.
+  3. TRIANGULATE: Add test asserting food without tags shows NO panel. Add test asserting multi-tag food shows all descriptions in panel.
+  4. REFACTOR: Extract `getWarningDescription(tag: WarningTag): string` into `apps/web/src/shared/utils/warning-descriptions.ts` if both badge and panel use it. Keep DRY.
+- **Deliverable**: Modal shows badge + red warning panel with full clinical guidance. Selection not blocked.
+- **Tests** (4): badge render, panel render with tag, no panel without tag, multi-tag panel.
+- **LOC est.**: ~35 (20 template/logic + 15 test).
+- **Depends on**: T-04-11 (WarningBadge).
 
-#### T-04-13: Warning badges en `MenuWeekPage.vue`
+#### T-04-14: Integrate `WarningBadge` in `MenuWeekPage.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-C1
-- **Files**: `apps/web/src/modules/menus/MenuWeekPage.vue`
-- **Deliverable**: badge ⚠️ en slot con alimento con `warningTags`
-- **Tests** (1): render con slot con tag
-- **TDD**: render
-- **Depends on**: T-04-11
+- **Files**: `apps/web/src/modules/menus/MenuWeekPage.vue`, `apps/web/src/modules/menus/MenuWeekPage.test.ts` (extend or new)
+- **TDD cycle**:
+  1. RED: Write test asserting menu slot with food having `warningTags` renders `WarningBadge` next to food name. Test fails (badge not integrated).
+  2. GREEN: Import `WarningBadge` in `MenuWeekPage.vue`. Add `<WarningBadge :tags="slot.food.warningTags" />` to each slot cell. Test passes.
+  3. REFACTOR: None.
+- **Deliverable**: Menu week grid shows badge for slots with tagged foods.
+- **Tests** (2): badge render for tagged slot, no badge for clean slot.
+- **LOC est.**: ~10 (5 template + 5 test).
+- **Depends on**: T-04-11 (WarningBadge).
+- **NOTE**: MenuWeekPage deferred from Bloque 0 (T-00-05) due to data model mismatch. If menu slots still don't support SNACK_1/SNACK_2 by PR-5, this task integrates badge into existing 3-meal grid only. Full menu upgrade is separate scope.
 
-#### T-04-14: Warning badges en `PlateBuilderDrawer.vue`
+#### T-04-15: Integrate `WarningBadge` in `PlateBuilderDrawer.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-C2
-- **Files**: `apps/web/src/modules/plates/components/PlateBuilderDrawer.vue`
-- **Deliverable**: badge ⚠️ en slot del plate con alimento con `warningTags`
-- **Tests** (1): render con slot con tag
-- **TDD**: render
-- **Depends on**: T-04-11
+- **Files**: `apps/web/src/modules/plates/components/PlateBuilderDrawer.vue`, `apps/web/src/modules/plates/components/PlateBuilderDrawer.test.ts` (extend or new)
+- **TDD cycle**:
+  1. RED: Write test asserting plate slot with dragged food having `warningTags` renders `WarningBadge` next to food name. Test fails (badge not integrated).
+  2. GREEN: Import `WarningBadge` in `PlateBuilderDrawer.vue`. Add `<WarningBadge :tags="item.food.warningTags" />` to each plate item slot. Test passes.
+  3. REFACTOR: None.
+- **Deliverable**: Plate builder shows badge when food with tags is dropped into a slot.
+- **Tests** (2): badge render for tagged item, no badge for clean item.
+- **LOC est.**: ~10 (5 template + 5 test).
+- **Depends on**: T-04-11 (WarningBadge).
 
-#### T-04-15: Cross-component "consultá a tu pediatra" copy
+---
 
-- **Spec**: REQ-4-B3
-- **Files**: componentes con warning
-- **Deliverable**: copy consistente en todos los tooltips
-- **Tests**: snapshot del copy
-- **TDD**: no aplica (copy review)
+**PR-5 subtotal (T-03-01..04 + T-04-11..15)**: ~250 LOC (backend 105 + badge 40 + integrations 65 + tests 40). Under 400-line budget. Tight, but achievable with the shared `WarningBadge` extraction cutting duplication.
+
+---
+
+### Review Workload Forecast (PR-5 specific)
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines (schema + types + seed + UI) | ~250 |
+| Estimated test lines | ~95 (included in total) |
+| Migration lines | ~20 (non-destructive ADD COLUMN) |
+| 400-line budget risk | Low (under budget, single-domain scope) |
+| Chained PRs recommended | No (self-contained, under review threshold) |
+| Clinical data completeness risk | Low (PDF page 7 is authoritative, garbanzo flagged for confirmation) |
+| Duplication risk | Low (WarningBadge.vue extracted as atom, reused 4x) |
+| Decision needed before apply | No (scope confirmed, clinical data sourced, ALLERGEN_TYPE_MAPPING move approved as same-domain bundling) |
+
+**Open questions for product/clinical before apply**:
+1. **Garbanzo CHOKING_HAZARD**: PDF page 7 does NOT list garbanzo verbatim in the choking section. Seed.ts:862 deferred it. Should PR-5 tag garbanzo or wait for clinical confirmation? Recommend: add TODO comment in seed backfill, defer tagging until confirmed.
+2. **REQUIRES_PREPARATION enum value**: Not directly sourced from PDF page 7. Design doc AD-04 includes it. Should it stay or be removed from the enum? Recommend: keep it (design decision), use sparingly (e.g., "duros en trozo" foods like jícama/zanahoria cruda that need cooking), document rationale in seed comment.
 
 ### Sub-bloque 4.3 (C1 — Plate Group Count Suggestion)
 

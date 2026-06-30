@@ -45,7 +45,7 @@
             <div class="group-header-left">
               <div class="group-icon-wrapper">
                 <FoodIcon
-                  :food="{ id: group.group, name: group.labelEs, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, createdAt: '', updatedAt: '' }"
+                  :food="{ id: group.group, name: group.labelEs, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, warningTags: [], createdAt: '', updatedAt: '' }"
                   :size="22"
                   weight="bold"
                 />
@@ -97,7 +97,7 @@
               role="listitem"
             >
               <FoodIcon
-                :food="{ id: food.foodId, name: food.name, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, createdAt: '', updatedAt: '' }"
+                :food="{ id: food.foodId, name: food.name, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, warningTags: [], createdAt: '', updatedAt: '' }"
                 :size="14"
                 weight="bold"
               />
