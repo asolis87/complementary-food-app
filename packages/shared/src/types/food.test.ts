@@ -45,18 +45,6 @@ describe('WarningTag enum (T-03-01)', () => {
     const emptyTags: readonly WarningTag[] = []
     expect(emptyTags).toEqual([])
   })
-})
-
-describe('Prisma-Shared sync (TRIANGULATE)', () => {
-  it('should match Prisma WarningTag enum values exactly', async () => {
-    // Dynamic import to avoid compile-time dependency
-    const { WarningTag: PrismaWarningTag } = await import('@prisma/client')
-
-    const prismaValues = Object.values(PrismaWarningTag) as string[]
-    const sharedValues = [...WARNING_TAGS]
-
-    expect(sharedValues.sort()).toEqual(prismaValues.sort())
-  })
 
   it('should allow multi-tag arrays (e.g., choking + requires_preparation)', () => {
     const multiTags: readonly WarningTag[] = [
@@ -66,3 +54,8 @@ describe('Prisma-Shared sync (TRIANGULATE)', () => {
     expect(multiTags).toHaveLength(2)
   })
 })
+
+// NOTE: The Prisma <-> shared enum sync test lives in apps/api
+// (modules/foods/warning-tags-sync.test.ts), where @prisma/client is a
+// declared dependency and the generated client is available. packages/shared
+// is the source of truth for shared types and must NOT depend on @prisma/client.
