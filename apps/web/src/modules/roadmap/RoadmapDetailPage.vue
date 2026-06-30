@@ -139,7 +139,7 @@
             <div class="category-title-group">
               <div class="category-icon-wrapper">
                 <FoodIcon
-                  :food="{ id: group.group, name: group.labelEs, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, createdAt: '', updatedAt: '' }"
+                  :food="{ id: group.group, name: group.labelEs, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, warningTags: [], createdAt: '', updatedAt: '' }"
                   :size="26"
                   weight="bold"
                 />
@@ -183,7 +183,7 @@
               <div class="food-info-left">
                 <div class="food-icon-wrapper">
                   <FoodIcon
-                    :food="{ id: food.foodId, name: food.name, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, createdAt: '', updatedAt: '' }"
+                    :food="{ id: food.foodId, name: food.name, group: group.group as FoodGroup, alClassification: 'NEUTRAL', alScore: 0, isAllergen: false, ageMonths: 0, needsValidation: false, warningTags: [], createdAt: '', updatedAt: '' }"
                     :size="18"
                     weight="bold"
                   />

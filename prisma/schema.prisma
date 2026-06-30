@@ -123,6 +123,13 @@ enum ALClassification {
   NEUTRAL
 }
 
+enum WarningTag {
+  PROHIBITED_UNDER_24M
+  CHOKING_HAZARD_UNDER_5Y
+  PROHIBITED_PEDIATRIC
+  REQUIRES_PREPARATION
+}
+
 model Food {
   id               String           @id @default(cuid())
   name             String           @unique
@@ -134,6 +141,7 @@ model Food {
   ageMonths        Int              @default(6) // minimum recommended age in months
   description      String?
   needsValidation  Boolean          @default(false) // flag for nutriólogo review
+  warningTags      WarningTag[]     @default([])
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 

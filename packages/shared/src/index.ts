@@ -6,8 +6,8 @@
  */
 
 // Types
-export type { ALClassification, FoodGroup, Food, FoodSummary } from './types/food.js'
-export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from './types/food.js'
+export type { ALClassification, FoodGroup, Food, FoodSummary, WarningTag } from './types/food.js'
+export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS, WARNING_TAGS } from './types/food.js'
 
 export { MealType, ReactionType, StoolType, SymptomType, REACTION_TYPE_LABELS, STOOL_LABELS, SYMPTOM_LABELS } from './types/diary.js'
 export type {
@@ -53,7 +53,7 @@ export type {
 } from './types/dashboard.js'
 
 // Constants
-export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS } from './constants/allergens.js'
+export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS, ALLERGEN_TYPE_MAPPING } from './constants/allergens.js'
 export type { AllergenInfo } from './constants/allergens.js'
 
 export {
@@ -113,3 +113,7 @@ export type { AllergenAgeThreshold } from './constants/allergen-age-thresholds.j
 // Utils
 export { calculateBalance, getBalanceSeverity, derivePlateBalanceLabel } from './utils/balance.js'
 export { ageInMonths, formatAgeEs, isFoodAgeAppropriate } from './utils/age.js'
+
+// Data
+export { foods } from './data/food-catalog.js'
+export type { FoodSeed } from './data/food-catalog.js'

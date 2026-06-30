@@ -169,6 +169,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
               allergenType: item.food.allergenType ?? null,
               ageMonths: item.food.ageMonths,
               needsValidation: false, // Not available in FoodSummary
+              warningTags: [], // Not available in FoodSummary
               createdAt: '', // Not available in FoodSummary
               updatedAt: '', // Not available in FoodSummary
             },

@@ -9,6 +9,16 @@ export type ALClassification = 'ASTRINGENT' | 'LAXATIVE' | 'NEUTRAL'
 /** Food group for plate building */
 export type FoodGroup = 'FRUIT' | 'VEGETABLE' | 'PROTEIN' | 'CEREAL_TUBER' | 'HEALTHY_FAT'
 
+/** Warning tags for food safety (choking, age restrictions, etc.) */
+export const WARNING_TAGS = [
+  'PROHIBITED_UNDER_24M',
+  'CHOKING_HAZARD_UNDER_5Y',
+  'PROHIBITED_PEDIATRIC',
+  'REQUIRES_PREPARATION',
+] as const
+
+export type WarningTag = (typeof WARNING_TAGS)[number]
+
 /** Human-readable Spanish labels for food groups */
 export const FOOD_GROUP_LABELS: Record<FoodGroup, string> = {
   FRUIT: 'Frutas',
@@ -37,6 +47,7 @@ export interface Food {
   ageMonths: number
   description?: string | null
   needsValidation: boolean
+  warningTags: readonly WarningTag[]
   createdAt: string
   updatedAt: string
 }
@@ -50,4 +61,5 @@ export interface FoodSummary {
   ageMonths: number
   isAllergen: boolean
   allergenType?: string | null
+  warningTags: readonly WarningTag[]
 }
