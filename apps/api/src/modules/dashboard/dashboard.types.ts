@@ -17,6 +17,7 @@ export interface FoodForSuggestion {
   ageMonths: number
   isAllergen: boolean
   allergenType: string | null
+  isIronRich: boolean
   warningTags?: string[]
 }
 

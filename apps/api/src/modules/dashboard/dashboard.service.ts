@@ -195,8 +195,8 @@ export async function getSuggestedFoods(
   // Filter out recently tried foods
   const candidateFoods = foods.filter((f) => !recentlyTriedFoodIds.has(f.id))
 
-  // Sort and limit
-  const sorted = sortSuggestions(candidateFoods, recentlyTriedFoodIds, limit)
+  // Sort and limit (pass babyAgeMonths for iron priority)
+  const sorted = sortSuggestions(candidateFoods, recentlyTriedFoodIds, limit, babyAgeMonths)
 
   // Map to response type
   return sorted.map((food) => ({
@@ -480,31 +480,55 @@ export function calculateAgeAndDaysInAC(
 /**
  * Sort suggested foods by priority:
  * 1. Pending allergens (highest priority)
- * 2. Foods from groups with less variety (lower tried ratio)
- * 3. Random within same priority tier
+ * 2. Iron-rich foods (when baby >= 10 months, per REQ-A1)
+ * 3. Foods from groups with less variety (lower tried ratio)
+ * 4. Random within same priority tier
  *
- * Spec: REQ-DASH-BIZ-01
+ * Spec: REQ-DASH-BIZ-01, REQ-A1, REQ-A2
  */
 export function sortSuggestions(
   foods: FoodForSuggestion[],
   recentlyTriedFoodIds: Set<string>,
   limit: number = DEFAULT_SUGGESTIONS_LIMIT,
+  babyAgeMonths?: number,
 ): FoodForSuggestion[] {
   if (foods.length === 0) return []
 
   // Filter out recently tried foods
   const candidates = foods.filter((f) => !recentlyTriedFoodIds.has(f.id))
 
-  // Sort: allergens first, then random (Fisher-Yates shuffle with priority)
+  const ironPriorityActive = babyAgeMonths !== undefined && babyAgeMonths >= 10
+
+  // Base rotation (unchanged for < 10m): allergens first, then the existing
+  // randomized rotation within the same priority tier. Allergen candidates that
+  // survive the recently-tried filter are effectively PENDING introductions.
   const sorted = [...candidates].sort((a, b) => {
-    // Allergens have higher priority
     if (a.isAllergen && !b.isAllergen) return -1
     if (!a.isAllergen && b.isAllergen) return 1
-    // Within same priority, randomize
     return Math.random() - 0.5
   })
 
-  return sorted.slice(0, limit)
+  if (!ironPriorityActive) {
+    return sorted.slice(0, limit)
+  }
+
+  // REQ-A1 (baby >= 10m) reconciled with the allergen introduction window (REQ-03):
+  // both clinical goals peak at 10-12m, so PENDING allergens keep the lead (their
+  // window is closing) and iron-rich foods follow with a >= 30% floor to prevent
+  // anemia. Built by explicit tiers so the guarantee does not depend on the
+  // non-deterministic rotation sort. In practice the catalog has 18 iron-rich
+  // foods (all age <= 10m). REQ-A2: no iron-rich foods → normal rotation.
+  const pendingAllergens = sorted.filter((f) => f.isAllergen)
+  const ironFoods = sorted.filter((f) => !f.isAllergen && f.isIronRich)
+  const rest = sorted.filter((f) => !f.isAllergen && !f.isIronRich)
+
+  if (ironFoods.length === 0) {
+    return sorted.slice(0, limit)
+  }
+
+  // Fill iron-rich up to max(first-3, 30%-floor), bounded by availability, then the rest.
+  const minIron = Math.min(ironFoods.length, Math.max(3, Math.ceil(limit * 0.3)))
+  return [...pendingAllergens, ...ironFoods.slice(0, minIron), ...rest].slice(0, limit)
 }
 
 /**
