@@ -12,7 +12,7 @@
  *          AD-3 — plateStore.saveDraftAsPlate() handles API + cache.
  */
 
-import type { Food, FoodGroup, Plate, CreatePlateInput } from '@pakulab/shared'
+import type { Food, FoodGroup, Plate, CreatePlateInput, PlateStage } from '@pakulab/shared'
 import { PLATE_LIMITS } from '@pakulab/shared'
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
@@ -35,6 +35,7 @@ export interface UsePlateBuilderReturn {
   draftItems: Ref<PlateItemDraft[]>
   draftName: Ref<string>
   draftGroupCount: Ref<4 | 5>
+  draftStageFor: Ref<PlateStage | null>
   saving: Ref<boolean>
   // Derived
   balance: ComputedRef<BalanceResult | null>
@@ -46,6 +47,7 @@ export interface UsePlateBuilderReturn {
   addFood: (food: Food, group: FoodGroup) => void
   removeFood: (localId: string) => void
   setGroupCount: (count: 4 | 5) => void
+  setStageFor: (stage: PlateStage | null) => void
   clearItems: () => void
   resetDraft: () => void
   loadPlateIntoDraft: (plate: Plate) => void
@@ -72,6 +74,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
   const draftItems = ref<PlateItemDraft[]>([])
   const draftName = ref<string>('Mi plato')
   const draftGroupCount = ref<4 | 5>(4)
+  const draftStageFor = ref<PlateStage | null>(null)
   const saving = ref(false)
 
   // ─── Derived state ───────────────────────────────────────────────────────
@@ -134,6 +137,11 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     }
   }
 
+  /** Set the target stage for this plate (T-05-06) */
+  function setStageFor(stage: PlateStage | null): void {
+    draftStageFor.value = stage
+  }
+
   /** Clear items and reset name, keeping group count intact */
   function clearItems(): void {
     draftItems.value = []
@@ -153,6 +161,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     draftItems.value = []
     draftName.value = plate.name
     draftGroupCount.value = plate.groupCount
+    draftStageFor.value = plate.stageFor ?? null // Preserve stage on edit (T-05-06 dead-badge fix)
 
     if (plate.items?.length) {
       for (const item of plate.items) {
@@ -164,16 +173,17 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
               name: item.food.name,
               group: item.food.group,
               alClassification: item.food.alClassification,
-              alScore: 0, // Not available in FoodSummary
+              alScore: 0, // Not hydrated by the plate API food select; recomputed on demand
               isAllergen: item.food.isAllergen,
               allergenType: item.food.allergenType ?? null,
               ageMonths: item.food.ageMonths,
-              needsValidation: false, // Not available in FoodSummary
+              needsValidation: false, // Not hydrated by the plate API food select
               warningTags: item.food.warningTags ?? [], // Preserve safety tags on the edit path
-              createdAt: '', // Not available in FoodSummary
-              updatedAt: '', // Not available in FoodSummary
+              createdAt: '', // Not hydrated by the plate API food select
+              updatedAt: '', // Not hydrated by the plate API food select
             },
             groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount ?? null, // Preserve servingAmount on edit (T-04-02 dead-badge fix)
           })
         }
       }
@@ -191,9 +201,11 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     const payload: CreatePlateInput = {
       name: draftName.value,
       groupCount: draftGroupCount.value,
+      stageFor: draftStageFor.value ?? undefined,
       items: draftItems.value.map((item) => ({
         foodId: item.food.id,
         groupAssignment: item.groupAssignment,
+        servingAmount: item.servingAmount ?? undefined,
       })),
     }
 
@@ -218,9 +230,11 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     const payload: CreatePlateInput = {
       name: draftName.value,
       groupCount: draftGroupCount.value,
+      stageFor: draftStageFor.value ?? undefined,
       items: draftItems.value.map((item) => ({
         foodId: item.food.id,
         groupAssignment: item.groupAssignment,
+        servingAmount: item.servingAmount ?? undefined,
       })),
     }
 
@@ -238,6 +252,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     draftItems,
     draftName,
     draftGroupCount,
+    draftStageFor,
     saving,
     // Derived
     balance,
@@ -249,6 +264,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     addFood,
     removeFood,
     setGroupCount,
+    setStageFor,
     clearItems,
     resetDraft,
     loadPlateIntoDraft,

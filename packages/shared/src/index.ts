@@ -24,7 +24,8 @@ export type {
   DayObservationDeleteInput,
 } from './types/diary.js'
 
-export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput } from './types/plate.js'
+export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput, PlateStage } from './types/plate.js'
+export { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedGroupCount, getSuggestedStageForAge } from './types/plate.js'
 
 export type {
   WeeklyMenuResponse,

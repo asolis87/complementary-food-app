@@ -44,10 +44,14 @@ export async function getUserPlates(
   userId: string,
   query: ListPlatesQuery,
 ) {
-  const { page, limit } = query
+  const { page, limit, stageFor } = query
   const skip = (page - 1) * limit
 
-  const where = { userId, deletedAt: null }
+  const where = {
+    userId,
+    deletedAt: null,
+    ...(stageFor !== undefined && { stageFor }),
+  }
 
   // Contract: plates MUST be sorted by createdAt descending so the UI
   // can unshift new plates at the top without re-fetching. Do NOT change
@@ -115,6 +119,7 @@ export async function createPlate(
       name: input.name,
       groupCount: input.groupCount,
       babyProfileId: input.babyProfileId,
+      stageFor: input.stageFor,
       balanceScore: balance.score,
       astringentCount: balance.astringent,
       laxativeCount: balance.laxative,
@@ -123,6 +128,7 @@ export async function createPlate(
         create: input.items.map((item) => ({
           foodId: item.foodId,
           groupAssignment: item.groupAssignment,
+          servingAmount: item.servingAmount,
         })),
       },
     },
@@ -170,6 +176,7 @@ export async function updatePlate(
       ...(input.name && { name: input.name }),
       ...(input.groupCount && { groupCount: input.groupCount }),
       ...('babyProfileId' in input && { babyProfileId: input.babyProfileId }),
+      ...('stageFor' in input && { stageFor: input.stageFor }),
       ...balanceData,
       ...(input.items && {
         items: {
@@ -177,6 +184,7 @@ export async function updatePlate(
           create: input.items.map((item) => ({
             foodId: item.foodId,
             groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount,
           })),
         },
       }),

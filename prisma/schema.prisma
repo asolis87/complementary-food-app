@@ -130,6 +130,13 @@ enum WarningTag {
   REQUIRES_PREPARATION
 }
 
+enum PlateStage {
+  SIX_TO_NINE_MONTHS
+  TEN_TO_TWELVE_MONTHS
+  THIRTEEN_TO_TWENTY_THREE_MONTHS
+  FAMILY_TABLE
+}
+
 model Food {
   id               String           @id @default(cuid())
   name             String           @unique
@@ -158,18 +165,19 @@ model Food {
 // ==========================================
 
 model Plate {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   userId          String
   babyProfileId   String?
-  name            String    @default("Mi plato")
-  groupCount      Int       @default(4) // 4 or 5 groups
-  balanceScore    Float     @default(0) // -1.0 to +1.0
-  astringentCount Int       @default(0)
-  laxativeCount   Int       @default(0)
-  neutralCount    Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime? // Soft delete (AD12)
+  name            String      @default("Mi plato")
+  groupCount      Int         @default(4) // 4 or 5 groups
+  stageFor        PlateStage? // Target age stage (REQ-C1)
+  balanceScore    Float       @default(0) // -1.0 to +1.0
+  astringentCount Int         @default(0)
+  laxativeCount   Int         @default(0)
+  neutralCount    Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?   // Soft delete (AD12)
 
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   babyProfile BabyProfile? @relation(fields: [babyProfileId], references: [id], onDelete: SetNull)
