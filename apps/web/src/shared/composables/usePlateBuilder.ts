@@ -221,6 +221,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
               alScore: 0, // Not hydrated by the plate API food select; recomputed on demand
               isAllergen: item.food.isAllergen,
               allergenType: item.food.allergenType ?? null,
+              isIronRich: false, // Not hydrated by the plate API food select
               ageMonths: item.food.ageMonths,
               needsValidation: false, // Not hydrated by the plate API food select
               warningTags: item.food.warningTags ?? [], // Preserve safety tags on the edit path

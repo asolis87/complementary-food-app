@@ -55,6 +55,7 @@ export interface Food {
   alScore: number // -1.0 (astringent) to +1.0 (laxative)
   isAllergen: boolean
   allergenType?: string | null
+  isIronRich: boolean
   ageMonths: number
   description?: string | null
   needsValidation: boolean
@@ -72,5 +73,6 @@ export interface FoodSummary {
   ageMonths: number
   isAllergen: boolean
   allergenType?: string | null
+  isIronRich: boolean
   warningTags: readonly WarningTag[]
 }

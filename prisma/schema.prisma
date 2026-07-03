@@ -145,6 +145,7 @@ model Food {
   alScore          Float            // -1.0 (astringent) to +1.0 (laxative)
   isAllergen       Boolean          @default(false)
   allergenType     String?          // e.g., "leche", "gluten", "huevo"
+  isIronRich       Boolean          @default(false)
   ageMonths        Int              @default(6) // minimum recommended age in months
   description      String?
   needsValidation  Boolean          @default(false) // flag for nutriólogo review

@@ -267,3 +267,150 @@ describe('BLOQUE 3 (PR-5): WarningTag Backfill — T-03-03', () => {
     })
   })
 })
+
+describe('BLOQUE 4 (PR-11): Iron-Rich Foods — T-11-03', () => {
+  describe('Iron-rich meats (heme iron)', () => {
+    it('should flag "Carne de res molida cocida" as iron-rich', () => {
+      const carneRes = foods.find((f) => f.name === 'Carne de res molida cocida')
+      expect(carneRes, 'Carne de res molida cocida not found').toBeDefined()
+      expect(carneRes!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Hígado de pollo cocido" as iron-rich', () => {
+      const higadoPollo = foods.find((f) => f.name === 'Hígado de pollo cocido')
+      expect(higadoPollo, 'Hígado de pollo cocido not found').toBeDefined()
+      expect(higadoPollo!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Hígado de res cocido" as iron-rich', () => {
+      const higadoRes = foods.find((f) => f.name === 'Hígado de res cocido')
+      expect(higadoRes, 'Hígado de res cocido not found').toBeDefined()
+      expect(higadoRes!.isIronRich).toBe(true)
+    })
+  })
+
+  describe('Iron-rich legumes', () => {
+    it('should flag "Frijol negro cocido" as iron-rich', () => {
+      const frijolNegro = foods.find((f) => f.name === 'Frijol negro cocido')
+      expect(frijolNegro, 'Frijol negro cocido not found').toBeDefined()
+      expect(frijolNegro!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Frijol pinto cocido" as iron-rich', () => {
+      const frijolPinto = foods.find((f) => f.name === 'Frijol pinto cocido')
+      expect(frijolPinto, 'Frijol pinto cocido not found').toBeDefined()
+      expect(frijolPinto!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Frijol blanco (alubias) cocido" as iron-rich', () => {
+      const frijolBlanco = foods.find((f) => f.name === 'Frijol blanco (alubias) cocido')
+      expect(frijolBlanco, 'Frijol blanco (alubias) cocido not found').toBeDefined()
+      expect(frijolBlanco!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Lenteja cocida" as iron-rich', () => {
+      const lenteja = foods.find((f) => f.name === 'Lenteja cocida')
+      expect(lenteja, 'Lenteja cocida not found').toBeDefined()
+      expect(lenteja!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Lenteja roja cocida" as iron-rich', () => {
+      const lentejaRoja = foods.find((f) => f.name === 'Lenteja roja cocida')
+      expect(lentejaRoja, 'Lenteja roja cocida not found').toBeDefined()
+      expect(lentejaRoja!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Garbanzo cocido" as iron-rich', () => {
+      const garbanzo = foods.find((f) => f.name === 'Garbanzo cocido')
+      expect(garbanzo, 'Garbanzo cocido not found').toBeDefined()
+      expect(garbanzo!.isIronRich).toBe(true)
+    })
+  })
+
+  describe('Iron-rich green leafy vegetables', () => {
+    it('should flag "Espinaca cocida" as iron-rich', () => {
+      const espinaca = foods.find((f) => f.name === 'Espinaca cocida')
+      expect(espinaca, 'Espinaca cocida not found').toBeDefined()
+      expect(espinaca!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Acelga cocida" as iron-rich', () => {
+      const acelga = foods.find((f) => f.name === 'Acelga cocida')
+      expect(acelga, 'Acelga cocida not found').toBeDefined()
+      expect(acelga!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Quelites cocidos" as iron-rich', () => {
+      const quelites = foods.find((f) => f.name === 'Quelites cocidos')
+      expect(quelites, 'Quelites cocidos not found').toBeDefined()
+      expect(quelites!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Verdolagas cocidas" as iron-rich', () => {
+      const verdolagas = foods.find((f) => f.name === 'Verdolagas cocidas')
+      expect(verdolagas, 'Verdolagas cocidas not found').toBeDefined()
+      expect(verdolagas!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Rúgula" as iron-rich (green leaf, description states rica en hierro)', () => {
+      const rugula = foods.find((f) => f.name === 'Rúgula')
+      expect(rugula, 'Rúgula not found').toBeDefined()
+      expect(rugula!.isIronRich).toBe(true)
+    })
+  })
+
+  describe('Iron-fortified infant cereals', () => {
+    it('should flag "Cereal de arroz infantil (enriquecido)" as iron-rich', () => {
+      const cerealArroz = foods.find((f) => f.name === 'Cereal de arroz infantil (enriquecido)')
+      expect(cerealArroz, 'Cereal de arroz infantil not found').toBeDefined()
+      expect(cerealArroz!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Cereal de avena infantil (enriquecido)" as iron-rich', () => {
+      const cerealAvena = foods.find((f) => f.name === 'Cereal de avena infantil (enriquecido)')
+      expect(cerealAvena, 'Cereal de avena infantil not found').toBeDefined()
+      expect(cerealAvena!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Cereal de maíz infantil (enriquecido)" as iron-rich', () => {
+      const cerealMaiz = foods.find((f) => f.name === 'Cereal de maíz infantil (enriquecido)')
+      expect(cerealMaiz, 'Cereal de maíz infantil not found').toBeDefined()
+      expect(cerealMaiz!.isIronRich).toBe(true)
+    })
+
+    it('should flag "Cereal de trigo infantil (enriquecido)" as iron-rich', () => {
+      const cerealTrigo = foods.find((f) => f.name === 'Cereal de trigo infantil (enriquecido)')
+      expect(cerealTrigo, 'Cereal de trigo infantil not found').toBeDefined()
+      expect(cerealTrigo!.isIronRich).toBe(true)
+    })
+  })
+
+  describe('Negative controls: safe non-iron foods', () => {
+    it('should NOT flag "Plátano maduro" as iron-rich', () => {
+      const platano = foods.find((f) => f.name === 'Plátano maduro')
+      expect(platano, 'Plátano maduro not found').toBeDefined()
+      expect(platano!.isIronRich).toBe(false)
+    })
+
+    it('should NOT flag "Manzana cocida (sin cáscara)" as iron-rich', () => {
+      const manzana = foods.find((f) => f.name === 'Manzana cocida (sin cáscara)')
+      expect(manzana, 'Manzana cocida not found').toBeDefined()
+      expect(manzana!.isIronRich).toBe(false)
+    })
+  })
+
+  describe('Catalog-wide iron-rich invariants', () => {
+    it('should have at least 15 iron-rich foods (clinical source: meats, legumes, green leaves, fortified cereals)', () => {
+      const ironRichFoods = foods.filter((f) => f.isIronRich)
+      expect(
+        ironRichFoods.length,
+        `Expected at least 15 iron-rich foods, found ${ironRichFoods.length}`,
+      ).toBeGreaterThanOrEqual(15)
+    })
+
+    it('should have exactly 18 iron-rich foods (verified list per clinical source)', () => {
+      const ironRichFoods = foods.filter((f) => f.isIronRich)
+      expect(ironRichFoods.length).toBe(18)
+    })
+  })
+})

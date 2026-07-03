@@ -147,19 +147,19 @@ describe('calculateAgeAndDaysInAC', () => {
 describe('sortSuggestions', () => {
   it('prioritizes pending allergens over non-allergens', () => {
     const foods = [
-      { id: '1', name: 'Zanahoria', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null },
-      { id: '2', name: 'Huevo', group: 'PROTEIN' as FoodGroup, alClassification: 'ASTRINGENT', ageMonths: 6, isAllergen: true, allergenType: 'huevo' },
-      { id: '3', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null },
+      { id: '1', name: 'Zanahoria', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Huevo', group: 'PROTEIN' as FoodGroup, alClassification: 'ASTRINGENT', ageMonths: 6, isAllergen: true, allergenType: 'huevo', isIronRich: false },
+      { id: '3', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
     ]
     const triedFoodIds = new Set<string>(['3'])
 
-    const sorted = sortSuggestions(foods, triedFoodIds)
+    const sorted = sortSuggestions(foods, triedFoodIds, undefined, 6)
     // Allergens should come first
     expect(sorted[0]!.name).toBe('Huevo')
   })
 
   it('returns empty array for empty input', () => {
-    const sorted = sortSuggestions([], new Set())
+    const sorted = sortSuggestions([], new Set(), undefined, 6)
     expect(sorted).toEqual([])
   })
 
@@ -172,8 +172,9 @@ describe('sortSuggestions', () => {
       ageMonths: 6,
       isAllergen: false,
       allergenType: null as string | null,
+      isIronRich: false,
     }))
-    const sorted = sortSuggestions(foods, new Set(), 5)
+    const sorted = sortSuggestions(foods, new Set(), 5, 6)
     expect(sorted).toHaveLength(5)
   })
 
@@ -186,9 +187,91 @@ describe('sortSuggestions', () => {
       ageMonths: 6,
       isAllergen: false,
       allergenType: null as string | null,
+      isIronRich: false,
     }))
-    const sorted = sortSuggestions(foods, new Set())
+    const sorted = sortSuggestions(foods, new Set(), undefined, 6)
     expect(sorted).toHaveLength(3)
+  })
+})
+
+// ── sortSuggestions — Iron Priority (REQ-A1) ──────────────────────────────────
+
+describe('sortSuggestions — Iron Priority for 10-23m (REQ-A1)', () => {
+  it('prioritizes iron-rich foods first when baby is >= 10 months', () => {
+    const foods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Hígado de pollo', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '3', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '4', name: 'Lenteja', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 7, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '5', name: 'Espinaca', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: true },
+    ]
+
+    const sorted = sortSuggestions(foods, new Set(), 5, 11) // 11-month baby
+    // First 3 should be iron-rich (REQ-A1)
+    expect(sorted.slice(0, 3).every(f => f.isIronRich)).toBe(true)
+  })
+
+  it('ensures at least 30% iron-rich foods when baby is >= 10 months', () => {
+    const foods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Hígado', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '3', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '4', name: 'Lenteja', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 7, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '5', name: 'Aguacate', group: 'HEALTHY_FAT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '6', name: 'Frijol', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '7', name: 'Papaya', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '8', name: 'Espinaca', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '9', name: 'Calabaza', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '10', name: 'Acelga', group: 'VEGETABLE' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: true },
+    ]
+
+    const sorted = sortSuggestions(foods, new Set(), 10, 11) // 11-month baby, 10 suggestions
+    const ironCount = sorted.filter(f => f.isIronRich).length
+    // At least 30% (3 out of 10) should be iron-rich
+    expect(ironCount).toBeGreaterThanOrEqual(3)
+  })
+
+  it('does NOT prioritize iron-rich foods when baby is < 10 months', () => {
+    const foods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Hígado de pollo', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '3', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+    ]
+
+    const sorted = sortSuggestions(foods, new Set(), 3, 7) // 7-month baby
+    // No guarantee that iron foods come first for < 10 months
+    expect(sorted).toHaveLength(3)
+  })
+
+  it('gracefully handles case when NO iron-rich foods are available (REQ-A2)', () => {
+    const foods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Manzana', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '3', name: 'Aguacate', group: 'HEALTHY_FAT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+    ]
+
+    const sorted = sortSuggestions(foods, new Set(), 3, 11) // 11-month baby, no iron foods
+    // Should return normal suggestions, not crash or return empty
+    expect(sorted).toHaveLength(3)
+    expect(sorted.every(f => !f.isIronRich)).toBe(true)
+  })
+
+  it('leads with a pending allergen, then iron-rich foods, for >= 10m (REQ-A1 + allergen window reconciled)', () => {
+    // At 10-12m both goals peak: the allergen introduction window is closing AND
+    // iron matters for anemia. A PENDING allergen keeps the lead (window-critical),
+    // then iron-rich foods follow with priority over the normal rotation.
+    const foods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: false, allergenType: null, isIronRich: false },
+      { id: '2', name: 'Hígado', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '3', name: 'Lenteja', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 8, isAllergen: false, allergenType: null, isIronRich: true },
+      { id: '4', name: 'Huevo', group: 'PROTEIN' as FoodGroup, alClassification: 'NEUTRAL', ageMonths: 6, isAllergen: true, allergenType: 'huevo', isIronRich: false },
+    ]
+
+    const sorted = sortSuggestions(foods, new Set(), 4, 11) // 11-month baby
+    // The pending allergen leads (window closing), then the iron-rich foods.
+    expect(sorted[0]!.name).toBe('Huevo')
+    expect(sorted[1]!.isIronRich).toBe(true)
+    expect(sorted[2]!.isIronRich).toBe(true)
   })
 })
 
