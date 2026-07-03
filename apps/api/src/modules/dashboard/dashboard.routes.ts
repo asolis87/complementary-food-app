@@ -20,6 +20,7 @@ import {
   roadmapQuerySchema,
   todayQuerySchema,
   balanceQuerySchema,
+  snackSuggestionsQuerySchema,
 } from './dashboard.schemas.js'
 import {
   getDashboardData,
@@ -28,6 +29,7 @@ import {
   getRoadmapProgress,
   getTodayLogs,
   getWeeklyBalance,
+  getSnackSuggestions,
 } from './dashboard.service.js'
 
 /**
@@ -216,6 +218,26 @@ export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
       const data = await getWeeklyBalance(fastify.prisma, query.babyProfileId)
 
       setCacheHeaders(reply, DASHBOARD_CACHE_TTL.balance)
+      reply.send({ data })
+    },
+  )
+
+  // ============================================================================
+  // GET /api/dashboard/snack-suggestions — age-appropriate snack ideas
+  // Spec: REQ-06 REQ-B1
+  // ============================================================================
+  fastify.get(
+    '/snack-suggestions',
+    { preHandler: [requireAuth, requireTier('FREE')] },
+    async (request, reply) => {
+      const query = snackSuggestionsQuerySchema.parse(request.query)
+      const userId = request.user!.id
+
+      await verifyBabyOwnership(fastify, query.babyProfileId, userId)
+
+      const data = await getSnackSuggestions(fastify.prisma, query.babyProfileId)
+
+      setCacheHeaders(reply, DASHBOARD_CACHE_TTL.snackSuggestions)
       reply.send({ data })
     },
   )
