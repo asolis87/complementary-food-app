@@ -96,6 +96,8 @@ export const DASHBOARD_CACHE_TTL = {
   today: 0,
   /** GET /api/dashboard/balance — weekly A/L balance */
   balance: 60 * 60, // 1 hour
+  /** GET /api/dashboard/snack-suggestions — age-appropriate snack ideas */
+  snackSuggestions: 60 * 60, // 1 hour
 } as const
 
 // ── Suggestion Configuration ──────────────────────────────────────────────────

@@ -31,6 +31,7 @@ import type {
   BalanceInsight,
   MealSlot,
   FoodGroup,
+  SnackSuggestionResponse,
 } from '@pakulab/shared'
 import type { FoodForSuggestion, FoodLogWithFood, FoodWithReaction } from './dashboard.types.js'
 
@@ -208,6 +209,86 @@ export async function getSuggestedFoods(
     allergenType: food.allergenType,
     status: recentlyTriedFoodIds.has(food.id) ? 'tried' : 'pending',
   }))
+}
+
+/**
+ * Returns snack suggestions for babies >= 10 months.
+ *
+ * Spec: REQ-06 REQ-B1
+ */
+export async function getSnackSuggestions(
+  prisma: PrismaClient,
+  babyProfileId: string,
+): Promise<import('@pakulab/shared').SnackSuggestionResponse> {
+  // Load baby profile to calculate age
+  const profile = await prisma.babyProfile.findFirst({
+    where: { id: babyProfileId, deletedAt: null },
+    select: { birthDate: true },
+  })
+
+  if (!profile) {
+    throw new Error('Baby profile not found')
+  }
+
+  const birthStr = profile.birthDate.toISOString().split('T')[0]!
+  const babyAgeMonths = ageInMonths(birthStr)
+
+  // If baby < 10 months, snacks not yet available
+  if (babyAgeMonths < 10) {
+    return { available: false, reason: 'SNACKS_NOT_YET' }
+  }
+
+  // Get age-appropriate foods, deterministically ordered by name so the 5
+  // suggestions (and the "at least 3 soft fruit/yogur/queso" guarantee) do not
+  // depend on the database's physical row order.
+  const foods = (await prisma.food.findMany({
+    where: {
+      ageMonths: { lte: babyAgeMonths },
+    },
+    orderBy: { name: 'asc' },
+  })) as FoodForSuggestion[]
+
+  const isYogurQueso = (food: FoodForSuggestion): boolean =>
+    food.group === 'PROTEIN' &&
+    (food.name.toLowerCase().includes('yogur') || food.name.toLowerCase().includes('queso'))
+
+  // "Core" snacks available from 10m (REQ-B1): soft fruit, yogur/queso, and cooked
+  // vegetables (verduras cocidas en palitos). At least 3 of the 5 must come from here.
+  const isCoreSnack = (food: FoodForSuggestion): boolean =>
+    food.group === 'FRUIT' || food.group === 'VEGETABLE' || isYogurQueso(food)
+
+  // Extra snacks unlocked at 12m+ (REQ-B1): galletas sin azúcar, pan suave, cereal de arroz.
+  const isExtraSnack = (food: FoodForSuggestion): boolean =>
+    babyAgeMonths >= 12 &&
+    food.group === 'CEREAL_TUBER' &&
+    (food.name.toLowerCase().includes('galleta') ||
+      food.name.toLowerCase().includes('pan') ||
+      food.name.toLowerCase().includes('cereal') ||
+      food.name.toLowerCase().includes('arroz'))
+
+  const notChokingHazard = (food: FoodForSuggestion): boolean =>
+    !(food.warningTags?.includes('CHOKING_HAZARD_UNDER_5Y') ?? false)
+
+  const coreCandidates = foods.filter((f) => notChokingHazard(f) && isCoreSnack(f))
+  const extraCandidates = foods.filter((f) => notChokingHazard(f) && isExtraSnack(f))
+
+  // Prefer core snacks first so the "at least 3 frutas/yogur/queso/verduras"
+  // clinical guarantee holds, then top up with the 12m+ extras.
+  const snackCandidates = [...coreCandidates, ...extraCandidates]
+
+  // Return top 5 suggestions
+  const suggestions = snackCandidates.slice(0, 5).map((food) => ({
+    foodId: food.id,
+    name: food.name,
+    group: food.group,
+    ageMonths: food.ageMonths,
+    benefit: deriveBenefit(food),
+    isAllergen: food.isAllergen,
+    allergenType: food.allergenType,
+    status: 'pending' as const,
+  }))
+
+  return { available: true, suggestions }
 }
 
 // ── Pending Allergens ─────────────────────────────────────────────────────────

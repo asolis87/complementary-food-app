@@ -51,6 +51,7 @@ export type {
   RoadmapFood,
   BalanceInsight,
   MealSlot,
+  SnackSuggestionResponse,
 } from './types/dashboard.js'
 
 // Constants

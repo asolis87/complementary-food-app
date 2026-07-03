@@ -22,9 +22,10 @@ import {
   getTodayLogs,
   getWeeklyBalance,
   getDashboardData,
+  getSnackSuggestions,
 } from './dashboard.service.js'
 import { BALANCE_TIPS } from '@pakulab/shared'
-import type { FoodGroup } from '@pakulab/shared'
+import type { FoodGroup, SuggestedFood } from '@pakulab/shared'
 import type { PrismaClient } from '@prisma/client'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -547,5 +548,214 @@ describe('getDashboardData', () => {
     expect(Array.isArray(result.pendingAllergens)).toBe(true)
     expect(Array.isArray(result.roadmapProgress)).toBe(true)
     expect(result.weeklyBalance).toBeDefined()
+  })
+})
+
+// ── getSnackSuggestions ───────────────────────────────────────────────────────
+
+describe('getSnackSuggestions', () => {
+  // getSnackSuggestions derives age from birthDate against the CURRENT date, so
+  // tests must use dates relative to now (absolute literals silently drift into a
+  // different age bucket as real time passes). ageInMonths counts whole calendar
+  // months (year*12 + month diff, ignoring day-of-month), so we subtract exactly
+  // `months` and pin the day to 1 to avoid end-of-month rollover skewing the count.
+  const birthDateForAge = (months: number): Date => {
+    const now = new Date()
+    // Build in UTC: the service does birthDate.toISOString().split('T')[0], so a
+    // local-timezone date could roll to the previous day/month in UTC and skew the age.
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, 15))
+  }
+
+  it('returns unavailable for baby of exactly 9 months (< 10m boundary)', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(9),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+    })
+
+    const result = await getSnackSuggestions(
+      prisma as unknown as PrismaClient,
+      'baby-1'
+    )
+
+    expect(result).toEqual({
+      available: false,
+      reason: 'SNACKS_NOT_YET',
+    })
+  })
+
+  it('returns 5 suggestions for baby of exactly 10 months (>= 10m boundary)', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(10),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    const mockFoods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '2', name: 'Yogur natural', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '3', name: 'Queso fresco', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '4', name: 'Mango', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '5', name: 'Papaya', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '6', name: 'Uvas enteras', group: 'FRUIT', ageMonths: 12, warningTags: ['CHOKING_HAZARD_UNDER_5Y'], isAllergen: false, allergenType: null },
+    ]
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+      food: { findMany: vi.fn().mockResolvedValue(mockFoods) },
+    })
+
+    const result = await getSnackSuggestions(
+      prisma as unknown as PrismaClient,
+      'baby-1'
+    )
+
+    expect(result.available).toBe(true)
+    if (result.available) {
+      expect(result.suggestions).toHaveLength(5)
+      // Check none have choking hazard tag (not exposed in SuggestedFood type)
+      const allSafe = result.suggestions.every((s: SuggestedFood) => s.name !== 'Uvas enteras')
+      expect(allSafe).toBe(true)
+    }
+  })
+
+  it('returns suggestions with galletas/pan/cereal for baby of exactly 12 months (extras boundary)', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(12),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    const mockFoods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '2', name: 'Yogur natural', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '3', name: 'Galletas sin azúcar', group: 'CEREAL_TUBER', ageMonths: 12, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '4', name: 'Pan suave', group: 'CEREAL_TUBER', ageMonths: 12, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '5', name: 'Cereal de arroz inflado', group: 'CEREAL_TUBER', ageMonths: 12, warningTags: [], isAllergen: false, allergenType: null },
+    ]
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+      food: { findMany: vi.fn().mockResolvedValue(mockFoods) },
+    })
+
+    const result = await getSnackSuggestions(
+      prisma as unknown as PrismaClient,
+      'baby-1'
+    )
+
+    expect(result.available).toBe(true)
+    if (result.available) {
+      const hasCereal = result.suggestions.some((s: SuggestedFood) => s.group === 'CEREAL_TUBER')
+      expect(hasCereal).toBe(true)
+    }
+  })
+
+  it('ensures at least 3 suggestions are frutas/yogur/queso', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(11),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    const mockFoods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '2', name: 'Yogur natural', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '3', name: 'Queso fresco', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '4', name: 'Mango', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '5', name: 'Papaya', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+    ]
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+      food: { findMany: vi.fn().mockResolvedValue(mockFoods) },
+    })
+
+    const result = await getSnackSuggestions(
+      prisma as unknown as PrismaClient,
+      'baby-1'
+    )
+
+    expect(result.available).toBe(true)
+    if (result.available) {
+      const softCount = result.suggestions.filter((s: SuggestedFood) =>
+        s.group === 'FRUIT' || (s.group === 'PROTEIN' && (s.name.includes('Yogur') || s.name.includes('Queso')))
+      ).length
+      expect(softCount).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('includes cooked vegetables (verduras cocidas) as snacks from 10m (REQ-B1)', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(11),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    // Only vegetables + one choking-hazard veg: the safe cooked vegetables must surface.
+    const mockFoods = [
+      { id: '1', name: 'Zanahoria cocida', group: 'VEGETABLE', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '2', name: 'Calabaza cocida', group: 'VEGETABLE', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '3', name: 'Elote entero', group: 'VEGETABLE', ageMonths: 12, warningTags: ['CHOKING_HAZARD_UNDER_5Y'], isAllergen: false, allergenType: null },
+    ]
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+      food: { findMany: vi.fn().mockResolvedValue(mockFoods) },
+    })
+
+    const result = await getSnackSuggestions(prisma as unknown as PrismaClient, 'baby-1')
+
+    expect(result.available).toBe(true)
+    if (result.available) {
+      const veggies = result.suggestions.filter((s: SuggestedFood) => s.group === 'VEGETABLE')
+      expect(veggies.length).toBeGreaterThanOrEqual(2) // both cooked veggies surface
+      expect(result.suggestions.some((s: SuggestedFood) => s.name === 'Elote entero')).toBe(false)
+    }
+  })
+
+  it('returns fewer than 5 suggestions when few candidates exist (graceful degradation)', async () => {
+    const mockProfile = {
+      id: 'baby-1',
+      birthDate: birthDateForAge(11),
+      userId: 'user-1',
+      deletedAt: null,
+    }
+
+    const mockFoods = [
+      { id: '1', name: 'Plátano', group: 'FRUIT', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+      { id: '2', name: 'Yogur natural', group: 'PROTEIN', ageMonths: 6, warningTags: [], isAllergen: false, allergenType: null },
+    ]
+
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(mockProfile) },
+      food: { findMany: vi.fn().mockResolvedValue(mockFoods) },
+    })
+
+    const result = await getSnackSuggestions(prisma as unknown as PrismaClient, 'baby-1')
+
+    expect(result.available).toBe(true)
+    if (result.available) {
+      expect(result.suggestions.length).toBe(2) // returns what's available, no crash
+    }
+  })
+
+  it('throws when the baby profile does not exist', async () => {
+    const prisma = createMockPrisma({
+      babyProfile: { findFirst: vi.fn().mockResolvedValue(null) },
+    })
+
+    await expect(
+      getSnackSuggestions(prisma as unknown as PrismaClient, 'nonexistent'),
+    ).rejects.toThrow('Baby profile not found')
   })
 })
