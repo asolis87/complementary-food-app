@@ -30,6 +30,26 @@
       <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
     </div>
 
+    <!-- Stage filter (REQ-C3, C4) -->
+    <div class="filter-controls">
+      <label for="stage-filter" class="filter-label">Filtrar por etapa:</label>
+      <select
+        id="stage-filter"
+        v-model="selectedStageFilter"
+        class="stage-filter"
+        aria-label="Filtrar platos por etapa objetivo"
+      >
+        <option :value="null">Todas las etapas</option>
+        <option
+          v-for="stage in PLATE_STAGES"
+          :key="stage"
+          :value="stage"
+        >
+          {{ PLATE_STAGE_LABELS[stage] }}
+        </option>
+      </select>
+    </div>
+
     <!-- Loading -->
     <div v-if="plateStore.loading" class="state-center" aria-live="polite">
       <div class="spinner" aria-hidden="true" />
@@ -188,22 +208,53 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
+import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { PLATE_LIMITS, BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@pakulab/shared'
-import type { Plate, PlateItem, FoodGroup } from '@pakulab/shared'
+import { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedStageForAge, getAgeMonths } from '@pakulab/shared'
+import type { Plate, PlateItem, FoodGroup, PlateStage } from '@pakulab/shared'
 
 const plateStore = usePlateStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 
 const plateLimit = computed(() => PLATE_LIMITS[authStore.tier])
 const atLimit = computed(
   () => plateStore.savedPlates.length >= plateLimit.value,
 )
 
+// ─── Stage Filter (REQ-C3, C4) ─────────────────────────────────────────────
+/** Selected stage filter (null = "Todas") */
+const selectedStageFilter = ref<PlateStage | null>(null)
+
+/** Baby's age in months (null if no active profile) */
+const babyAgeMonths = computed<number | null>(() => {
+  const birthDate = profileStore.activeProfile?.birthDate
+  return birthDate ? getAgeMonths(birthDate) : null
+})
+
+/** REQ-C4: Default filter to the baby's current stage */
+function initializeStageFilter(): void {
+  if (babyAgeMonths.value !== null) {
+    selectedStageFilter.value = getSuggestedStageForAge(babyAgeMonths.value)
+  } else {
+    selectedStageFilter.value = null // "Todas"
+  }
+}
+
 onMounted(() => {
-  plateStore.fetchSavedPlates()
+  // Set the default filter (REQ-C4), then do a single initial fetch. The watch is
+  // registered afterwards so this default assignment does not trigger a second,
+  // racing fetch on mount — it only reacts to later user changes.
+  initializeStageFilter()
+  plateStore.fetchSavedPlates(selectedStageFilter.value ?? undefined)
+
+  // Refetch when the user changes the stage filter.
+  watch(selectedStageFilter, () => {
+    plateStore.fetchSavedPlates(selectedStageFilter.value ?? undefined)
+  })
 })
 
 function formatRelativeDate(iso: string): string {
@@ -453,6 +504,56 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 
 @media (min-width: 768px) {
   .disclaimer-banner {
+    margin-bottom: var(--md3-space-4);
+  }
+}
+
+/* ─── Stage Filter (REQ-C3, C4) ─── */
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-top: var(--md3-space-3);
+  margin-bottom: var(--md3-space-2);
+}
+
+.filter-label {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.stage-filter {
+  flex: 1;
+  max-width: 16rem;
+  padding: 0.5rem var(--md3-space-2);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container-low);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--md3-transition-fast),
+    background var(--md3-transition-fast);
+}
+
+.stage-filter:hover {
+  border-color: var(--md3-primary);
+  background: var(--md3-surface-container);
+}
+
+.stage-filter:focus {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 1px;
+  border-color: var(--md3-primary);
+}
+
+@media (min-width: 768px) {
+  .filter-controls {
     margin-bottom: var(--md3-space-4);
   }
 }

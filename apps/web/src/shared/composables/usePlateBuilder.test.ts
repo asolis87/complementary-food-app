@@ -1,9 +1,6 @@
 /**
- * Tests for usePlateBuilder — loadPlateIntoDraft warningTags preservation.
- * Regression guard for the dead-badge-on-edit bug: when a saved plate is
- * loaded for editing, the food's safety warningTags must survive into the
- * draft (they were previously hardcoded to [], silently dropping choking/
- * prohibited warnings on the edit path).
+ * Tests for usePlateBuilder — loadPlateIntoDraft warningTags preservation
+ * and serving amount logic (REQ-B1, REQ-B2, REQ-B3).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -145,5 +142,205 @@ describe('usePlateBuilder — loadPlateIntoDraft', () => {
     builder.loadPlateIntoDraft(plate)
 
     expect(builder.draftItems.value[0]!.servingAmount).toBeNull()
+  })
+})
+
+describe('usePlateBuilder — serving amount logic (REQ-B1, B2, B3)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('totalServingAmount defaults to item count when no servingAmount set (1 cda per item)', () => {
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'FRUIT',
+          servingAmount: null,
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Manzana',
+            group: 'FRUIT',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+        {
+          id: 'item-2',
+          plateId: 'plate-1',
+          foodId: 'food-2',
+          groupAssignment: 'PROTEIN',
+          servingAmount: null,
+          createdAt: '',
+          food: {
+            id: 'food-2',
+            name: 'Pollo',
+            group: 'PROTEIN',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    // REQ-B1: default 1 cda per item → 2 items = 2 cdas
+    expect(builder.totalServingAmount.value).toBe(2)
+  })
+
+  it('totalServingAmount sums explicit servingAmounts', () => {
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'FRUIT',
+          servingAmount: '2',
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Manzana',
+            group: 'FRUIT',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+        {
+          id: 'item-2',
+          plateId: 'plate-1',
+          foodId: 'food-2',
+          groupAssignment: 'PROTEIN',
+          servingAmount: '3',
+          createdAt: '',
+          food: {
+            id: 'food-2',
+            name: 'Pollo',
+            group: 'PROTEIN',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    // REQ-B2: 2 + 3 = 5 cdas
+    expect(builder.totalServingAmount.value).toBe(5)
+  })
+
+  it('hasExcessServing is false when all groups <= 4 cdas', () => {
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'FRUIT',
+          servingAmount: '4',
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Manzana',
+            group: 'FRUIT',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+        {
+          id: 'item-2',
+          plateId: 'plate-1',
+          foodId: 'food-2',
+          groupAssignment: 'PROTEIN',
+          servingAmount: '4',
+          createdAt: '',
+          food: {
+            id: 'food-2',
+            name: 'Pollo',
+            group: 'PROTEIN',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    // REQ-B3: max per group is 4, no excess
+    expect(builder.hasExcessServing.value).toBe(false)
+  })
+
+  it('hasExcessServing is true when any single group > 4 cdas', () => {
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'PROTEIN',
+          servingAmount: '5',
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Pollo',
+            group: 'PROTEIN',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    // REQ-B3: PROTEIN has 5 cdas, exceeds threshold
+    expect(builder.hasExcessServing.value).toBe(true)
+  })
+
+  it('updateServingAmount changes item servingAmount and reflects in total', () => {
+    const builder = usePlateBuilder()
+    builder.addFood(
+      {
+        id: 'food-1',
+        name: 'Manzana',
+        group: 'FRUIT',
+        alClassification: 'NEUTRAL',
+        alScore: 0,
+        ageMonths: 6,
+        isAllergen: false,
+        needsValidation: false,
+        warningTags: [],
+        createdAt: '',
+        updatedAt: '',
+      },
+      'FRUIT',
+    )
+
+    const localId = builder.draftItems.value[0]!.id
+    expect(builder.totalServingAmount.value).toBe(1) // Default
+
+    builder.updateServingAmount(localId, '3')
+    expect(builder.draftItems.value[0]!.servingAmount).toBe('3')
+    expect(builder.totalServingAmount.value).toBe(3)
   })
 })
