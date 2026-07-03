@@ -114,6 +114,7 @@ export type { AllergenAgeThreshold } from './constants/allergen-age-thresholds.j
 // Utils
 export { calculateBalance, getBalanceSeverity, derivePlateBalanceLabel } from './utils/balance.js'
 export { ageInMonths, formatAgeEs, isFoodAgeAppropriate } from './utils/age.js'
+export { getAgeMonths } from './utils/date.js'
 
 // Data
 export { foods } from './data/food-catalog.js'

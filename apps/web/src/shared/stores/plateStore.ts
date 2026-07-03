@@ -4,7 +4,7 @@
  * Design: AD4 — Pinia for server-synced state.
  */
 
-import type { Food, FoodGroup, Plate, BalanceResult, CreatePlateInput } from '@pakulab/shared'
+import type { Food, FoodGroup, Plate, BalanceResult, CreatePlateInput, PlateStage } from '@pakulab/shared'
 import { calculateBalance, PLATE_LIMITS } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -126,14 +126,19 @@ export const usePlateStore = defineStore('plates', () => {
     limit: number
   }
 
-  /** Fetch the first page of saved plates (resets pagination state). */
-  async function fetchSavedPlates() {
+  /**
+   * Fetch the first page of saved plates (resets pagination state).
+   * @param stageFor - Optional stage filter (omit for all plates)
+   */
+  async function fetchSavedPlates(stageFor?: PlateStage) {
     loading.value = true
     error.value = null
     try {
-      const result = await apiClient.get<PaginatedPlatesResponse>(
-        `/plates?page=1&limit=${PLATES_PER_PAGE}`,
-      )
+      const params = new URLSearchParams({ page: '1', limit: String(PLATES_PER_PAGE) })
+      if (stageFor) {
+        params.set('stageFor', stageFor)
+      }
+      const result = await apiClient.get<PaginatedPlatesResponse>(`/plates?${params}`)
       savedPlates.value = result.data
       totalPlates.value = result.total
       currentPage.value = result.page

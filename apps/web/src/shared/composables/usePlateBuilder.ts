@@ -21,6 +21,9 @@ import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useBalance } from '@/shared/composables/useBalance.js'
 import type { BalanceResult } from '@pakulab/shared'
 
+/** REQ-B3: Max cdas per food group per serving (clinical guideline) */
+const MAX_SERVING_PER_GROUP = 4
+
 // ─── Options ────────────────────────────────────────────────────────────────
 
 export interface UsePlateBuilderOptions {
@@ -42,6 +45,9 @@ export interface UsePlateBuilderReturn {
   hasItems: ComputedRef<boolean>
   isValid: ComputedRef<boolean>
   canSave: ComputedRef<boolean>
+  totalServingAmount: ComputedRef<number>
+  groupServingCounts: ComputedRef<Record<FoodGroup, number>>
+  hasExcessServing: ComputedRef<boolean>
   // Actions
   initDraft: () => void
   addFood: (food: Food, group: FoodGroup) => void
@@ -53,6 +59,7 @@ export interface UsePlateBuilderReturn {
   loadPlateIntoDraft: (plate: Plate) => void
   savePlate: () => Promise<Plate>
   updatePlate: (plateId: string) => Promise<Plate>
+  updateServingAmount: (localId: string, amount: string) => void
 }
 
 // ─── Composable ──────────────────────────────────────────────────────────────
@@ -95,6 +102,42 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     return plateStore.savedPlates.length < limit
   })
 
+  /**
+   * REQ-B2: Total serving amount (sum of all item servingAmounts, default 1 per item).
+   */
+  const totalServingAmount = computed(() => {
+    return draftItems.value.reduce((sum, item) => {
+      const amount = item.servingAmount ? parseInt(item.servingAmount, 10) : 1
+      return sum + amount
+    }, 0)
+  })
+
+  /**
+   * REQ-B3: Serving count per food group (for excess detection).
+   */
+  const groupServingCounts = computed(() => {
+    const counts: Record<FoodGroup, number> = {
+      FRUIT: 0,
+      VEGETABLE: 0,
+      CEREAL_TUBER: 0,
+      PROTEIN: 0,
+      HEALTHY_FAT: 0,
+    }
+    draftItems.value.forEach((item) => {
+      const amount = item.servingAmount ? parseInt(item.servingAmount, 10) : 1
+      counts[item.groupAssignment] += amount
+    })
+    return counts
+  })
+
+  /**
+   * REQ-B3: True when any single food group exceeds 4 cdas.
+   */
+  const hasExcessServing = computed(() => {
+    const counts = groupServingCounts.value
+    return Object.values(counts).some((count) => count > MAX_SERVING_PER_GROUP)
+  })
+
   // ─── Actions ──────────────────────────────────────────────────────────────
 
   /** Reset all draft state to defaults */
@@ -107,6 +150,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
   /**
    * Add a food to the draft, replacing any existing item in the same group zone.
    * Only ONE food per zone is allowed.
+   * REQ-B1: servingAmount defaults to null (UI will default to "1" visually).
    */
   function addFood(food: Food, group: FoodGroup): void {
     draftItems.value = draftItems.value.filter(
@@ -116,6 +160,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
       id: `${food.id}-${Date.now()}`,
       food,
       groupAssignment: group,
+      servingAmount: null, // REQ-B1: default null (UI shows "1")
     })
   }
 
@@ -247,6 +292,16 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     }
   }
 
+  /**
+   * REQ-B1: Update the serving amount for a specific item by localId.
+   */
+  function updateServingAmount(localId: string, amount: string): void {
+    const item = draftItems.value.find((i) => i.id === localId)
+    if (item) {
+      item.servingAmount = amount
+    }
+  }
+
   return {
     // State
     draftItems,
@@ -259,6 +314,9 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     hasItems,
     isValid,
     canSave,
+    totalServingAmount,
+    groupServingCounts,
+    hasExcessServing,
     // Actions
     initDraft,
     addFood,
@@ -270,5 +328,6 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     loadPlateIntoDraft,
     savePlate,
     updatePlate,
+    updateServingAmount,
   }
 }

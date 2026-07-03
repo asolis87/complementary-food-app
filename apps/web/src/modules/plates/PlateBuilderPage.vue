@@ -20,6 +20,11 @@
             Arrastra y suelta o toca los segmentos para armar una comida nutricionalmente
             optimizada para tu pequeño.
           </p>
+          <!-- Total serving amount display (REQ-B2) -->
+          <div v-if="hasItems" class="total-serving-display">
+            <span class="material-symbols-outlined" aria-hidden="true">restaurant</span>
+            <span class="total-text">{{ totalServingAmount }} {{ totalServingAmount === 1 ? 'cda' : 'cdas' }} en total</span>
+          </div>
           <!-- Medical disclaimer (REQ-AL-02) -->
           <div class="disclaimer-banner" role="note">
             <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">info</span>
@@ -36,6 +41,13 @@
                 @click="setGroupCount(4)"
               >
                 4 Grupos
+                <span
+                  v-if="showGroupCountSuggestion && suggestedGroupCount === 4"
+                  class="badge-suggested"
+                  :title="`Sugerido para ${babyAgeMonths} meses`"
+                >
+                  Sugerido
+                </span>
               </button>
               <button
                 class="toggle-btn"
@@ -45,6 +57,13 @@
                 @click="setGroupCount(5)"
               >
                 5 Grupos
+                <span
+                  v-if="showGroupCountSuggestion && suggestedGroupCount === 5"
+                  class="badge-suggested"
+                  :title="`Sugerido para ${babyAgeMonths} meses`"
+                >
+                  Sugerido
+                </span>
               </button>
             </div>
           </div>
@@ -61,6 +80,13 @@
               @click="setGroupCount(4)"
             >
               4 Grupos
+              <span
+                v-if="showGroupCountSuggestion && suggestedGroupCount === 4"
+                class="badge-suggested"
+                :title="`Sugerido para ${babyAgeMonths} meses`"
+              >
+                Sugerido
+              </span>
             </button>
             <button
               class="toggle-btn"
@@ -70,6 +96,13 @@
               @click="setGroupCount(5)"
             >
               5 Grupos
+              <span
+                v-if="showGroupCountSuggestion && suggestedGroupCount === 5"
+                class="badge-suggested"
+                :title="`Sugerido para ${babyAgeMonths} meses`"
+              >
+                Sugerido
+              </span>
             </button>
           </div>
         </div>
@@ -133,6 +166,14 @@
 
           <!-- Right column: Sidebar (Balance + PlateContents placeholder) -->
           <div class="col-sidebar">
+            <!-- Excess serving banner (REQ-B3) -->
+            <div v-if="hasExcessServing" class="excess-serving-banner" role="alert">
+              <span class="material-symbols-outlined banner-icon" aria-hidden="true">warning</span>
+              <span class="banner-text">
+                Estás ofreciendo más de 4 cdas por grupo, asegurate de respetar las señales de saciedad
+              </span>
+            </div>
+
             <!-- ② Balance Indicator -->
             <section aria-label="Equilibrio A/L">
               <BalanceIndicator :balance="balance" />
@@ -146,6 +187,7 @@
                 :times-offered-by-food-id="timesOfferedByFoodId"
                 @select-group="onGroupSelect"
                 @remove-item="removeFood"
+                @update-serving-amount="updateServingAmount"
               />
             </section>
           </div>
@@ -211,7 +253,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
-import { getEffectiveGroup } from '@pakulab/shared'
+import { getEffectiveGroup, getSuggestedGroupCount, getAgeMonths } from '@pakulab/shared'
 import type { Plate } from '@pakulab/shared'
 import { PLATE_STAGES, PLATE_STAGE_LABELS, type PlateStage } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
@@ -251,6 +293,8 @@ const {
   balance,
   hasItems,
   canSave,
+  totalServingAmount,
+  hasExcessServing,
   initDraft,
   addFood,
   removeFood,
@@ -260,6 +304,7 @@ const {
   loadPlateIntoDraft,
   savePlate,
   updatePlate,
+  updateServingAmount,
 } = usePlateBuilder({ onSaved: onPlateSaved })
 
 // ─── Stores ─────────────────────────────────────────────────────────────
@@ -270,6 +315,23 @@ const foodStore = useFoodStore()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const foodHistoryStore = useFoodHistoryStore()
+
+// ─── Group Count Suggestion (REQ-A2) ─────────────────────────────────────
+/** Baby's age in months for group count suggestion (null if no active profile) */
+const babyAgeMonths = computed<number | null>(() => {
+  const birthDate = profileStore.activeProfile?.birthDate
+  return birthDate ? getAgeMonths(birthDate) : null
+})
+
+/** Suggested group count based on baby's age (null if no active profile) */
+const suggestedGroupCount = computed<4 | 5 | null>(() => {
+  return babyAgeMonths.value !== null ? getSuggestedGroupCount(babyAgeMonths.value) : null
+})
+
+/** True when the current draftGroupCount differs from the suggested value */
+const showGroupCountSuggestion = computed<boolean>(() => {
+  return suggestedGroupCount.value !== null && suggestedGroupCount.value !== draftGroupCount.value
+})
 
 // ─── Food Exposure ─────────────────────────────────────────────────────────
 const foodExposure = useFoodExposure()
@@ -653,6 +715,30 @@ async function handleShare() {
   max-width: 42ch;
 }
 
+/* Total serving amount display (REQ-B2) */
+.total-serving-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--md3-space-3);
+  padding: 0.625rem var(--md3-space-3);
+  background: var(--md3-primary-container);
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-primary-container);
+}
+
+.total-serving-display .material-symbols-outlined {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.total-text {
+  flex: 1;
+}
+
 /* Disclaimer */
 .disclaimer-banner {
   display: flex;
@@ -671,6 +757,33 @@ async function handleShare() {
   font-size: 1.1rem;
   color: var(--md3-primary);
   flex-shrink: 0;
+}
+
+/* Excess serving banner (REQ-B3) */
+.excess-serving-banner {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  background: var(--md3-tertiary-container);
+  border-left: 4px solid var(--md3-tertiary);
+  border-radius: var(--md3-rounded-md);
+  padding: 0.75rem var(--md3-space-3);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-tertiary-container);
+  margin-bottom: var(--md3-space-4);
+}
+
+.banner-icon {
+  font-size: 1.25rem;
+  color: var(--md3-tertiary);
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.banner-text {
+  flex: 1;
+  line-height: 1.5;
 }
 
 /* ─── Group Toggle ────────────────────────────────────────────────────── */
