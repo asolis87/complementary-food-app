@@ -53,6 +53,7 @@ phases:
       - PR-3
       - PR-4
       - PR-5
+      - PR-6
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -64,14 +65,16 @@ phases:
     status: in_progress
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-6
+    next_pr: PR-7
     in_progress_branch: null
     notes:
       - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
       - PR-4 (Bloque 2 allergens backend, PR #79, merge 4804dad) merged — GET /api/allergens/status (PRO), derived from FoodLog+Food, no new table. 4R review fixed celery silent-drop (now explicit exclude + log.warn for unmapped), deterministic ordering, isAllergen-bounded query, boundary tests. ALLERGEN_TYPE_MAPPING bridges seed English→shared Spanish keys. fish/shellfish split into pescado/mariscos in TOP_ALLERGENS. api 415/415, shared 127/127 green.
       - STALE-PLAN WARNING — tasks.md was written 2026-06-18, before the 154-food catalog expansion. Bloque 1 was largely already done. VERIFY actual code/schema before each further bloque (sdd-explore first).
       - PR-5 (Bloque 3 BACKEND, PR #81, merge 917d435) merged — WarningTag enum + Food.warningTags @default([]) (additive, db-push deploy). T-03-01..04 only. Clinical backfill of 15 foods (CHOKING_HAZARD_UNDER_5Y + REQUIRES_PREPARATION) from PDF page 7. Moved the 154-food catalog + FoodSeed type to packages/shared/src/data/food-catalog.ts so its integrity tests run in CI (prisma/ is not a workspace package). Added seed.ts entrypoint guard. Moved ALLERGEN_TYPE_MAPPING to @pakulab/shared. Two 4R rounds fixed seed-not-persisting-warningTags, clinical false-negatives (tree nuts + elote), vacuous escape-hatch tests, never-run-in-CI test. CI fix — packages/shared must NOT import @prisma/client (build order); Prisma<->shared sync test moved to apps/api/src/modules/foods/warning-tags-sync.test.ts. Final green typecheck + api 416, shared 171, web 244.
-      - PR-5 SCOPE NOTE — tasks.md mapped PR-5 = Bloque 3 (T-03-01..04) + T-04-11..15 (warning badge UI). Only the BACKEND (T-03-01..04) shipped. T-04-11..15 (WarningBadge.vue + integrations in FoodSearchPage/FoodSearchModal/MenuWeekPage/PlateBuilderDrawer) are STILL PENDING — next batch. Garbanzo intentionally left UNTAGGED (not verbatim on PDF page 7; awaiting product confirmation) — see seed comment.
+      - PR-5 SCOPE NOTE — tasks.md mapped PR-5 = Bloque 3 (T-03-01..04) + T-04-11..15 (warning badge UI). Only the BACKEND (T-03-01..04) shipped. T-04-11..15 (WarningBadge.vue + integrations in FoodSearchPage/FoodSearchModal/MenuWeekPage/PlateBuilderDrawer) shipped in PR-6 (see below). Garbanzo intentionally left UNTAGGED (not verbatim on PDF page 7; awaiting product confirmation) — see seed comment.
+      - PR-6 (Bloque 4 warning-badge UI, PR #83, merge 8829fbd) merged — T-04-11..15. WarningBadge.vue (flat shared atom, ⚠️ + native title tooltip) integrated into FoodSearchPage, FoodSearchModal (+ safety panel), MenuWeekPage (via menu API contract widening: PlateItemSummary.food.warningTags + Pick/select/serialize), PlateVisualization. WARNING_TAG_LABELS + WARNING_DISCLAIMER centralized in @pakulab/shared. 4R caught + fixed a BLOCKER (same class as PR-2 dead-banner) — usePlateBuilder.ts:172 loadPlateIntoDraft hardcoded warningTags:[] with a false comment, silently dropping choking/honey badges when editing a saved plate; fixed to item.food.warningTags ?? [] with RED→GREEN regression test. Final green: typecheck exit 0, shared 175, api 416, web 260, 0 invalid-prop warnings.
+      - PR-6 DEFERRED — MenuWeekPage badge has no dedicated template render test (API data path proven end-to-end; template test still missing). Icon inconsistency left as cosmetic deferral: emoji ⚠️ (WarningBadge) vs material-symbols "warning" (FoodSearchModal panel) — design call. Bloque 4 remainder NOT done: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions).
       - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
       - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
