@@ -220,7 +220,7 @@
                       class="preview-grid__food-dot"
                       :class="`preview-grid__food-dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
                     />
-                    <span class="preview-grid__food-name">{{ item.food?.name ?? 'Alimento' }}</span>
+                    <span class="preview-grid__food-name">{{ item.food?.name ?? 'Alimento' }} <WarningBadge v-if="item.food" :tags="item.food.warningTags ?? []" /></span>
                     <!-- Compact exposure indicator after name -->
                     <span
                       class="preview-grid__exposure-mark"
@@ -350,7 +350,7 @@
                       class="food-summary__dot"
                       :class="`food-summary__dot--${item.food?.alClassification?.toLowerCase() ?? 'neutral'}`"
                     />
-                    <span class="food-summary__name">{{ item.food?.name ?? 'Alimento' }}</span>
+                    <span class="food-summary__name">{{ item.food?.name ?? 'Alimento' }} <WarningBadge v-if="item.food" :tags="item.food.warningTags ?? []" /></span>
                     <!-- Compact exposure indicator (dot) for mobile summary -->
                     <span
                       v-if="item.foodId && timesOfferedByFoodId[item.foodId] !== undefined"
@@ -665,6 +665,7 @@ import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey } fro
 import TierGate from '@/shared/components/TierGate.vue'
 import PlateBuilderDrawer from '@/shared/components/PlateBuilderDrawer.vue'
 import MenuExportFrame from './components/MenuExportFrame.vue'
+import WarningBadge from '@/shared/components/WarningBadge.vue'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'

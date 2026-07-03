@@ -7,7 +7,7 @@
 
 // Types
 export type { ALClassification, FoodGroup, Food, FoodSummary, WarningTag } from './types/food.js'
-export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS, WARNING_TAGS } from './types/food.js'
+export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS, WARNING_TAGS, WARNING_TAG_LABELS, WARNING_DISCLAIMER } from './types/food.js'
 
 export { MealType, ReactionType, StoolType, SymptomType, REACTION_TYPE_LABELS, STOOL_LABELS, SYMPTOM_LABELS } from './types/diary.js'
 export type {

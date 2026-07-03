@@ -488,7 +488,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 
 ### Sub-bloque 4.2 (B3 — Warnings UI)
 
-#### T-04-11: `WarningBadge.vue` shared component (TDD: RED → GREEN → TRIANGULATE)
+#### [x] T-04-11: `WarningBadge.vue` shared component (TDD: RED → GREEN → TRIANGULATE)
 
 - **Spec**: REQ-4-B1, REQ-4-B3 (reusable badge + tooltip)
 - **Files**: `apps/web/src/shared/components/atoms/WarningBadge.vue` (new), `apps/web/src/shared/components/atoms/WarningBadge.test.ts` (new)
@@ -521,7 +521,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **LOC est.**: ~40 (30 component + 10 test).
 - **Depends on**: T-03-01 (WarningTag type exists in shared).
 
-#### T-04-12: Integrate `WarningBadge` in `FoodSearchPage.vue` (TDD: RED → GREEN)
+#### [x] T-04-12: Integrate `WarningBadge` in `FoodSearchPage.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-B1
 - **Files**: `apps/web/src/modules/foods/FoodSearchPage.vue`, `apps/web/src/modules/foods/FoodSearchPage.test.ts` (extend or new)
@@ -534,7 +534,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **LOC est.**: ~10 (5 template + 5 test).
 - **Depends on**: T-04-11 (WarningBadge component), T-03-03 (seed backfill so test data exists).
 
-#### T-04-13: Integrate `WarningBadge` + warning panel in `FoodSearchModal.vue` (TDD: RED → GREEN → TRIANGULATE)
+#### [x] T-04-13: Integrate `WarningBadge` + warning panel in `FoodSearchModal.vue` (TDD: RED → GREEN → TRIANGULATE)
 
 - **Spec**: REQ-4-B2
 - **Files**: `apps/web/src/modules/foods/FoodSearchModal.vue`, `apps/web/src/modules/foods/FoodSearchModal.test.ts` (extend or new)
@@ -555,7 +555,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **LOC est.**: ~35 (20 template/logic + 15 test).
 - **Depends on**: T-04-11 (WarningBadge).
 
-#### T-04-14: Integrate `WarningBadge` in `MenuWeekPage.vue` (TDD: RED → GREEN)
+#### [x] T-04-14: Integrate `WarningBadge` in `MenuWeekPage.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-C1
 - **Files**: `apps/web/src/modules/menus/MenuWeekPage.vue`, `apps/web/src/modules/menus/MenuWeekPage.test.ts` (extend or new)
@@ -569,7 +569,7 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Depends on**: T-04-11 (WarningBadge).
 - **NOTE**: MenuWeekPage deferred from Bloque 0 (T-00-05) due to data model mismatch. If menu slots still don't support SNACK_1/SNACK_2 by PR-5, this task integrates badge into existing 3-meal grid only. Full menu upgrade is separate scope.
 
-#### T-04-15: Integrate `WarningBadge` in `PlateBuilderDrawer.vue` (TDD: RED → GREEN)
+#### [x] T-04-15: Integrate `WarningBadge` in `PlateBuilderDrawer.vue` (TDD: RED → GREEN)
 
 - **Spec**: REQ-4-C2
 - **Files**: `apps/web/src/modules/plates/components/PlateBuilderDrawer.vue`, `apps/web/src/modules/plates/components/PlateBuilderDrawer.test.ts` (extend or new)

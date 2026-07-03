@@ -38,7 +38,7 @@
               :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
-              <span class="food-name-text">{{ item.food.name }}</span>
+              <span class="food-name-text">{{ item.food.name }} <WarningBadge :tags="item.food.warningTags" /></span>
               <FoodExposureBadge
                 v-if="item.food.id && timesOfferedByFoodId"
                 :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
@@ -79,7 +79,7 @@
               :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
-              <span class="food-name-text">{{ item.food.name }}</span>
+              <span class="food-name-text">{{ item.food.name }} <WarningBadge :tags="item.food.warningTags" /></span>
               <FoodExposureBadge
                 v-if="item.food.id && timesOfferedByFoodId"
                 :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
@@ -120,7 +120,7 @@
               :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
-              <span class="food-name-text">{{ item.food.name }}</span>
+              <span class="food-name-text">{{ item.food.name }} <WarningBadge :tags="item.food.warningTags" /></span>
               <FoodExposureBadge
                 v-if="item.food.id && timesOfferedByFoodId"
                 :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
@@ -158,7 +158,7 @@
               :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
-              <span class="food-name-text">{{ item.food.name }}</span>
+              <span class="food-name-text">{{ item.food.name }} <WarningBadge :tags="item.food.warningTags" /></span>
               <FoodExposureBadge
                 v-if="item.food.id && timesOfferedByFoodId"
                 :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
@@ -197,7 +197,7 @@
               :class="[alClass(item), exposureClass(item.food.id)]"
             >
               <span class="al-dot" />
-              <span class="food-name-text">{{ item.food.name }}</span>
+              <span class="food-name-text">{{ item.food.name }} <WarningBadge :tags="item.food.warningTags" /></span>
               <FoodExposureBadge
                 v-if="item.food.id && timesOfferedByFoodId"
                 :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
@@ -227,6 +227,7 @@ import type { FoodGroup } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS } from '@pakulab/shared'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
 import FoodExposureBadge from '@/shared/components/FoodExposureBadge.vue'
+import WarningBadge from '@/shared/components/WarningBadge.vue'
 import FoodIcon from '@/shared/components/FoodIcon.vue'
 
 const props = defineProps<{

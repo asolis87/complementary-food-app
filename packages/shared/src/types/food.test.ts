@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest'
 import type { WarningTag } from './food'
-import { WARNING_TAGS } from './food'
+import { WARNING_TAGS, WARNING_TAG_LABELS } from './food'
 
 describe('WarningTag enum (T-03-01)', () => {
   it('should have exactly 4 warning tag values', () => {
@@ -52,6 +52,44 @@ describe('WarningTag enum (T-03-01)', () => {
       'REQUIRES_PREPARATION'
     ]
     expect(multiTags).toHaveLength(2)
+  })
+})
+
+describe('WARNING_TAG_LABELS (T-04-11 shared constant)', () => {
+  it('should have all 4 warning tag keys', () => {
+    const keys = Object.keys(WARNING_TAG_LABELS)
+    expect(keys).toHaveLength(4)
+    expect(keys).toContain('PROHIBITED_UNDER_24M')
+    expect(keys).toContain('CHOKING_HAZARD_UNDER_5Y')
+    expect(keys).toContain('PROHIBITED_PEDIATRIC')
+    expect(keys).toContain('REQUIRES_PREPARATION')
+  })
+
+  it('should have es-MX tuteo strings for all tags', () => {
+    expect(WARNING_TAG_LABELS.PROHIBITED_UNDER_24M).toBe('No recomendado antes de los 2 años')
+    expect(WARNING_TAG_LABELS.CHOKING_HAZARD_UNDER_5Y).toBe('Riesgo de atragantamiento en menores de 5 años')
+    expect(WARNING_TAG_LABELS.PROHIBITED_PEDIATRIC).toBe('No recomendado en toda la edad pediátrica')
+    expect(WARNING_TAG_LABELS.REQUIRES_PREPARATION).toBe('Requiere preparación específica (cocción/corte)')
+  })
+
+  it('should cover all WARNING_TAGS values', () => {
+    WARNING_TAGS.forEach((tag) => {
+      expect(WARNING_TAG_LABELS[tag]).toBeDefined()
+      expect(typeof WARNING_TAG_LABELS[tag]).toBe('string')
+      expect(WARNING_TAG_LABELS[tag].length).toBeGreaterThan(0)
+    })
+  })
+
+  it('should use es-MX tuteo (not voseo)', () => {
+    // Check no voseo markers (consultá, tenés, etc.)
+    const allText = Object.values(WARNING_TAG_LABELS).join(' ')
+    expect(allText).not.toContain('consultá')
+    expect(allText).not.toContain('tenés')
+    expect(allText).not.toContain('ofrecé')
+
+    // Should use tuteo forms
+    expect(allText).toContain('años')
+    expect(allText).toContain('menores')
   })
 })
 

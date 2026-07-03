@@ -33,7 +33,7 @@ type PlateWithItems = Plate & {
     plateId: string
     foodId: string
     groupAssignment: string
-    food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen'> | null
+    food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen' | 'warningTags'> | null
   })[]
 }
 
@@ -142,6 +142,7 @@ function serializePlateItems(items: PlateWithItems['items'] | undefined): PlateI
           group: item.food.group,
           alClassification: item.food.alClassification,
           isAllergen: item.food.isAllergen,
+          warningTags: item.food.warningTags,
         }
       : undefined,
   }))
@@ -244,7 +245,7 @@ export async function getWeekMenu(
                 include: {
                   items: {
                     include: {
-                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, warningTags: true } }
                     }
                   }
                 }
@@ -311,7 +312,7 @@ export async function createWeekMenu(
                    include: {
                      items: {
                        include: {
-                          food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                          food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, warningTags: true } }
                        }
                      }
                    }
@@ -411,7 +412,7 @@ export async function upsertMealSlot(
              include: {
                items: {
                  include: {
-                    food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                    food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, warningTags: true } }
                  }
                }
              }
@@ -435,7 +436,7 @@ export async function upsertMealSlot(
                  include: {
                    items: {
                      include: {
-                        food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                        food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, warningTags: true } }
                      }
                    }
                  }
@@ -573,7 +574,7 @@ export async function serveMeal(
             include: {
               items: {
                 include: {
-                   food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                   food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, warningTags: true } }
                 }
               }
             }

@@ -74,8 +74,8 @@ function createMockPrisma(scenarios: {
         id: VALID_PLATE_CUID,
         balanceScore: 0.5,
         items: [
-          { id: 'item-1', foodId: 'food-1', food: { id: 'food-1', name: 'Manzana', group: 'FRUIT', alClassification: 'NEUTRAL', isAllergen: false } },
-          { id: 'item-2', foodId: 'food-2', food: { id: 'food-2', name: 'Pollo', group: 'PROTEIN', alClassification: 'ASTRINGENT', isAllergen: false } },
+          { id: 'item-1', foodId: 'food-1', food: { id: 'food-1', name: 'Manzana', group: 'FRUIT', alClassification: 'NEUTRAL', isAllergen: false, warningTags: [] } },
+          { id: 'item-2', foodId: 'food-2', food: { id: 'food-2', name: 'Pollo', group: 'PROTEIN', alClassification: 'ASTRINGENT', isAllergen: false, warningTags: [] } },
         ],
       }),
     },
