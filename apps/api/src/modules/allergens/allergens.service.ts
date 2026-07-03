@@ -8,25 +8,15 @@
  */
 
 import type { PrismaClient } from '@prisma/client'
+import type { AllergenStatusResponse, AllergenEntry } from '@pakulab/shared'
 import { TOP_ALLERGENS, CLOSING_WINDOW_AGE_MONTHS, ageInMonths, ALLERGEN_TYPE_MAPPING } from '@pakulab/shared'
 import { ForbiddenError } from '../../shared/errors/index.js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface AllergenStatusResponse {
-  ageMonths: number
-  closingWindow: boolean
-  allergens: AllergenEntry[]
-}
-
-export interface AllergenEntry {
-  type: string
-  name: string
-  status: 'introduced' | 'pending' | 'in_window'
-  introducedAt: string | null
-  exposureCount: number
-  lastReaction: string | null
-}
+// The response contract lives in @pakulab/shared so the web card is typed
+// against the same single source of truth. Re-exported here for existing importers.
+export type { AllergenStatusResponse, AllergenEntry }
 
 interface FoodLogForAllergen {
   foodId: string

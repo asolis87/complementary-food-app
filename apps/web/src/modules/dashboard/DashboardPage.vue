@@ -92,11 +92,18 @@
             @view-full-roadmap="handleViewFullRoadmap"
           />
 
-          <AllergenAlertsCard
-            :allergens="dashboardData?.pendingAllergens ?? []"
-            :loading="loading"
-            :baby-age-months="dashboardData?.baby?.ageInMonths ?? 0"
-            @view-guide="handleViewAllergenGuide"
+          <AllergenTrackerCard
+            v-if="dashboardData?.baby"
+            :baby-age-months="dashboardData.baby.ageInMonths"
+            :tier="authStore.tier"
+            :baby-profile-id="profileStore.activeProfile?.id ?? ''"
+          />
+
+          <SnackSuggestionCard
+            v-if="dashboardData?.baby"
+            :baby-age-months="dashboardData.baby.ageInMonths"
+            :baby-profile-id="profileStore.activeProfile?.id ?? ''"
+            @view-food="handleViewFood"
           />
         </div>
       </div>
@@ -126,7 +133,8 @@ import { safeSetItem } from '@/shared/utils/safeStorage.js'
 import DashboardHeader from './components/DashboardHeader.vue'
 import TodayLogsCard from './components/TodayLogsCard.vue'
 import TextureGuideCard from './components/TextureGuideCard.vue'
-import AllergenAlertsCard from './components/AllergenAlertsCard.vue'
+import AllergenTrackerCard from './components/AllergenTrackerCard.vue'
+import SnackSuggestionCard from './components/SnackSuggestionCard.vue'
 import BalanceInsightCard from './components/BalanceInsightCard.vue'
 import DashboardSkeleton from './components/DashboardSkeleton.vue'
 import DashboardErrorBoundary from './components/DashboardErrorBoundary.vue'
