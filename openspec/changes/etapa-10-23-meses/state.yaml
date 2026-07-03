@@ -55,6 +55,7 @@ phases:
       - PR-5
       - PR-6
       - PR-7
+      - PR-8
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -66,7 +67,7 @@ phases:
     status: in_progress
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-8
+    next_pr: PR-9
     in_progress_branch: null
     notes:
       - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
@@ -78,6 +79,8 @@ phases:
       - PR-6 DEFERRED — MenuWeekPage badge has no dedicated template render test (API data path proven end-to-end; template test still missing). Icon inconsistency left as cosmetic deferral: emoji ⚠️ (WarningBadge) vs material-symbols "warning" (FoodSearchModal panel) — design call. Bloque 4 remainder NOT done: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions).
       - PR-7 (Bloque 5 plate stage, PR #85, merge 60bd586) merged — RE-SCOPED to backend + stage selector only (T-05-01..06). PlateStage enum (SIX_TO_NINE_MONTHS..FAMILY_TABLE) + Plate.stageFor? (additive, db-push). Shared PLATE_STAGES + PLATE_STAGE_LABELS (es-MX) + getSuggestedGroupCount + getSuggestedStageForAge (tested, consumed by PR-8). API Zod stageFor+servingAmount, getUserPlates stageFor filter ("null"/"" query param → IS NULL via z.preprocess), create/update persist stageFor+servingAmount, menus.service select widening. Web "Etapa objetivo" selector in PlateBuilderPage; usePlateBuilder edit path preserves stageFor+servingAmount with RED→GREEN regression tests. plate-stage-sync.test.ts (Prisma↔shared enum sync) in apps/api. 4R fixed: type regressions (warningTags/groupCount/PlateItem.food loosening), food:undefined-as-any anti-pattern, C1 stageFor query-param null coercion, false comments. ~292 LOC, under 400 (no size:exception). Final green: typecheck exit 0, api 431, web 263, shared 187.
       - PR-7 DEFERRED to PR-8 — serving-amount UI (T-04-02 per-slot selector, T-04-03 total "X cdas", T-04-04 non-blocking >4cdas amber banner), groupCount suggestion badge (T-04-A2; reuse ageInMonths computed from birthDate at DiaryPage.vue:565), stage filter UI in PlateListPage (T-05-07). PDF export with stage / Capability D (T-05-08) still deferred. Shared helpers getSuggestedGroupCount/getSuggestedStageForAge already landed (tested) awaiting these consumers.
+      - PR-8 (Bloque 4+5 remaining UI, PR #87, merge 2cc719e) merged — T-04-02..04 + T-04-A2 + T-05-07. New getAgeMonths(birthDate, referenceDate?) in packages/shared/src/utils/date.ts (invalid-date guard → 0, avoids NaN leak). usePlateBuilder derived state (totalServingAmount/groupServingCounts/hasExcessServing/updateServingAmount) shared by PlateBuilderPage AND PlateBuilderDrawer. PlateContents per-slot serving selector (1-4 cdas, default 1, preserved on edit); PlateBuilderPage "X cdas en total" + non-blocking >4cdas/group amber banner + "Sugerido para X meses" groupCount badge; PlateListPage stage filter (default = baby's stage) via plateStore.fetchSavedPlates(stageFor?). 4R (R3) caught + fixed 2 BLOCKERs the apply missed: (1) getAgeMonths NaN leak → wrong clinical stage/groupCount suggestion for corrupt birthDate; (2) PlateListPage double-fetch race on mount (watch now registered inside onMounted after the initial fetch). R2 clean (es-MX verbatim). ~369 prod LOC (under 400) + ~342 test LOC. Final green: typecheck exit 0, shared 196, api 431, web 271. EXPLORE CORRECTION recorded: PlateBuilderDrawer.vue is REAL (shared/components/), not the "phantom" PR-7 explore claimed.
+      - PR-8 DEFERRED / epic remainder — Bloque 4: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions). Bloque 5: T-05-08 (PDF export with stage / Capability D — export route still unverified). Next_pr=PR-9 (likely Bloque 4 C1/C2 features) — run sdd-explore FIRST (tasks.md is stale from 2026-06-18).
       - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
       - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
