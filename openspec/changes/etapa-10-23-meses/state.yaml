@@ -56,6 +56,7 @@ phases:
       - PR-6
       - PR-7
       - PR-8
+      - PR-9
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -67,7 +68,7 @@ phases:
     status: in_progress
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-9
+    next_pr: PR-10
     in_progress_branch: null
     notes:
       - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
@@ -81,6 +82,8 @@ phases:
       - PR-7 DEFERRED to PR-8 — serving-amount UI (T-04-02 per-slot selector, T-04-03 total "X cdas", T-04-04 non-blocking >4cdas amber banner), groupCount suggestion badge (T-04-A2; reuse ageInMonths computed from birthDate at DiaryPage.vue:565), stage filter UI in PlateListPage (T-05-07). PDF export with stage / Capability D (T-05-08) still deferred. Shared helpers getSuggestedGroupCount/getSuggestedStageForAge already landed (tested) awaiting these consumers.
       - PR-8 (Bloque 4+5 remaining UI, PR #87, merge 2cc719e) merged — T-04-02..04 + T-04-A2 + T-05-07. New getAgeMonths(birthDate, referenceDate?) in packages/shared/src/utils/date.ts (invalid-date guard → 0, avoids NaN leak). usePlateBuilder derived state (totalServingAmount/groupServingCounts/hasExcessServing/updateServingAmount) shared by PlateBuilderPage AND PlateBuilderDrawer. PlateContents per-slot serving selector (1-4 cdas, default 1, preserved on edit); PlateBuilderPage "X cdas en total" + non-blocking >4cdas/group amber banner + "Sugerido para X meses" groupCount badge; PlateListPage stage filter (default = baby's stage) via plateStore.fetchSavedPlates(stageFor?). 4R (R3) caught + fixed 2 BLOCKERs the apply missed: (1) getAgeMonths NaN leak → wrong clinical stage/groupCount suggestion for corrupt birthDate; (2) PlateListPage double-fetch race on mount (watch now registered inside onMounted after the initial fetch). R2 clean (es-MX verbatim). ~369 prod LOC (under 400) + ~342 test LOC. Final green: typecheck exit 0, shared 196, api 431, web 271. EXPLORE CORRECTION recorded: PlateBuilderDrawer.vue is REAL (shared/components/), not the "phantom" PR-7 explore claimed.
       - PR-8 DEFERRED / epic remainder — Bloque 4: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions). Bloque 5: T-05-08 (PDF export with stage / Capability D — export route still unverified). Next_pr=PR-9 (likely Bloque 4 C1/C2 features) — run sdd-explore FIRST (tasks.md is stale from 2026-06-18).
+      - PR-9 (Snack Suggestions BACKEND, PR #89, merge 42062b2) merged — RE-SCOPED to backend-only (T-04-18..19). getSnackSuggestions(babyProfileId) in dashboard.service.ts + GET /api/dashboard/snack-suggestions (FREE tier, verifyBabyOwnership, Zod) + shared SnackSuggestionResponse type + cache TTL. <10m → SNACKS_NOT_YET; >=10m → up to 5 snack foods (soft fruit + cooked VEGETABLE + yogur/queso), 12m+ adds galleta/pan/cereal/arroz; always excludes CHOKING_HAZARD_UNDER_5Y; deterministic order (orderBy name + core-before-extras). Derived from existing catalog, no seed changes. 4R: R1 risk CLEAN (ownership before data, FREE tier, no IDOR/injection). R3 caught + fixed: (1) CLINICAL BUG — VEGETABLE group was omitted (REQ-B1 requires cooked veg from 10m); (2) VACUOUS/FRAGILE tests — absolute birthDate literals with wrong age comments passing by accident; rewrote with UTC mid-month birthDateForAge(months) helper (avoids TZ skew from birthDate.toISOString().split + end-of-month rollover; ageInMonths ignores day-of-month) + edge tests (profile-not-found, <5 candidates, veg inclusion). ~120 prod LOC. Final green: typecheck exit 0, shared 196, api 439, web 271.
+      - PR-9 SCOPE NOTE — the ORIGINAL PR-9 scope (allergen tracker card + snack card web UI) was NOT shipped; only the snack backend. Web cards → PR-10 (allergen card replaces old AllergenAlertsCard, silently fixing the pre-existing ES/EN allergen-key bug; snack card consumes GET /api/dashboard/snack-suggestions). Iron priority E1 (T-04-16..17) → PR-11, still BLOCKED on isIronRich schema decision. Full context at engram sdd/etapa-10-23-meses/pr9-scope + pr9-explore + pr9-apply-progress.
       - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
       - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
