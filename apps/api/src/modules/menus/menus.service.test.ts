@@ -35,6 +35,7 @@ describe('computeBalanceScore', () => {
       babyProfileId: null,
       name: 'Test Plate',
       groupCount: 4,
+      stageFor: null,
       balanceScore,
       astringentCount: 0,
       laxativeCount: 0,
@@ -280,6 +281,7 @@ describe('serializeMenu', () => {
       babyProfileId: 'baby-1',
       name: 'Test Plate',
       groupCount: 4,
+      stageFor: null,
       balanceScore: 0.75,
       astringentCount: 0,
       laxativeCount: 1,
@@ -447,7 +449,7 @@ describe('serializeMenu', () => {
     const plate = serialized.days[0]?.meals[0]?.plate
     expect(plate?.createdAt).toBe('2024-06-10T08:00:00.000Z')
     expect(plate?.updatedAt).toBe('2024-06-10T08:00:00.000Z')
-    expect(plate?.deletedAt).toBeUndefined()
+    expect(plate?.deletedAt).toBeNull()
   })
 
   it('handles meal without plate (null plate)', () => {
@@ -480,7 +482,7 @@ describe('serializeMenu', () => {
 
     const serialized = serializeMenu(castMenuForSerialization(menu))
 
-    expect(serialized.days[0]?.meals[0]?.plate?.babyProfileId).toBeUndefined()
+    expect(serialized.days[0]?.meals[0]?.plate?.babyProfileId).toBeNull()
   })
 
   it('handles plate with deletedAt date', () => {

@@ -15,19 +15,25 @@ function makePlate(overrides: Partial<Plate> = {}): Plate {
   return {
     id: 'plate-1',
     userId: 'user-1',
+    babyProfileId: null,
     name: 'Plato de prueba',
     groupCount: 4,
+    stageFor: null,
     balanceScore: 0,
     astringentCount: 0,
     laxativeCount: 0,
     neutralCount: 0,
+    deletedAt: null,
     createdAt: '',
     updatedAt: '',
     items: [
       {
         id: 'item-1',
+        plateId: 'plate-1',
         foodId: 'food-1',
         groupAssignment: 'FRUIT',
+        servingAmount: null,
+        createdAt: '',
         food: {
           id: 'food-1',
           name: 'Uvas (sin semilla, en cuartos)',
@@ -68,5 +74,76 @@ describe('usePlateBuilder — loadPlateIntoDraft', () => {
     builder.loadPlateIntoDraft(plate)
 
     expect(builder.draftItems.value[0]!.food.warningTags).toEqual([])
+  })
+
+  // PR-7 dead-badge regression tests (T-05-06 + T-04-02)
+  it('preserves stageFor from saved plate into draft (dead-badge trap fix)', () => {
+    // RED: would FAIL if loadPlateIntoDraft hardcoded draftStageFor.value = null
+    // GREEN: PASSES because line 164 reads plate.stageFor ?? null
+    const plate = makePlate({ stageFor: 'TEN_TO_TWELVE_MONTHS' })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+  })
+
+  it('preserves servingAmount from saved PlateItems into draft (dead-badge trap fix)', () => {
+    // RED: would FAIL if loadPlateIntoDraft hardcoded servingAmount: null for all items
+    // GREEN: PASSES because line 186 reads item.servingAmount ?? null
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'PROTEIN',
+          servingAmount: '3', // Explicitly set 3 cdas
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Huevo',
+            group: 'PROTEIN',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: true,
+            allergenType: 'egg',
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    expect(builder.draftItems.value).toHaveLength(1)
+    expect(builder.draftItems.value[0]!.servingAmount).toBe('3')
+  })
+
+  it('defaults servingAmount to null when PlateItem has no servingAmount', () => {
+    const plate = makePlate({
+      items: [
+        {
+          id: 'item-1',
+          plateId: 'plate-1',
+          foodId: 'food-1',
+          groupAssignment: 'FRUIT',
+          servingAmount: null, // Explicitly null
+          createdAt: '',
+          food: {
+            id: 'food-1',
+            name: 'Manzana',
+            group: 'FRUIT',
+            alClassification: 'NEUTRAL',
+            ageMonths: 6,
+            isAllergen: false,
+            warningTags: [],
+          },
+        },
+      ],
+    })
+    const builder = usePlateBuilder()
+    builder.loadPlateIntoDraft(plate)
+
+    expect(builder.draftItems.value[0]!.servingAmount).toBeNull()
   })
 })

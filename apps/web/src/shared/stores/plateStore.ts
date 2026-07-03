@@ -16,6 +16,7 @@ export interface PlateItemDraft {
   id: string // Local ID for list key
   food: Food
   groupAssignment: FoodGroup
+  servingAmount?: string | null
 }
 
 export const usePlateStore = defineStore('plates', () => {
@@ -237,11 +238,17 @@ export const usePlateStore = defineStore('plates', () => {
             astringentCount: 0,
             laxativeCount: 0,
             neutralCount: 0,
+            babyProfileId: null,
+            stageFor: null,
+            deletedAt: null,
             items: itemsPayload.map((item, idx) => ({
               id: `local-item-${idx}-${Date.now()}`,
               plateId: '',
               foodId: item.foodId,
               groupAssignment: item.groupAssignment,
+              servingAmount: item.servingAmount ?? null,
+              createdAt: new Date().toISOString(),
+              // Optimistic PlateItem without full Food — food is populated on API sync.
             })),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -263,11 +270,16 @@ export const usePlateStore = defineStore('plates', () => {
           astringentCount: draftBalance.astringent,
           laxativeCount: draftBalance.laxative,
           neutralCount: draftBalance.neutral,
+          babyProfileId: null,
+          stageFor: null,
+          deletedAt: null,
           items: draftItems.value.map((item) => ({
             id: item.id,
             plateId: '',
             foodId: item.food.id,
             groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount ?? null,
+            createdAt: new Date().toISOString(),
             food: item.food,
           })),
           createdAt: new Date().toISOString(),

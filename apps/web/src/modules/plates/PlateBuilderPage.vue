@@ -73,6 +73,26 @@
             </button>
           </div>
         </div>
+
+        <!-- Stage selector (T-05-06 REQ-C2) -->
+        <div class="stage-selector-wrapper">
+          <label for="stage-selector" class="stage-label">Etapa objetivo:</label>
+          <select
+            id="stage-selector"
+            v-model="draftStageFor"
+            class="stage-selector"
+            aria-label="Seleccionar etapa objetivo del plato"
+          >
+            <option :value="null">Sin definir</option>
+            <option
+              v-for="stage in PLATE_STAGES"
+              :key="stage"
+              :value="stage"
+            >
+              {{ PLATE_STAGE_LABELS[stage] }}
+            </option>
+          </select>
+        </div>
       </header>
 
       <!-- ─── Main Content Grid ─────────────────────────────────────── -->
@@ -193,6 +213,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
 import { getEffectiveGroup } from '@pakulab/shared'
 import type { Plate } from '@pakulab/shared'
+import { PLATE_STAGES, PLATE_STAGE_LABELS, type PlateStage } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
@@ -225,6 +246,7 @@ const {
   draftItems,
   draftName,
   draftGroupCount,
+  draftStageFor,
   saving,
   balance,
   hasItems,
@@ -233,6 +255,7 @@ const {
   addFood,
   removeFood,
   setGroupCount,
+  setStageFor,
   clearItems,
   loadPlateIntoDraft,
   savePlate,
@@ -821,5 +844,42 @@ section[aria-label="Contenido del plato"] {
   .page-main {
     padding: var(--md3-space-3) var(--md3-space-2) var(--md3-space-8);
   }
+}
+
+/* ─── Stage Selector + Suggestion Badge (T-05-06) ──────────────────────── */
+.stage-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-top: var(--md3-space-3);
+}
+
+.stage-label {
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  color: var(--md3-on-surface-variant);
+}
+
+.stage-selector {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--md3-outline);
+  border-radius: var(--md3-rounded-sm);
+  background: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-md);
+  cursor: pointer;
+}
+
+.badge-suggested {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: var(--md3-weight-medium);
+  background: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--md3-rounded-sm);
+  margin-left: 0.375rem;
 }
 </style>

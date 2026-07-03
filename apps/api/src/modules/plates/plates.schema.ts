@@ -4,6 +4,7 @@
 
 import { z } from 'zod'
 import { sanitizeText } from '../../shared/utils/sanitize.js'
+import { PLATE_STAGES } from '@pakulab/shared'
 
 const foodGroupSchema = z.enum(['FRUIT', 'VEGETABLE', 'PROTEIN', 'CEREAL_TUBER', 'HEALTHY_FAT'])
 const alClassificationSchema = z.enum(['ASTRINGENT', 'LAXATIVE', 'NEUTRAL'])
@@ -11,12 +12,14 @@ const alClassificationSchema = z.enum(['ASTRINGENT', 'LAXATIVE', 'NEUTRAL'])
 export const plateItemInputSchema = z.object({
   foodId: z.string().cuid(),
   groupAssignment: foodGroupSchema,
+  servingAmount: z.string().regex(/^[1-4]$/, 'Porción debe ser 1, 2, 3 o 4 cdas').optional(),
 })
 
 export const createPlateSchema = z.object({
   name: z.string().min(1).max(100).default('Mi plato').transform(sanitizeText),
   groupCount: z.literal(4).or(z.literal(5)).default(4),
   babyProfileId: z.string().cuid().optional(),
+  stageFor: z.enum(PLATE_STAGES).optional(),
   items: z.array(plateItemInputSchema).max(20),
 })
 
@@ -24,6 +27,7 @@ export const updatePlateSchema = z.object({
   name: z.string().min(1).max(100).optional().transform((v) => (v == null ? v : sanitizeText(v))),
   groupCount: z.literal(4).or(z.literal(5)).optional(),
   babyProfileId: z.string().cuid().optional().nullable(),
+  stageFor: z.enum(PLATE_STAGES).optional(),
   items: z.array(plateItemInputSchema).max(20).optional(),
 })
 
@@ -56,6 +60,12 @@ export const calculateBalanceSchema = z.object({
 export const listPlatesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  // Query params arrive as strings: the literal "null" (or empty) means the
+  // "Sin definir" filter (stageFor IS NULL); absence means no filter (all rows).
+  stageFor: z.preprocess(
+    (val) => (val === 'null' || val === '' ? null : val),
+    z.enum(PLATE_STAGES).nullable().optional(),
+  ),
 })
 
 export type CreatePlateInput = z.infer<typeof createPlateSchema>
