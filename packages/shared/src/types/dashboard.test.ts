@@ -32,7 +32,6 @@ describe('DashboardData type contract', () => {
       userTier: 'PRO',
       todayLogs: [],
       suggestedFoods: [],
-      pendingAllergens: [],
       roadmapProgress: [],
       weeklyBalance: {
         label: 'balanced',
@@ -52,7 +51,6 @@ describe('DashboardData type contract', () => {
       userTier: 'FREE',
       todayLogs: [],
       suggestedFoods: [],
-      pendingAllergens: [],
       roadmapProgress: [],
       weeklyBalance: {
         label: 'balanced',

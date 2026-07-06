@@ -18,7 +18,6 @@ export interface DashboardData {
   userTier: 'FREE' | 'PRO'
   todayLogs: TodayLog[]
   suggestedFoods: SuggestedFood[]
-  pendingAllergens: AllergenAlert[]
   roadmapProgress: RoadmapProgress[]
   weeklyBalance: BalanceInsight
 }
