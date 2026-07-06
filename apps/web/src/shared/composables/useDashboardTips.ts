@@ -86,6 +86,8 @@ export function useStageTip(ageMonths: number) {
     getTip,
     /** The full curated stage-specific list (read-only) */
     tips: stageTipsArray,
+    /** The AgeStage this tip set was derived from (single source of truth) */
+    stage,
   }
 }
 

@@ -558,4 +558,162 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       expect(exportFrame.props('stageLabel')).toBe('')
     })
   })
+
+  describe('REQ-A3: Age-aware meal columns (CRITICAL-1)', () => {
+    const birthDateForAge = (months: number): Date => {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth() - months, 1)
+    }
+
+    it('shows 3 meal columns for an 8-month baby (no snack columns)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(8) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const mealSlots = wrapper.findAll('.meal-slot')
+      // 7 days * 3 meals = 21 slots
+      expect(mealSlots.length).toBe(21)
+
+      // Verify labels are: Desayuno, Comida, Cena (no Colación)
+      const labels = wrapper.findAll('.meal-slot__label')
+      const labelTexts = labels.map(l => l.text().replace(/\s+/g, ' ').trim())
+      expect(labelTexts.some(t => t.includes('Desayuno'))).toBe(true)
+      expect(labelTexts.some(t => t.includes('Comida'))).toBe(true)
+      expect(labelTexts.some(t => t.includes('Cena'))).toBe(true)
+      expect(labelTexts.filter(t => t.includes('Colación')).length).toBe(0)
+    })
+
+    it('shows 4 meal columns for an 11-month baby (SNACK_1 "Colación" present)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(11) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const mealSlots = wrapper.findAll('.meal-slot')
+      // 7 days * 4 meals = 28 slots
+      expect(mealSlots.length).toBe(28)
+
+      // Verify labels include "Colación" (singular for 4-meal layout)
+      const labels = wrapper.findAll('.meal-slot__label')
+      const labelTexts = labels.map(l => l.text().replace(/\s+/g, ' ').trim())
+      expect(labelTexts.filter(t => t.includes('Colación')).length).toBeGreaterThan(0)
+      // Should be singular "Colación", not "Colación 1"
+      expect(labelTexts.some(t => t.includes('Colación') && !t.includes('Colación 1'))).toBe(true)
+    })
+
+    it('shows 5 meal columns for a 15-month baby (two colación columns)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(15) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const mealSlots = wrapper.findAll('.meal-slot')
+      // 7 days * 5 meals = 35 slots
+      expect(mealSlots.length).toBe(35)
+
+      // Verify labels include "Colación 1" and "Colación 2"
+      const labels = wrapper.findAll('.meal-slot__label')
+      const labelTexts = labels.map(l => l.text().replace(/\s+/g, ' ').trim())
+      expect(labelTexts.filter(t => t.includes('Colación 1')).length).toBeGreaterThan(0)
+      expect(labelTexts.filter(t => t.includes('Colación 2')).length).toBeGreaterThan(0)
+    })
+
+    // Boundary tests — the 10m/13m thresholds are clinically load-bearing.
+    it('shows 4 meal columns at EXACTLY 10 months (lower boundary of 10-12m)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(10) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // 7 days * 4 meals = 28 — a 10-month baby must get the snack column, not 3.
+      expect(wrapper.findAll('.meal-slot').length).toBe(28)
+    })
+
+    it('shows 5 meal columns at EXACTLY 13 months (lower boundary of 13-23m)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(13) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // 7 days * 5 meals = 35 — a 13-month baby must get both colación columns.
+      expect(wrapper.findAll('.meal-slot').length).toBe(35)
+    })
+
+    it('falls back to 3 meal columns when the profile has no birthDate (age-0 guard)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1' }, // no birthDate → getAgeMonths → 0
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // Age 0 → 3 meals (safe default), not an empty/broken grid.
+      expect(wrapper.findAll('.meal-slot').length).toBe(21)
+    })
+  })
 })

@@ -662,8 +662,8 @@
 import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
-import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey } from '@pakulab/shared'
-import { getAgeMonths, getSuggestedStageForAge, PLATE_STAGE_LABELS } from '@pakulab/shared'
+import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey, MEAL_TYPE_TO_KEY } from '@pakulab/shared'
+import { getAgeMonths, getSuggestedStageForAge, PLATE_STAGE_LABELS, getMealSlotsForAge } from '@pakulab/shared'
 import TierGate from '@/shared/components/TierGate.vue'
 import PlateBuilderDrawer from '@/shared/components/PlateBuilderDrawer.vue'
 import MenuExportFrame from './components/MenuExportFrame.vue'
@@ -761,7 +761,7 @@ const exportFrameRef = ref<InstanceType<typeof MenuExportFrame> | null>(null)
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-type MealKey = 'desayuno' | 'comida' | 'cena'
+type MealKey = 'desayuno' | 'comida' | 'cena' | 'snack1' | 'snack2'
 type DayKey = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
 
 interface MealDef {
@@ -779,11 +779,15 @@ interface DayInfo {
   isToday: boolean
 }
 
-const MEALS: MealDef[] = [
-  { key: 'desayuno', name: 'Desayuno', icon: 'wb_sunny' },
-  { key: 'comida', name: 'Comida', icon: 'lunch_dining' },
-  { key: 'cena', name: 'Cena', icon: 'bedtime' },
-]
+// Icon mapping for meal types (Material Symbols)
+const MEAL_ICONS: Record<SharedMealKey, string> = {
+  desayuno: 'wb_sunny',
+  comida: 'lunch_dining',
+  cena: 'bedtime',
+  snack1: 'bakery_dining',
+  snack2: 'cookie',
+  snack: 'bakery_dining',
+}
 
 // ─── Stores ───────────────────────────────────────────────────────────────
 
@@ -804,6 +808,21 @@ const profilesLoading = computed(() => profileStore.loading ?? false)
 const babyAgeMonths = computed<number>(() => {
   const birthDate = profileStore.activeProfile?.birthDate
   return birthDate ? getAgeMonths(birthDate) : 0
+})
+
+// ─── Age-aware meal slots (REQ-A3) ────────────────────────────────────────
+
+/**
+ * Age-aware meal columns for the menu grid. Uses getMealSlotsForAge to
+ * return 3 meals (<10m), 4 meals (10-12m), or 5 meals (≥13m).
+ */
+const MEALS = computed<MealDef[]>(() => {
+  const slots = getMealSlotsForAge(babyAgeMonths.value)
+  return slots.map(slot => ({
+    key: MEAL_TYPE_TO_KEY[slot.mealType] as MealKey,
+    name: slot.label,
+    icon: MEAL_ICONS[MEAL_TYPE_TO_KEY[slot.mealType]],
+  }))
 })
 
 /** Baby's current stage label (empty string if age is 0) */
@@ -886,7 +905,7 @@ const weekFoodIds = computed<string[]>(() => {
   const ids = new Set<string>()
   // Week grid foods
   for (const day of weekDays.value) {
-    for (const meal of MEALS) {
+    for (const meal of MEALS.value) {
       const plate = menuStore.getPlate(day.key, meal.key as MealKey)
       if (plate?.items) {
         for (const item of plate.items) {
@@ -1005,7 +1024,7 @@ const exportData = computed<ExportDay[]>(() => {
     const newFoodIdsToday = new Set<string>()
     const newFoodNamesToday: string[] = []
 
-    const meals: ExportMeal[] = MEALS.map((meal) => {
+    const meals: ExportMeal[] = MEALS.value.map((meal) => {
       const plate = menuStore.getPlate(dayKey, meal.key)
       const foods: ExportFood[] = menuStore.getSlotFoods(dayKey, meal.key).map((item) => {
         const foodId = item.foodId ?? ''
@@ -1416,7 +1435,7 @@ async function confirmApplyAll(): Promise<void> {
   closeApplyAllDialog()
 
   // Sequential assignment to avoid Pinia reactive state race conditions (UX-5)
-  for (const meal of MEALS) {
+  for (const meal of MEALS.value) {
     try {
       await menuStore.assignPlate(profileId, weekStartISO.value, dayKey!, meal.key, plate!)
     } catch (err) {

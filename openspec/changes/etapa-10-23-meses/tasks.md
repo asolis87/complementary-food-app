@@ -109,18 +109,20 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **TDD**: no aplica (UI integration). Test de aceptación: la página renderiza con la edad correcta del bebé
 - **Depends on**: T-00-01
 
-### T-00-05: Update `MenuWeekPage.vue` con `MEALS` age-aware ⏸️ DEFERRED (Bloque 4)
+### T-00-05: Update `MenuWeekPage.vue` con `MEALS` age-aware ✅ DONE (PR-13, CRITICAL-1)
 
 - **Spec**: REQ-A3
-- **Files**: `apps/web/src/modules/menus/MenuWeekPage.vue`
+- **Files**: `apps/web/src/modules/menus/MenuWeekPage.vue`, `apps/web/src/modules/menus/MenuWeekPage.test.ts`
 - **Deliverable**:
-  - Reemplazar `MEALS` array con `getMealSlotsForAge(babyAgeMonths)`
+  - Reemplazar `MEALS` array con `getMealSlotsForAge(babyAgeMonths)` computed
   - Grilla dinámica: 3 columnas (6-9m) / 4 columnas (10-12m) / 5 columnas (13-23m)
-  - Drag & drop funciona en todas las columnas
-- **Tests**: 1-2 integration tests del componente
-- **TDD**: snapshot del componente con diferentes edades
+  - MealKey type extended to include 'snack1' | 'snack2'
+  - MEAL_ICONS mapping for all meal types
+  - All MEALS array usages converted to MEALS.value (computed ref)
+- **Tests**: 6 integration tests (3-meal @8m, 4-meal @11m, 5-meal @15m; + 4R-added boundary tests: exactly 10m → 4 cols, exactly 13m → 5 cols, no-birthDate age-0 → 3 cols)
+- **TDD**: RED → GREEN → REFACTOR completed
 - **Depends on**: T-00-01
-- **DEFERRED — reason**: `MenuWeekPage` uses its own data model with lowercase keys (`'desayuno' | 'comida' | 'cena'`) and `menuStore.getPlate(dayKey, mealKey)` doesn't support `SNACK_1`/`SNACK_2`. Adding snack menu slots requires: new menu store handlers, new picker dialog flow, new export logic. This is a Bloque 4 task, not Bloque 0. The dashboard and diary get the 10-23m upgrade first; the menu upgrade is a separate scope. Tracked for Bloque 4 as a new task (T-04-MENU-SNACKS) — open question to resolve before scheduling.
+- **Resolved**: Backend already supported all MealTypes via MenuMeal.mealType enum. Frontend only needed to consume getMealSlotsForAge and map to local meal definitions. Export frame was ripple-safe (dynamic v-for). Completed as PR-13 CRITICAL-1 fix. 4R added clinical-boundary tests (10m/13m thresholds) + age-0 fallback test.
 
 ### T-XX-DIARY-PICKER-AGE-AWARE: Update diary meal-type picker (NEW, PR-1.5)
 
@@ -204,15 +206,18 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **Tests** (2): muestra al confirmar, no muestra segunda vez en misma sesión
 - **TDD**: render + interaction
 
-### T-00-12: `useStageTip(ageMonths)` en `useDashboardTips.ts`
+### T-00-12: `useStageTip(ageMonths)` en `useDashboardTips.ts` ✅ DONE (PR-2) + UI wiring (PR-13, CRITICAL-2)
 
 - **Spec**: REQ-D2
-- **Files**: `apps/web/src/shared/composables/useDashboardTips.ts`
+- **Files**: `apps/web/src/shared/composables/useDashboardTips.ts`, `apps/web/src/modules/dashboard/components/StageTipCard.vue`, `apps/web/src/modules/dashboard/DashboardPage.vue`
 - **Deliverable**:
-  - `useStageTip(ageMonths)` retorna un tip de `STAGE_TIPS[ageStageFor(months)]` rotado
-  - No immediate repeat en misma sesión
-- **Tests** (3): retorna tip de etapa correcta, no immediate repeat, cambia con edad
-- **TDD**: pure function test
+  - `useStageTip(ageMonths)` retorna un tip de `STAGE_TIPS[ageStageFor(months)]` rotado (PR-2)
+  - No immediate repeat en misma sesión (PR-2)
+  - **NEW (PR-13 CRITICAL-2)**: StageTipCard.vue component created and wired into DashboardPage below BalanceInsightCard
+  - Card displays stage label ("Tip para 10-12 meses") and tip text
+  - Reshuffle button (always visible) rotates tip on click
+- **Tests** (PR-2: 16 composable tests; PR-13: 4 component tests): retorna tip de etapa correcta, no immediate repeat, cambia con edad, renders for all stages, reshuffle works
+- **TDD**: pure function test (PR-2) + component tests (PR-13 RED → GREEN)
 - **Depends on**: T-00-02
 
 ---
