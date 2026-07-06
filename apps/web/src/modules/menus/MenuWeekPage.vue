@@ -645,6 +645,7 @@
         :week-end="weekEndISO"
         :week-label="weekLabel"
         :baby-name="profileStore.activeProfile?.name ?? ''"
+        :stage-label="babyStageLabel"
         :days="exportData"
         :week-stats="weekStats"
         @done="onExportDone"
@@ -662,6 +663,7 @@ import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
 import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey } from '@pakulab/shared'
+import { getAgeMonths, getSuggestedStageForAge, PLATE_STAGE_LABELS } from '@pakulab/shared'
 import TierGate from '@/shared/components/TierGate.vue'
 import PlateBuilderDrawer from '@/shared/components/PlateBuilderDrawer.vue'
 import MenuExportFrame from './components/MenuExportFrame.vue'
@@ -795,6 +797,22 @@ const foodHistoryStore = useFoodHistoryStore()
 
 const hasProfile = computed(() => !!profileStore.activeProfile)
 const profilesLoading = computed(() => profileStore.loading ?? false)
+
+// ─── Baby age and stage (for export) ──────────────────────────────────────
+
+/** Baby's age in months (0 if birthDate is missing/invalid) */
+const babyAgeMonths = computed<number>(() => {
+  const birthDate = profileStore.activeProfile?.birthDate
+  return birthDate ? getAgeMonths(birthDate) : 0
+})
+
+/** Baby's current stage label (empty string if age is 0) */
+const babyStageLabel = computed<string>(() => {
+  const ageMonths = babyAgeMonths.value
+  if (ageMonths === 0) return ''
+  const stage = getSuggestedStageForAge(ageMonths)
+  return PLATE_STAGE_LABELS[stage]
+})
 
 // ─── Week state ───────────────────────────────────────────────────────────
 

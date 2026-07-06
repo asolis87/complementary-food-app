@@ -9,7 +9,9 @@
       </div>
       <h1 class="export-title">Menú Semanal</h1>
       <p class="export-subtitle">{{ weekLabel }}</p>
-      <p v-if="babyName" class="export-baby">{{ babyName }}</p>
+      <p v-if="babyName" class="export-baby">
+        {{ babyName }}<template v-if="stageLabel"> — {{ stageLabel }}</template>
+      </p>
     </div>
 
     <!-- 7×3 Grid: Days × Meals -->
@@ -139,6 +141,7 @@ const props = defineProps<{
   weekEnd: string
   weekLabel: string
   babyName: string
+  stageLabel?: string
   days: ExportDay[]
   weekStats: {
     total: number
