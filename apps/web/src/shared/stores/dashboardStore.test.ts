@@ -81,15 +81,6 @@ function createMockDashboardData(overrides: Partial<DashboardData> = {}): Dashbo
         status: 'pending' as const,
       },
     ],
-    pendingAllergens: [
-      {
-        allergenKey: 'huevo',
-        nameEs: 'Huevo',
-        icon: '🥚',
-        minAgeMonths: 6,
-        urgency: 'normal' as const,
-      },
-    ],
     roadmapProgress: [
       {
         group: 'VEGETABLE' as const,

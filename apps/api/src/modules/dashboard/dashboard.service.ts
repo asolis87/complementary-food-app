@@ -72,22 +72,21 @@ export async function getDashboardData(
     daysInAC,
   }
 
-  // Run independent queries in parallel
-  const [todayResult, suggestedFoods, pendingAllergens, roadmapProgress, weeklyBalance] =
-    await Promise.all([
-      getTodayLogs(prisma, babyProfileId),
-      getSuggestedFoods(prisma, babyProfileId, babyAgeMonths),
-      getPendingAllergens(prisma, babyProfileId, babyAgeMonths),
-      getRoadmapProgress(prisma, babyProfileId, babyAgeMonths),
-      getWeeklyBalance(prisma, babyProfileId),
-    ])
+  // Run independent queries in parallel.
+  // Pending allergens are a PRO-only feature exposed via GET /api/dashboard/allergens;
+  // they are intentionally excluded from this FREE-tier bundle to avoid leaking PRO data.
+  const [todayResult, suggestedFoods, roadmapProgress, weeklyBalance] = await Promise.all([
+    getTodayLogs(prisma, babyProfileId),
+    getSuggestedFoods(prisma, babyProfileId, babyAgeMonths),
+    getRoadmapProgress(prisma, babyProfileId, babyAgeMonths),
+    getWeeklyBalance(prisma, babyProfileId),
+  ])
 
   return {
     baby,
     userTier,
     todayLogs: todayResult.logs,
     suggestedFoods,
-    pendingAllergens,
     roadmapProgress,
     weeklyBalance,
   }

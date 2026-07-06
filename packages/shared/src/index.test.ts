@@ -44,7 +44,6 @@ describe('Barrel exports — Dashboard types', () => {
       userTier: 'FREE',
       todayLogs: [],
       suggestedFoods: [],
-      pendingAllergens: [],
       roadmapProgress: [],
       weeklyBalance: {
         label: 'balanced',

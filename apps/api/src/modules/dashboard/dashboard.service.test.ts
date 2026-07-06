@@ -628,7 +628,9 @@ describe('getDashboardData', () => {
     expect(result.userTier).toBe('PRO')
     expect(Array.isArray(result.todayLogs)).toBe(true)
     expect(Array.isArray(result.suggestedFoods)).toBe(true)
-    expect(Array.isArray(result.pendingAllergens)).toBe(true)
+    // pendingAllergens is a PRO feature served only via GET /api/dashboard/allergens.
+    // It must NOT leak into the FREE-tier /api/dashboard bundle.
+    expect('pendingAllergens' in result).toBe(false)
     expect(Array.isArray(result.roadmapProgress)).toBe(true)
     expect(result.weeklyBalance).toBeDefined()
   })
