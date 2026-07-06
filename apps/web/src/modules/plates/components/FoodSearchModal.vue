@@ -660,6 +660,15 @@ function hasAllergenReactionWarning(food: Food): boolean {
   border-radius: var(--md3-rounded-md);
 }
 
+/* Available-food rows stack their button + warning panel vertically so the
+   safety panel sits BELOW the food (not beside it, which broke the layout).
+   The "selected" row (.food-item-added) keeps the horizontal layout. */
+.food-item:not(.food-item-added) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
 /* Added items row */
 .food-item-added {
   background: var(--md3-primary-container);

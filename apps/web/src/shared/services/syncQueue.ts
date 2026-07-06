@@ -19,6 +19,10 @@ export interface QueuedPlate {
     groupAssignment: FoodGroup
   }>
   queuedAt: number
+  // TODO(tech-debt): the offline queue does not persist stageFor or per-item
+  // servingAmount, so a plate saved while offline syncs (AppLayout.vue flush)
+  // with stageFor=null and default servings. The online save path handles both.
+  // Fixing requires widening this type + the enqueue call + the AppLayout flush.
 }
 
 // ─── DB Schema ────────────────────────────────────────────────────────────────
