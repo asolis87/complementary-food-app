@@ -1,146 +1,138 @@
-# Verify Report: etapa-10-23-meses
+# Verify Report: etapa-10-23-meses — ROUND 2
 
-> **Phase**: sdd-verify (final verification before archive)
+> **Phase**: sdd-verify (round 2, re-verification after PR-13 CRITICAL fixes)
 > **Change**: etapa-10-23-meses — 10–23 month complementary-feeding experience
-> **Branch / commit**: `release/etapa-10-23-meses` @ `a1b47f0` (all 12 feature PRs + tech-debt PR-95 merged)
+> **Branch / commit**: `chore/etapa-10-23-meses-pr13-state-sync` @ `eb6ae22` (post-merge state-sync of `release/etapa-10-23-meses` @ `6463fc3`; PR #99 / PR-13 merged, all 13 PRs present)
 > **Artifact store**: openspec
 > **Verified**: 2026-07-06
-> **Verdict**: **NOT READY FOR ARCHIVE** — 2 CRITICAL spec-coverage gaps (both traceable to documented `T-00-05` / `REQ-D2` deferrals, but neither was removed from the spec contract). See §Verdict.
+> **Verdict**: **READY FOR ARCHIVE** — both round-1 CRITICALs closed with real source evidence + real DOM/exact-string tests. All suites green. No new blockers. Non-blocking WARNINGs/SUGGESTIONs unchanged (product/clinical decisions, not re-opened).
 
 ---
 
-## 1. Test Health (REAL output, this working tree)
+## 0. Round 1 → Round 2 delta
 
-Shared built first (`pnpm --filter @pakulab/shared build`) so api/web typecheck against fresh dist.
+| Item | Round 1 (`a1b47f0`) | Round 2 (`eb6ae22`) | Change |
+|---|---|---|---|
+| **CRITICAL-1 REQ-A3** (MenuWeekPage age-aware) | ❌ hardcoded 3-meal grid, `repeat(3,1fr)`, no `getMealSlotsForAge` | ✅ `MEALS` computed from `getMealSlotsForAge(babyAgeMonths)`; 3/4/5 columns; SNACK columns for ≥10m | **CLOSED** |
+| **CRITICAL-2 REQ-D2** (Tip de la etapa card) | ❌ `useStageTip` unconsumed, card never rendered | ✅ `StageTipCard.vue` rendered in DashboardPage below BalanceInsightCard; `useStageTip` exports `stage` | **CLOSED** |
+| web suite | 289 passed | 299 passed (+10, PR-13 tests) | as forecast |
+| typecheck / shared / api | 0 / 218 / 444 | 0 / 218 / 444 | unchanged |
+| W-1..W-5 WARNINGs | open (non-blocking) | unchanged (non-blocking) | no regression |
+| S-1..S-5 SUGGESTIONs | open | unchanged | no regression |
 
-| Command | Result | Baseline | Match |
+**Note on commit ref**: the task named `release/etapa-10-23-meses @ 6463fc3`; the checked-out working tree is the immediate state-sync child `eb6ae22` (branch `chore/etapa-10-23-meses-pr13-state-sync`), whose only production-code delta from `6463fc3` is the `openspec/.../state.yaml` PR-13 sync note. All PR-13 source (MenuWeekPage, StageTipCard, DashboardPage, useDashboardTips) is present and verified in this tree. No material difference for verification.
+
+---
+
+## 1. Test Health (REAL output, this working tree @ `eb6ae22`)
+
+| Command | Result | Round-2 baseline | Match |
 |---|---|---|---|
 | `pnpm typecheck` (shared tsc + api tsc + web vue-tsc) | **exit 0** | exit 0 | ✅ |
 | `pnpm --filter @pakulab/shared test` | **218 passed (218)** / 15 files | 218 | ✅ |
 | `pnpm --filter api test` | **444 passed (444)** / 29 files | 444 | ✅ |
-| `pnpm --filter web test:run` | **289 passed (289)** / 31 files | 289 | ✅ |
+| `pnpm --filter web test:run` | **299 passed (299)** / 32 files | 299 (289 + ~10) | ✅ |
 
-No failures, no skipped suites, no `test:run` errors. All three suites match the last-session baseline exactly.
+No failures, no skipped suites, no runner errors. The `+10` on web is exactly the PR-13 additions: MenuWeekPage REQ-A3 age-aware tests (6 new: 8m/11m/15m + 10m boundary + 13m boundary + age-0 fallback) and StageTipCard tests (4 new). Rebuild of shared was NOT required — typecheck passed against existing dist.
 
-**Non-fatal noise (not a failure):** `FoodSearchPage.test.ts` emits `[Vue warn]: injection "Symbol(router)" not found` to stderr; both tests still pass. It is a missing RouterLink/router stub in that test's mount, not a runtime defect. → SUGGESTION.
+**Non-fatal noise (unchanged from round 1):** `FoodSearchPage.test.ts` emits `[Vue warn]: injection "Symbol(router)" not found` to stderr; both tests pass. Missing router stub in that mount, not a runtime defect. → SUGGESTION S-4 (unchanged).
 
 ---
 
-## 2. Spec Coverage Matrix (req-01 … req-06)
+## 2. PRIMARY OBJECTIVE — CRITICAL closure (evidence, file:line)
 
-Legend: ✅ satisfied · ⚠️ partial/deviation · ❌ unmet.
+### CRITICAL-1 — REQ-A3 MenuWeekPage age-aware  →  ✅ CLOSED
+
+**Source (`apps/web/src/modules/menus/MenuWeekPage.vue`):**
+- `babyAgeMonths` computed from active profile birthDate via `getAgeMonths`, `0` fallback for missing/invalid (`:807-811`).
+- `MEALS` is now a **`computed<MealDef[]>`** derived from `getMealSlotsForAge(babyAgeMonths.value)` and mapped through `MEAL_TYPE_TO_KEY` + `MEAL_ICONS` (`:819-826`). NOT a hardcoded array.
+- `MealKey` type extended to `'desayuno' | 'comida' | 'cena' | 'snack1' | 'snack2'` (`:764`); `MEAL_ICONS` covers all 5 slots incl. `snack1`/`snack2`/`snack` (`:783-790`).
+- Template renders variable columns via `v-for="meal in MEALS"` — desktop grid (`:94`), preview rows (`:183`), mobile day panel (`:304`) — and all script consumers use `MEALS.value` (weekFoodIds `:908`, exportData `:1027`, confirmApplyAll `:1438`). No `repeat(3,1fr)` remains as a fixed-meal constraint; per-day meal count is driven entirely by `MEALS`.
+- SNACK columns appear for ≥10m: `getMealSlotsForAge` returns SLOTS_4_MEALS (adds `SNACK_1` "Colación") for 10–12m and SLOTS_5_MEALS (`SNACK_1` "Colación 1" + `SNACK_2` "Colación 2") for ≥13m.
+
+**Shared source of truth (`packages/shared/src/constants/dashboard.ts:168-172`):** `getMealSlotsForAge(months)` → `<10` (incl. non-finite/negative) = 3 meals; `10..12` = 4 meals; `≥13` = 5 meals. Matches REQ-A1 chronological ordering (SNACK_1 mid-morning, SNACK_2 afternoon in 5-meal). 31 shared `dashboard.test.ts` tests pass.
+
+**Tests (`MenuWeekPage.test.ts` describe "REQ-A3: Age-aware meal columns (CRITICAL-1)" `:562-718`)** — REAL DOM-count assertions, not vacuous:
+- 8m → `findAll('.meal-slot').length === 21` (3×7), label set = Desayuno/Comida/Cena, **zero** "Colación" (`:568-596`).
+- 11m → `=== 28` (4×7), "Colación" present, singular NOT "Colación 1" (`:598-625`).
+- 15m → `=== 35` (5×7), both "Colación 1" AND "Colación 2" (`:627-653`).
+- **exactly 10m → `=== 28`** — lower boundary of 10–12m gets the snack column (`:656-675`).
+- **exactly 13m → `=== 35`** — lower boundary of 13–23m gets both colación columns (`:677-696`).
+- age-0 fallback (no birthDate) → `=== 21` (safe 3-meal default) (`:698-717`).
+Ages derived deterministically from birthDate via a `birthDateForAge(months)` helper pinned to day-1 (no end-of-month rollover). Assertions count real mounted `.meal-slot` nodes and inspect `.meal-slot__label` text — genuine, not `toBeTruthy` escape hatches.
+
+### CRITICAL-2 — REQ-D2 "Tip de la etapa" card  →  ✅ CLOSED
+
+**Source:**
+- `StageTipCard.vue` EXISTS (`apps/web/src/modules/dashboard/components/StageTipCard.vue`). Consumes `useStageTip(props.babyAgeMonths)` and destructures `{ tip, reshuffle, stage }` (`:47`); renders header "Tip para {stageLabel}" (`:9`), tip text (`:24`), and a reshuffle button (`:10-18`). `stageLabel` derived from the composable's `stage` via a display-only `AGE_STAGE_LABELS` map (`:40-48`) — no duplicate age→stage logic.
+- Rendered in `DashboardPage.vue` **below BalanceInsightCard**: BalanceInsightCard at `:112-117`, StageTipCard immediately after at `:120-123`, passing `:baby-age-months="dashboardData.baby.ageInMonths"`, guarded by `v-if="dashboardData"`. Import at `:145`. Satisfies REQ-D2 "debajo de la card de balance".
+- `useStageTip` (`apps/web/src/shared/composables/useDashboardTips.ts:61-92`) now **exports `stage`** (`:89-90`, "single source of truth"), reads `STAGE_TIPS[stage]`, picks with immediate-repeat avoidance (`_pickRandomStageTip` `:109-132`). `STAGE_TIPS` has ≥4 (6) tips per stage (`dashboard.ts:72-77`).
+
+**Tests (`StageTipCard.test.ts` `:1-86`)** — REAL, deterministic, not vacuous:
+- "renders a tip from the baby's stage list": mocks `Math.random → 0` → asserts EXACT tip `'Cada alimento nuevo necesita 10-15 exposiciones para ser aceptado.'` (TIPS_10_12[0]) (`:19-31`).
+- "displays the stage label": 11m → matches `/10.*12.*meses/i` (`:33-42`).
+- "reshuffle button click rotates the tip": `mockReturnValueOnce(0)` then `mockReturnValueOnce(0.34)` → floor(0.34×6)=2 → asserts new tip EXACTLY `'Experimenta con diferentes preparaciones y sabores.'` AND `!== initialTip` (`:44-65`). Deterministic reshuffle, not chance.
+- "renders for different age stages": 8m→`/6.*9/`, 15m→`/13.*17/`, 20m→`/18.*23/` (`:67-85`).
+
+---
+
+## 3. Spec Coverage Matrix (delta requirements)
+
+Legend: ✅ satisfied · ⚠️ partial/deviation (non-blocking) · ❌ unmet.
 
 ### REQ-01 — Age-Aware Experience (Bloque 0)
 
-| Req | Scenario focus | Status | Evidence |
-|---|---|---|---|
-| REQ-A1 | `getMealSlotsForAge` returns 3/4/5 slots chronologically | ✅ | `packages/shared/src/constants/dashboard.ts:168-172` + `SLOTS_3/4/5_MEALS:135-154`; 31 shared tests |
-| REQ-A2 | Dashboard uses age-aware slots, label "Comida" | ✅ | `DashboardPage.vue` + `TodayLogsCard`; label "Comida" at dashboard.ts:138/143/151 |
-| REQ-A3 | **MenuWeekPage age-aware (4 cols @11m, SNACK column)** | ❌ | `MenuWeekPage.vue:764` `MealKey='desayuno'|'comida'|'cena'`; `:782 MEALS` = 3 fixed; CSS `repeat(3,1fr)`. NO `getMealSlotsForAge`, NO SNACK_1/2 columns. **CRITICAL-1** |
-| REQ-A4 | Diary timeline order + "Sin registro" gap placeholders | ⚠️ | Order correct (`DiaryPage.vue:678 MEAL_TYPE_ORDER` SNACK_1:2, SNACK_2:4). Per-slot "Sin registro" placeholders NOT rendered (deferred `T-04-DIARY-GAPS`). Diary picker age-awareness IS fixed (`mealTypeOptions.ts:61 getMealTypeOptions`). → WARNING |
-| REQ-B1/B2 | `useStageTransition` cross-detection + banner | ✅ | `useStageTransition.ts` (9 tests); `StageTransitionBanner.vue` wired `DashboardPage.vue:49,304` |
-| REQ-C1 | TextureGuideCard 5-stage split + current/future | ✅ | `TextureGuideCard.vue:97-163` 5 stages (6m,7-9m,10-12m,13-17m,18-23m), `isCurrentStage`/`isFutureStage`, "Próximamente" badge (8 tests) |
-| REQ-D1 | `STAGE_TIPS` Record ≥4 tips/stage + `useStageTip` | ✅ | `dashboard.ts:72-77` STAGE_TIPS (6 tips each); `useDashboardTips.ts:61 useStageTip` (16 tests) |
-| REQ-D2 | **"Tip de la etapa" card rendered in dashboard** | ❌ | `useStageTip` has NO UI consumer — DashboardPage does not import/render it; only the test file consumes it. Card not wired. **CRITICAL-2** |
-| REQ-E1 | PerceptiveFeedingCard collapsible, 5 principles | ✅ | `PerceptiveFeedingCard.vue` wired `DashboardPage.vue:74` (4 tests) |
-| REQ-F1 | Water reminder in AddMealModal, 3 copy points | ✅ | `AddMealModal.vue:170-183` — vaso abierto/popote, orden leche→alimentos→agua, no reemplazar leche; dismissible, non-blocking (3 tests) |
-
-### REQ-02 — Food Catalog 10–23m (Bloque 1)  ✅ (re-scoped per PR-3, authoritative user decision)
-
 | Req | Status | Evidence |
 |---|---|---|
-| REQ-A1 (6 target foods exist, needsValidation) | ✅ | Foods pre-existed via 154-food catalog expansion; PR-3 re-scoped to DB-free audit + integrity test. `packages/shared/src/data/food-catalog.ts`; `apps/api/src/shared/migrations/seed-audit.test.ts` |
-| REQ-A2 (unique names, prep notes) | ✅ | catalog invariants tested (`food-catalog.test.ts` 44 tests, no-dup guard) |
-| REQ-A3 (isIronRich where applies) | ✅ | 18 iron-rich foods incl. hígado pollo/res, lenteja, frijol; yogur NOT iron-rich (verified). |
-| REQ-B1 (audit section visible) | ✅ | seed audit comment block (PR-3) |
+| REQ-A1 `getMealSlotsForAge` 3/4/5 | ✅ | `dashboard.ts:168-172`; 31 shared tests |
+| REQ-A2 dashboard age-aware, "Comida" | ✅ | `dashboard.ts:137/143/151` label "Comida"; TodayLogsCard |
+| **REQ-A3 MenuWeekPage age-aware** | ✅ **(FIXED PR-13)** | `MenuWeekPage.vue:819-826` MEALS computed; 6 DOM-count tests incl. 10m/13m boundaries + age-0 |
+| REQ-A4 diary order + gap placeholders | ⚠️ | Order correct; per-slot "Sin registro" placeholders still deferred (`T-04-DIARY-GAPS`). → W-1 (unchanged, non-blocking) |
+| REQ-B1/B2 stage transition | ✅ | `useStageTransition.ts` + `StageTransitionBanner.vue` (banner test 4 passing) |
+| REQ-C1 TextureGuideCard 5-stage | ✅ | `TextureGuideCard.vue` 5 stages, current/future |
+| REQ-D1 STAGE_TIPS + useStageTip | ✅ | `dashboard.ts:72-77`; `useDashboardTips.ts:61` (now exports `stage`) |
+| **REQ-D2 Tip de la etapa card** | ✅ **(FIXED PR-13)** | `StageTipCard.vue` rendered `DashboardPage.vue:120-123` below balance; 4 real tests |
+| REQ-E1 PerceptiveFeedingCard | ✅ | wired DashboardPage |
+| REQ-F1 water reminder | ✅ | `AddMealModal.vue` |
 
-Note: spec's `ageMonths: 10-12` proposal is OBSOLETE — user authoritatively kept 6-8m per Protocolo Beikost/Dra. Trueba. Recorded in state.yaml + tasks.md Bloque 1 reality update. Not a violation.
+### REQ-02..06 (previously PASSED — re-confirmed, no PR-13 regression)
 
-### REQ-03 — Allergen Tracker (Bloques 2+4)
+PR-13 was FRONTEND-ONLY (`git show --stat 84cc971..6463fc3`): DashboardPage (+7), StageTipCard (new), MenuWeekPage.vue (+41), MenuWeekPage.test.ts (+158), useDashboardTips.ts (+2). It did NOT touch allergen service, plate builder serving logic, snack service, iron priority, or the API. Spot-check:
 
-| Req | Status | Evidence |
+| Req | Status | Re-confirmation |
 |---|---|---|
-| REQ-A1 (GET /api/allergens/status, response shape) | ✅ | `allergens.routes.ts:38`; `allergens.service.ts:53 getStatus` returns `{ageMonths, closingWindow, allergens[]}` (8 route tests) |
-| REQ-A2 (exposureCount excludes REJECTED) | ✅ | `computeAllergenStatus:161` skips `reaction==='REJECTED'` |
-| REQ-A3 (status introduced/pending/in_window) | ✅ | `allergens.service.ts:189-196`; CLOSING_WINDOW_AGE_MONTHS=10 |
-| REQ-A4 (tier gating) | ⚠️ | Design AD-06 consciously overrode spec's "HTTP 402 `{error:'TIER_REQUIRED'}`" → uses `requireTier('PRO')` = **403 INSUFFICIENT_TIER**. Code matches DESIGN, deviates from SPEC TEXT. → WARNING (documented design decision) |
-| REQ-B1 (card hidden <6m) | ✅ | `AllergenTrackerCard.vue:83 showCard = babyAgeMonths >= 6` |
-| REQ-B2 (chips + closing-window banner) | ✅ | `AllergenTrackerCard.vue` (14 tests) |
-| REQ-B3 (FREE CTA → /billing) | ✅ | `TierGate required-tier="PRO"`; card skips fetch when tier!==PRO (`:109`) |
-
-Allergen set deviation: spec lists **8** priority allergens; `TOP_ALLERGENS` renders **9** (the 8 spec allergens split fish→pescado+mariscos, PLUS ajonjolí/sésamo). Superset is clinically defensible (sesame is a top-9 allergen); pescado/mariscos split is a recorded PR-4 decision. → WARNING (count differs from spec's literal "8").
-
-### REQ-04 — Warning Tags (Bloques 3+4)  ✅
-
-| Req | Status | Evidence |
-|---|---|---|
-| REQ-A1 (WarningTag enum, 4 values) | ✅ | schema enum + `packages/shared/src/types/food.ts WARNING_TAGS`; schema-non-destructive test (5 shared) |
-| REQ-A2 (Food.warningTags[] + seed backfill) | ✅ | 14+ foods tagged from PDF page 7; `seed-audit.test.ts` real invariants (all tree_nuts have CHOKING, round/hard-chunk fruits tagged, safe foods untagged) |
-| REQ-B1 (FoodSearchPage badge+tooltip) | ✅ | `FoodSearchPage.vue` `<WarningBadge>` (2 tests) |
-| REQ-B2 (FoodSearchModal panel, button stays enabled) | ✅ | `FoodSearchModal.vue` warning panel; add button enabled (4 tests, REQ-4-B2) |
-| REQ-B3 ("consulta a tu pediatra" disclaimer) | ✅ | `food.ts:47 WARNING_DISCLAIMER='Si tienes dudas, consulta a tu pediatra.'` — **es-MX tuteo** (spec text shows rioplatense voseo "tenés/consultá"; es-MX is the settled app-wide copy decision, NOT re-opened). → SUGGESTION on the stale spec string |
-| REQ-C1 (MenuWeekPage badge) | ✅ | `MenuWeekPage.vue:223,353 <WarningBadge>` via API contract widening |
-| REQ-C2 (PlateBuilder badge) | ✅ | `PlateVisualization.vue` badge; `usePlateBuilder.ts:232` edit-path preserves warningTags (dead-badge bug fixed) |
-
-### REQ-05 — Plate Builder (Bloques 4+5)  ✅
-
-| Req | Status | Evidence |
-|---|---|---|
-| REQ-A1/A2 (groupCount suggestion, deterministic) | ✅ | `getSuggestedGroupCount`; PlateBuilderPage "Sugerido para X meses" badge (`:47,63,86,102,328`) |
-| REQ-B1 (serving selector, default 1, preserve) | ✅ | `PlateContents.vue:50 :value="item.servingAmount ?? '1'"`, 1-4 cdas; `usePlateBuilder.ts:232` preserves on edit |
-| REQ-B2 (total "X cdas en total") | ✅ | `PlateBuilderPage.vue:26` |
-| REQ-B3 (>4 cdas/group non-blocking banner) | ✅ | `usePlateBuilder.ts:136 hasExcessServing` per group; `PlateBuilderPage.vue:170-173` exact spec copy, role=alert, non-blocking |
-| REQ-C1 (PlateStage enum, Plate.stageFor?) | ✅ | schema + `packages/shared/src/types/plate.ts` (12 tests); `plate-stage-sync.test.ts` |
-| REQ-C2 (stageFor selector "Etapa objetivo") | ✅ | PlateBuilderPage stageFor selector |
-| REQ-C3 (filter by stage, stageFor=null = IS NULL) | ✅ | `plates.schema.ts:65 z.preprocess("null"/""→null)`; `plates.service.ts:53 ...(stageFor!==undefined && {stageFor})` |
-| REQ-C4 (default filter = baby stage) | ✅ | `PlateListPage.vue:241 getSuggestedStageForAge(babyAgeMonths)`, null="Todas" |
-| REQ-D1 (export shows baby CURRENT stage) | ✅ | `MenuExportFrame.vue:13 — {{ stageLabel }}`; MenuWeekPage derives via getAgeMonths→getSuggestedStageForAge→PLATE_STAGE_LABELS (PR-12; MenuExportFrame 20 tests) |
-
-### REQ-06 — Dashboard Suggestions (Bloque 4)  ✅
-
-| Req | Status | Evidence |
-|---|---|---|
-| REQ-A1 (iron priority ≥10m, ≥30% iron-rich) | ✅ | `dashboard.service.ts:488 sortSuggestions`; tiers = pending-allergens → iron (`minIron=min(len,max(3,ceil(limit*0.3)))`) → rest. Allergen-first-then-iron is the recorded product decision. All 18 iron foods are age≤10 so always candidates for ≥10m babies (verified). |
-| REQ-A2 (graceful fallback, no iron-rich) | ✅ | `:524 if (ironFoods.length===0) return sorted.slice(0,limit)` |
-| REQ-B1 (getSnackSuggestions, <10m NOT_YET, ≥12m extras, exclude CHOKING) | ✅ | `dashboard.service.ts:218-291`; `<10m→SNACKS_NOT_YET`, core (fruit/veg/yogur-queso) ≥3, 12m+ galleta/pan/cereal/arroz, `notChokingHazard` filter, deterministic order-by-name |
-| REQ-B2 (SnackSuggestionCard only when snack slot exists) | ✅ | `SnackSuggestionCard.vue` wired `DashboardPage.vue:102`, shown ≥10m & available (5 tests) |
-| REQ-B3 (card "Ver detalle" → FoodSearchModal) | ✅ | SnackSuggestionCard |
+| REQ-02 food catalog 10–23m | ✅ | catalog + seed-audit untouched; shared `food-catalog.test.ts` 44 tests green |
+| REQ-03 allergen tracker | ✅ | `allergens.routes.test.ts` 8 green; AllergenTrackerCard untouched (W-2 403-vs-402, W-3 9-vs-8 = settled, NOT re-opened) |
+| REQ-04 warning tags | ✅ | `usePlateBuilder.ts` edit-path preserves warningTags (PR-13 diff only +1 line, no behavior change); WarningBadge in MenuWeekPage preview `:223` + mobile `:353` still present |
+| REQ-05 plate builder / **REQ-D1 export stage** | ✅ | MenuExportFrame still receives `:stage-label="babyStageLabel"` (`MenuWeekPage.vue:649`); `babyStageLabel` computed intact (`:829-834`); MenuExportFrame tests + MenuWeekPage stage-derivation tests (`:507-560`) green. `MEALS` computed feeds `exportData` (`:1027`) — ripple-safe, no collateral break. |
+| REQ-06 dashboard suggestions | ✅ | `dashboard.service.ts` iron/snack tiers untouched by PR-13; api 444 green |
 
 ---
 
-## 3. Task Completion vs Reality
+## 4. Task Completion vs Reality
 
-state.yaml `tasks.completed_prs` = PR-1 … PR-12 (all merged) + standalone tech-debt PR-95. Spot-checks confirm marked-done tasks are genuinely implemented (WarningBadge, allergen service, iron tiers, snack service, plate stageFor, export stage label all present with real tests). Two exceptions where a task/spec was marked done/deferred but the SPEC requirement remains unmet in shipped UI:
-
-- **T-00-05 (MenuWeekPage age-aware, REQ-A3)** — marked `DEFERRED (Bloque 4)` in tasks.md, but never actually implemented in any later PR and never removed from the REQ-01 spec contract. Menu grid is still 3 fixed columns. → CRITICAL-1.
-- **REQ-D2 "Tip de la etapa" card** — `useStageTip` composable shipped (REQ-D1) but the rendered dashboard card (REQ-D2) was never wired. Tracked in state.yaml deferred debt ("useStageTip has no UI consumer"). → CRITICAL-2.
-
-All other tasks' checked state matches code.
+state.yaml `completed_prs` = PR-1 … PR-13 (all merged). Round 1's two "marked done but unmet" exceptions (T-00-05 REQ-A3, REQ-D2) are now genuinely implemented and tested in PR-13. `apply.status: complete`, `next_pr: null`. All checked task states match shipped code. No unchecked implementation task remains.
 
 ---
 
-## 4. Known Deferred Tech-Debt — classified (from state.yaml apply.notes)
+## 5. Known Deferred Tech-Debt — status unchanged (NOT re-raised as blockers)
 
-| Deferred item | Classification | Rationale |
-|---|---|---|
-| dashboard `buildAllergenAlerts` ES/EN allergen-key bug | **WARNING (not truly dead code, but UI-orphaned)** | `getPendingAllergens`→`buildAllergenAlerts` still called by live route `GET /api/dashboard/allergens` (`dashboard.routes.ts:146`) and dangling store method `dashboardStore.fetchAllergens` (`:126`), BUT no UI reaches it: the old `AllergenAlertsCard` is DELETED (0 refs), and the epic card `AllergenTrackerCard.vue:114` fetches the correct `/allergens/status` (PR-4 service with proper ES↔EN mapping). Not a spec violation; the shipped tracker (REQ-03) is correct. Recommend deleting the orphaned route/method post-archive. |
-| `ALLERGEN_AGE_THRESHOLDS` pescado/mariscos reconcile | acceptable deferral | Constant is consumed ONLY by the UI-orphaned `buildAllergenAlerts` path above. Confined blast radius; no live consumer. |
-| garbanzo left untagged for warningTags | **acceptable deferral (spec-compliant)** | `food-catalog.ts:1030` documents deferral pending product; NOT on PDF page 7 verbatim. REQ-2-A1 makes garbanzo's CHOKING tag conditional ("si entero"), so untagged is within spec. |
-| shared test asserting all iron foods age≤10m (missing) | **WARNING (invariant holds, unlocked)** | Verified all 18 iron-rich foods have ageMonths 4–9 (≤10). The invariant HOLDS today but nothing locks it — a future regression would silently break iron priority for ≥10m babies. Add the test post-archive. |
-| `useStageTip` has no UI consumer | **CRITICAL-2** (see §2 REQ-D2) | Spec REQ-D2 explicitly requires the rendered card. |
-| `forbidOnly` missing in shared/api vitest configs | SUGGESTION (partly resolved) | api HAS `forbidOnly:!!process.env.CI` (`apps/api/vitest.config.ts:7`) and web has it via mergeConfig; only `packages/shared/vitest.config.ts` lacks it. A stray `.only` in shared tests would not fail CI. Non-blocking. |
-| TextureGuideCard under-6m all-future state | SUGGESTION | `currentStageIndex` = -1 for <6m → all stages "future", no current highlight. Spec scenarios only cover 8m/14m (both correct); the whole 10-23m experience targets ≥6m. Cosmetic edge case. |
+Per round-1 classification, these remain non-blocking and were explicitly NOT re-opened this round:
 
----
+| Item | Round-2 status |
+|---|---|
+| REQ-3-A4 tier 403 `INSUFFICIENT_TIER` vs spec 402 (AD-06 design decision) | W-2 — unchanged, documented design decision |
+| Allergen 9 (ajonjolí + pescado/mariscos split) vs spec "8" | W-3 — unchanged, clinical superset |
+| Orphaned buggy `buildAllergenAlerts` ES/EN path (no live UI consumer) | W-5 — unchanged; delete post-archive |
+| Missing "all iron foods ≤10m" invariant test | W-4 — unchanged; invariant holds, add test post-archive |
+| es-MX tuteo vs stale rioplatense spec strings (REQ-4-B3) | S-2 — unchanged; settled copy decision, refresh spec text only |
+| `forbidOnly` missing in `packages/shared/vitest.config.ts` (api/web have it) | S-1 — unchanged |
+| TextureGuideCard <6m all-future edge state | S-3 — unchanged; app targets ≥6m |
+| REQ-A4 diary per-slot "Sin registro" placeholders | W-1 — unchanged; `T-04-DIARY-GAPS` deferral |
+| FoodSearchPage router-injection Vue warning | S-4 — unchanged; add RouterLink stub |
+| WarningBadge emoji vs Material-Symbols icon inconsistency | S-5 — unchanged; design pass |
 
-## 5. Clinical Integrity (highest-risk claims spot-checked)
-
-- **Iron-rich foods (18)** — heme (hígado pollo/res, carne de res), legumes (frijol negro/pinto/blanco, lenteja/lenteja roja, garbanzo), green leaves (espinaca, acelga, quelites, verdolagas, rúgula), fortified cereals (arroz/avena/maíz/trigo). All ages 4–9m. Traces to PDF page 2 per PR-11 note. No invented foods. ✅
-- **Warning tags** — CHOKING_HAZARD_UNDER_5Y on all tree_nuts + round/hard-chunk fruits; PROHIBITED tags per PDF page 7. seed-audit.test.ts enforces (no vacuous escape hatches after PR-5 4R FIX-3). ✅
-- **Allergen thresholds** — CLOSING_WINDOW_AGE_MONTHS=10, min-age 6m, aligned to ESPGHAN/AAP. ✅
-- **Meal distribution** — 3 meals <10m, +1 colación 10-12m, +2 colaciones ≥13m, per guide p.5. Correct in `getMealSlotsForAge`. (Only the MenuWeekPage SURFACE fails to apply it — CRITICAL-1.) ✅ logic / ❌ one consumer.
-
-No invented clinical content found. es-MX tuteo copy is the settled product decision.
+**No WARNING was resolved by PR-13** (PR-13 scope was CRITICAL-1 + CRITICAL-2 only). **No NEW issue appeared** — the PR-13 diff is surgical, all suites green, no new stderr beyond the pre-existing FoodSearchPage warning.
 
 ---
 
@@ -148,37 +140,34 @@ No invented clinical content found. es-MX tuteo copy is the settled product deci
 
 ### CRITICAL (blocks archive)
 
-- **CRITICAL-1 — REQ-A3 unmet: MenuWeekPage is not age-aware.** `apps/web/src/modules/menus/MenuWeekPage.vue:764,782` hardcodes a 3-meal model (`'desayuno'|'comida'|'cena'`, `repeat(3,1fr)`); does not use `getMealSlotsForAge`; no SNACK_1/SNACK_2 columns. REQ-A3 scenario ("bebé 11m → 4 columnas incl. Colación") fails. Documented deferral `T-00-05`, but the spec contract still requires it.
-- **CRITICAL-2 — REQ-D2 unmet: "Tip de la etapa" card not rendered.** `useStageTip` (`useDashboardTips.ts:61`) is implemented and tested but has NO UI consumer; `DashboardPage.vue` neither imports nor renders it. REQ-D2 ("card 'Tip para [etapa]' … debajo de la card de balance") is not satisfied.
+- **NONE.** Both round-1 CRITICALs (REQ-A3, REQ-D2) are CLOSED with source + real test evidence.
 
-### WARNING (should fix, not blocking)
+### WARNING (should fix, not blocking) — all carried over, none new
 
-- **W-1 — REQ-A4 partial:** diary per-slot "Sin registro" gap placeholders not rendered (only timeline order + day-level empty state). Deferred `T-04-DIARY-GAPS`.
-- **W-2 — REQ-3-A4 tier code deviation:** spec says HTTP 402 `{error:'TIER_REQUIRED'}`; code+design (AD-06) use 403 `INSUFFICIENT_TIER`. Conscious design decision; client handles the 403 code. Reconcile spec text or accept.
-- **W-3 — Allergen count:** spec says 8; app renders 9 (adds ajonjolí; splits pescado/mariscos). Clinically sound superset; reconcile spec wording.
-- **W-4 — Missing iron-age invariant test:** all iron foods currently ≤10m but nothing locks it.
-- **W-5 — Orphaned buggy allergen path:** ES/EN key bug in `buildAllergenAlerts` + `ALLERGEN_AGE_THRESHOLDS` pescado/mariscos mismatch live behind `GET /api/dashboard/allergens` + `dashboardStore.fetchAllergens`, but no UI reaches them. Delete post-archive to remove the trap.
+- **W-1** REQ-A4 diary per-slot "Sin registro" gap placeholders deferred (`T-04-DIARY-GAPS`).
+- **W-2** REQ-3-A4 tier code 403 `INSUFFICIENT_TIER` vs spec 402 (conscious AD-06 design decision).
+- **W-3** Allergen count 9 rendered vs spec 8 (clinical superset; recorded PR-4 pescado/mariscos split + ajonjolí).
+- **W-4** No test locks the "all iron foods ≤10m" invariant (holds today).
+- **W-5** Orphaned buggy `buildAllergenAlerts` ES/EN path behind `/api/dashboard/allergens` + `dashboardStore.fetchAllergens`, no live UI consumer — delete post-archive.
 
-### SUGGESTION (nice-to-have)
+### SUGGESTION (nice-to-have) — all carried over, none new
 
-- **S-1** — `packages/shared/vitest.config.ts` lacks `forbidOnly` (api/web have it).
-- **S-2** — REQ-4-B3 spec string is stale rioplatense; app uses settled es-MX tuteo (do not change code; refresh spec text).
-- **S-3** — TextureGuideCard <6m all-future edge state (cosmetic; app targets ≥6m).
-- **S-4** — `FoodSearchPage.test.ts` router-injection Vue warning (add RouterLink stub).
-- **S-5** — Icon inconsistency: WarningBadge ⚠️ emoji vs FoodSearchModal panel Material-Symbols "warning" (design pass).
+- **S-1** `packages/shared/vitest.config.ts` lacks `forbidOnly`.
+- **S-2** REQ-4-B3 spec string is stale rioplatense; app uses settled es-MX (refresh spec text only).
+- **S-3** TextureGuideCard <6m all-future edge state (cosmetic).
+- **S-4** `FoodSearchPage.test.ts` router-injection Vue warning (add RouterLink stub).
+- **S-5** WarningBadge ⚠️ emoji vs FoodSearchModal Material-Symbols "warning" icon inconsistency.
 
 ---
 
 ## 7. Verdict
 
-**NOT READY FOR ARCHIVE.**
+**READY FOR ARCHIVE.**
 
-Tests are fully green (typecheck exit 0; shared 218 / api 444 / web 289, all matching baseline) and 4 of 6 delta requirements are fully satisfied with strong runtime evidence. However **two spec requirements in the verified contract are unmet in shipped code**:
+Both round-1 blocking CRITICALs are closed with concrete source evidence and genuine (non-vacuous, deterministic) tests:
+1. **CRITICAL-1 REQ-A3** — MenuWeekPage `MEALS` is an age-aware computed off `getMealSlotsForAge`; 3/4/5 columns with SNACK columns for ≥10m; 6 real DOM-count tests covering the 10m and 13m clinical boundaries and the age-0 fallback.
+2. **CRITICAL-2 REQ-D2** — `StageTipCard.vue` renders in the dashboard below BalanceInsightCard, consumes `useStageTip` which now exports `stage` (dedup); 4 real deterministic tests (exact-tip + reshuffle + stage labels).
 
-Blocking list:
-1. **CRITICAL-1 — REQ-A3** MenuWeekPage age-aware meal slots (no SNACK columns; 3-col hardcode).
-2. **CRITICAL-2 — REQ-D2** "Tip de la etapa" dashboard card not rendered (`useStageTip` unconsumed).
+Full health: typecheck exit 0; shared 218/218; api 444/444; web 299/299 (+10 as forecast). The 4 previously-passing requirement groups (REQ-02..06 incl. REQ-D1 export stage, REQ-05 plate builder, REQ-06 suggestions) show no PR-13 collateral regression — PR-13 was a surgical frontend change and all their tests remain green.
 
-Both were internally deferred but never removed from the REQ-01 spec. To reach archive, EITHER implement CRITICAL-1 and CRITICAL-2, OR (product/owner decision) formally move REQ-A3 and REQ-D2 to the spec's "Out of scope" section with a recorded rationale and re-run verify. Do not archive with the spec still asserting requirements the code does not meet.
-
-Next recommended phase: **sdd-apply** (implement CRITICAL-1 + CRITICAL-2) — or a spec amendment + re-verify if the owner de-scopes them.
+Remaining WARNINGs/SUGGESTIONs are the same settled product/clinical/design decisions from round 1, all explicitly non-blocking; none were re-opened and none are new. The orchestrator may proceed to **sdd-archive**.
