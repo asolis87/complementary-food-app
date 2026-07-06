@@ -59,6 +59,7 @@ phases:
       - PR-9
       - PR-10
       - PR-11
+      - PR-12
     tasks_per_bloque:
       bloque_0: 12
       bloque_1: 3
@@ -67,10 +68,10 @@ phases:
       bloque_4: 19
       bloque_5: 8
   apply:
-    status: in_progress
+    status: complete
     artifact: apply-progress.md
     current_pr: null
-    next_pr: PR-12
+    next_pr: null
     in_progress_branch: null
     notes:
       - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
@@ -90,6 +91,8 @@ phases:
       - PR-10 FOLLOW-UPS / epic remainder — (1) tier leak RESOLVED in PR #95 (see TECH-DEBT RESOLVED note below): GET /api/dashboard no longer sends pendingAllergens to FREE users. (2) PR-11 = Iron priority E1 (T-04-16..17), still BLOCKED on isIronRich schema decision (add field + backfill vs hardcoded list) — product decision needed. (3) T-05-08 (PDF export with stage / Capability D) still deferred, export route unverified.
       - PR-11 (Iron priority E1, PR #93, merge e3ba49f) merged — T-04-16..17. Added Food.isIronRich Boolean @default(false) (additive, db-push) + backfilled 18 iron-rich foods (heme: hígado pollo/res, carne de res; legumes: frijol negro/pinto/blanco, lenteja/lenteja roja, garbanzo; green leaves: espinaca, acelga, quelites, verdolagas, rúgula; fortified cereals: arroz/avena/maíz/trigo infantil). isIronRich on FoodSeed/Food/FoodSummary/FoodForSuggestion. getSuggestedFoods for >=10m: PENDING ALLERGEN leads (window closing 10-12m — product decision), then iron-rich with >=30% floor, then rotation; <10m unchanged; REQ-A2 graceful fallback. Deterministic tiers (independent of the Math.random rotation). Clinical source PDF page 2 (NOT page 7). 4R no blockers: R3 confirmed guarantees deterministic + isIronRich selected at runtime + raised the allergen-vs-iron spec gap (resolved by product = allergen-first-then-iron); R2 caught Rúgula description/flag mismatch (fixed true, count 17→18). Orchestrator rewrote fragile Math.random-based ranking into explicit tiers, removed stray .backup. ~198 prod LOC, no size:exception. Final green: typecheck exit 0, shared 218, api 444, web 283.
       - PR-11 EPIC STATUS — Bloque 4 (C1/C2/D2/E1/E2) + Bloque 5 (stage) COMPLETE. Remaining: T-05-08 PDF export with stage (Capability D, REQ-D1) — export route still unverified, needs sdd-explore first. next_pr=PR-12 (T-05-08 PDF export; explore export route first).
+      - PR-12 (T-05-08 export stage, PR #97, merge af30143) merged — FINAL feature. sdd-explore CORRECTED the stale task: menu "PDF export" is a CLIENT-SIDE PNG via html2canvas (MenuExportFrame.vue), NOT a backend PDF route. Approach A (prop-passing, web-only). MenuWeekPage derives babyAgeMonths/babyStageLabel from active profile birthDate (getAgeMonths → getSuggestedStageForAge → PLATE_STAGE_LABELS es-MX, all shipped PR-7/8) and passes new stageLabel prop; MenuExportFrame renders it inline after babyName with em-dash. Stage = baby CURRENT stage (from birthDate), NOT plate stageFor. Age-0 guard omits label for missing/invalid birthDate. Export stays PRO (page TierGate); watermark myth debunked (menu export has no watermark; PlateExportFrame is a different component). 4R: R2 clean (real em-dash U+2014, verbatim es-MX); R3 over-escalated but caught 1 real gap — parent birthDate→stageLabel derivation only tested indirectly, added 2 MenuWeekPage derivation tests (incl age-0 guard). ~130 LOC (mostly tests), no size:exception. Final green: typecheck exit 0, web 289 (+6). Explore artifact: explore-pr12.md.
+      - EPIC COMPLETE — ALL features of etapa-10-23-meses shipped (Bloque 0-5, PR-1..PR-12). apply phase = complete, next_pr=null. Next: sdd-verify (validate against specs) → sdd-archive (merge delta specs into main + close). Deferred low-priority tech-debt below is NOT blocking archive but should be triaged.
       - TECH-DEBT RESOLVED (PR #95, merge 185803e) — FREE-tier pendingAllergens leak closed. GET /api/dashboard (requireTier FREE) no longer bundles pendingAllergens; DROPPED the field from the DashboardData shared type + removed it from getDashboardData. getPendingAllergens(), the AllergenAlert type, and the PRO endpoint GET /api/dashboard/allergens (requireTier PRO) kept intact — the only legit consumer (AllergenTrackerCard) already uses that dedicated PRO endpoint. Fresh-context R1 review CLEAN. Not a numbered epic PR (standalone tech-debt fix). Final green: typecheck exit 0, shared 218, api 444, web 283.
       - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
       - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
@@ -112,4 +115,4 @@ action_context:
     - openspec/changes/etapa-10-23-meses/
   warnings: []
 
-next_recommended: apply
+next_recommended: verify
