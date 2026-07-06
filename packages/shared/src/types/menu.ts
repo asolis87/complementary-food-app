@@ -5,6 +5,7 @@
 
 import type { MealType } from './diary.js'
 import type { Plate, PlateItemSummary } from './plate.js'
+import type { Snack } from './snack.js'
 
 /** A single meal slot within a day */
 export interface MenuMealResponse {
@@ -12,9 +13,11 @@ export interface MenuMealResponse {
   menuDayId: string
   mealType: MealType
   plateId: string | null
+  snackId?: string | null
   notes: string | null
   servedAt?: string | null // ISO timestamp when meal was served
   plate?: (Plate & { items?: PlateItemSummary[] }) | null // Populated when fetching menu details
+  snack?: Snack | null // Populated when fetching menu details
 }
 
 /** A day within the weekly menu */
@@ -43,6 +46,7 @@ export interface MealSlotPatch {
   dayOfWeek: number // 0-6
   mealType: MealType
   plateId: string | null // null = clear the slot
+  snackId?: string | null // null = clear the snack
   notes?: string
 }
 

@@ -29,32 +29,37 @@ Chain strategy: feature-branch-chain
 
 ### Phase 1: Schema Foundation (RED → GREEN)
 
-- [ ] 1.1 **TEST**: Write `apps/api/src/modules/snacks/__tests__/snack-group-sync.test.ts` — assert `SNACK_GROUPS` subset of Prisma `FoodGroup` enum (mirrors `plate-stage-sync.test.ts`). Run `pnpm --filter api test` → RED.
-- [ ] 1.2 **SCHEMA**: Add `Snack` and `SnackItem` models to `prisma/schema.prisma` (see design §Interfaces). Add `MenuMeal.snackId String?` FK + `snack Snack? @relation(onDelete: SetNull)`. Add reverse relations on `User`/`BabyProfile`/`Food`. Run `pnpm --filter api db:push` + `pnpm --filter api db:generate`.
-- [ ] 1.3 **SHARED CONSTANTS**: Create `packages/shared/src/constants/snack.ts` — export `SNACK_GROUPS = ['HEALTHY_FAT','CEREAL_TUBER','FRUIT'] as const`, `getSnackGroupsForAge(months): FoodGroup[]`, `getMissingSnackGroups(items, months)`. Satisfies REQ-SM4.
-- [ ] 1.4 **REBUILD**: Run `pnpm --filter @pakulab/shared build` → sync test now GREEN. Confirm with `pnpm --filter api test snack-group-sync`.
+- [x] 1.1 **TEST**: Write `apps/api/src/modules/snacks/__tests__/snack-group-sync.test.ts` — assert `SNACK_GROUPS` subset of Prisma `FoodGroup` enum (mirrors `plate-stage-sync.test.ts`). Run `pnpm --filter api test` → RED.
+- [x] 1.2 **SCHEMA**: Add `Snack` and `SnackItem` models to `prisma/schema.prisma` (see design §Interfaces). Add `MenuMeal.snackId String?` FK + `snack Snack? @relation(onDelete: SetNull)`. Add reverse relations on `User`/`BabyProfile`/`Food`. Run `pnpm --filter api db:push` + `pnpm --filter api db:generate`.
+- [x] 1.3 **SHARED CONSTANTS**: Create `packages/shared/src/constants/snack.ts` — export `SNACK_GROUPS = ['HEALTHY_FAT','CEREAL_TUBER','FRUIT'] as const`, `getSnackGroupsForAge(months): FoodGroup[]`, `getMissingSnackGroups(items, months)`. Satisfies REQ-SM4.
+- [x] 1.4 **REBUILD**: Run `pnpm --filter @pakulab/shared build` → sync test now GREEN. Confirm with `pnpm --filter api test snack-group-sync`.
 
 ### Phase 2: Shared Types (RED → GREEN)
 
-- [ ] 2.1 **TEST**: Write `packages/shared/src/constants/__tests__/snack.test.ts` — test `getSnackGroupsForAge(11) → [FAT,CEREAL]`, `(15) → [FAT,CEREAL,FRUIT]`, `(8) → []`, `getMissingSnackGroups`. Run `pnpm --filter @pakulab/shared test` → RED.
-- [ ] 2.2 **TYPES**: Create `packages/shared/src/types/snack.ts` — export `Snack`, `SnackItem`, `SnackItemSummary`, `CreateSnackInput`. Satisfies REQ-SM1 type contract.
-- [ ] 2.3 **MENU TYPES**: Modify `packages/shared/src/types/menu.ts` — add `snackId?: string | null` + `snack?: Snack` to `MenuMealResponse`; add `snackId?: string | null` to `MealSlotPatch`. Satisfies REQ-WM1 shared contract.
-- [ ] 2.4 **BARREL**: Modify `packages/shared/src/index.ts` — export snack types + constants.
-- [ ] 2.5 **REBUILD + GREEN**: Run `pnpm --filter @pakulab/shared build`, then `pnpm --filter @pakulab/shared test` → GREEN.
+- [x] 2.1 **TEST**: Write `packages/shared/src/constants/__tests__/snack.test.ts` — test `getSnackGroupsForAge(11) → [FAT,CEREAL]`, `(15) → [FAT,CEREAL,FRUIT]`, `(8) → []`, `getMissingSnackGroups`. Run `pnpm --filter @pakulab/shared test` → RED.
+- [x] 2.2 **TYPES**: Create `packages/shared/src/types/snack.ts` — export `Snack`, `SnackItem`, `SnackItemSummary`, `CreateSnackInput`. Satisfies REQ-SM1 type contract.
+- [x] 2.3 **MENU TYPES**: Modify `packages/shared/src/types/menu.ts` — add `snackId?: string | null` + `snack?: Snack` to `MenuMealResponse`; add `snackId?: string | null` to `MealSlotPatch`. Satisfies REQ-WM1 shared contract.
+- [x] 2.4 **BARREL**: Modify `packages/shared/src/index.ts` — export snack types + constants.
+- [x] 2.5 **REBUILD + GREEN**: Run `pnpm --filter @pakulab/shared build`, then `pnpm --filter @pakulab/shared test` → GREEN.
 
 ### Phase 3: Backend Snack Module (RED → GREEN → REFACTOR)
 
-- [ ] 3.1 **TEST**: Write `apps/api/src/modules/snacks/__tests__/snack.service.test.ts` — test `createSnack` (2-group, 3-group, invalid group), `getUserSnacks` (filter by babyProfileId/stageFor), `getSnackById`, soft-delete behavior. Run `pnpm --filter api test snack.service` → RED. Covers REQ-SM2, REQ-SM3.
-- [ ] 3.2 **SERVICE**: Create `apps/api/src/modules/snacks/snack.service.ts` — implement `createSnack`, `getUserSnacks`, `getSnackById`, `deleteSnack` (soft). Reuse `requireTier('FREE')` posture. → GREEN.
-- [ ] 3.3 **SCHEMA**: Create `apps/api/src/modules/snacks/snack.schemas.ts` — Zod: `createSnackSchema` (validate groupAssignment ∈ SNACK_GROUPS), `listSnacksSchema`, `getSnackSchema`. Reject `PROTEINS|VEGETABLES|DAIRY`. Satisfies REQ-SM2/SM3 validation.
-- [ ] 3.4 **ROUTES**: Create `apps/api/src/modules/snacks/snack.routes.ts` — `POST /` (create), `GET /` (list), `GET /:id`, `DELETE /:id`. Wire to service under `requireAuth` + `requireTier`.
-- [ ] 3.5 **APP REGISTER**: Modify `apps/api/src/app.ts` — `register(snackRoutes, { prefix: '/api/snacks' })`.
-- [ ] 3.6 **REFACTOR**: Extract any shared ownership-check helpers if duplicated from plates module. Run `pnpm --filter api test` → all GREEN.
+- [x] 3.1 **TEST**: Write `apps/api/src/modules/snacks/__tests__/snack.service.test.ts` — test `createSnack` (2-group, 3-group, invalid group), `getUserSnacks` (filter by babyProfileId/stageFor), `getSnackById`, soft-delete behavior. Run `pnpm --filter api test snack.service` → RED. Covers REQ-SM2, REQ-SM3.
+- [x] 3.2 **SERVICE**: Create `apps/api/src/modules/snacks/snack.service.ts` — implement `createSnack`, `getUserSnacks`, `getSnackById`, `deleteSnack` (soft). Reuse `requireTier('FREE')` posture. → GREEN.
+- [x] 3.3 **SCHEMA**: Create `apps/api/src/modules/snacks/snack.schemas.ts` — Zod: `createSnackSchema` (validate groupAssignment ∈ SNACK_GROUPS), `listSnacksSchema`, `getSnackSchema`. Reject `PROTEINS|VEGETABLES|DAIRY`. Satisfies REQ-SM2/SM3 validation.
+- [x] 3.4 **ROUTES**: Create `apps/api/src/modules/snacks/snack.routes.ts` — `POST /` (create), `GET /` (list), `GET /:id`, `DELETE /:id`. Wire to service under `requireAuth` + `requireTier`.
+- [x] 3.5 **APP REGISTER**: Modify `apps/api/src/app.ts` — `register(snackRoutes, { prefix: '/api/snacks' })`.
+- [x] 3.6 **REFACTOR**: Extract any shared ownership-check helpers if duplicated from plates module. Run `pnpm --filter api test` → all GREEN.
 
-### Phase 4: Hygiene + PR-1a Verification
+### Phase 4: Menu Upsert Widening (RED → GREEN)
 
-- [ ] 4.1 **TYPECHECK**: Rebuild shared (`pnpm --filter @pakulab/shared build`), then typecheck api + web: `pnpm --filter api typecheck`, `pnpm --filter web typecheck` → no errors.
-- [ ] 4.2 **ALL TESTS GREEN**: Run `pnpm --filter @pakulab/shared test`, `pnpm --filter api test`, `pnpm --filter web test:run` → all suites green.
+- [x] 4.1 **SCHEMA**: Modify `apps/api/src/modules/menus/menus.schemas.ts` — `patchMealSchema` accepts `snackId?: string | null`; add mutual exclusion validation (snack mealType rejects plateId, meal mealType rejects snackId). Add tests for mutual exclusion. → GREEN.
+- [x] 4.2 **SERVICE**: Modify `apps/api/src/modules/menus/menus.service.ts` — `upsertMealSlot` handles snack path: if `snackId` provided, set `snackId` and clear `plateId: null`; add snack ownership check; include snack relation in response serialization. Update `serializeMenuMeal` and `getWeekMenu` to fetch/serialize snack. → GREEN.
+
+### Phase 5: Hygiene + PR-1a Verification
+
+- [x] 5.1 **TYPECHECK**: Rebuild shared (`pnpm --filter @pakulab/shared build`), then typecheck: `pnpm typecheck` → no errors.
+- [x] 5.2 **ALL TESTS GREEN**: Run `pnpm --filter @pakulab/shared test`, `pnpm --filter api test` → all suites green (web unchanged in PR-1a).
 - [ ] 4.3 **GIT STAGING**: Stage with explicit paths: `git add prisma/ packages/shared/ apps/api/` (avoids `.atl/skill-registry.md`).
 - [ ] 4.4 **COMMIT**: Conventional commit `feat(snacks): schema + backend catalog CRUD (PR-1a)`. No AI attribution.
 - [ ] 4.5 **BRANCH + PR**: Push to `feat/menu-snacks-pr1a` branch. Open PR-1a targeting `feat/menu-snacks` tracker branch (feature-branch-chain strategy). Title: `feat: snacks schema + backend catalog (PR-1a)`. Description: REQ-SM1, REQ-SM2, REQ-SM3 satisfied; autonomous catalog contract; no UI changes.
