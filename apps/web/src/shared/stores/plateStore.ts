@@ -213,6 +213,7 @@ export const usePlateStore = defineStore('plates', () => {
       const result = await apiClient.post<{ data: Plate }>('/plates', {
         name: platePayload.name,
         groupCount: platePayload.groupCount,
+        stageFor: platePayload.stageFor,
         items: itemsPayload,
       })
       // Contract: unshift preserves descending sort order from API (UX-2).
@@ -244,7 +245,7 @@ export const usePlateStore = defineStore('plates', () => {
             laxativeCount: 0,
             neutralCount: 0,
             babyProfileId: null,
-            stageFor: null,
+            stageFor: platePayload.stageFor ?? null,
             deletedAt: null,
             items: itemsPayload.map((item, idx) => ({
               id: `local-item-${idx}-${Date.now()}`,
@@ -329,6 +330,7 @@ export const usePlateStore = defineStore('plates', () => {
     const result = await apiClient.put<{ data: Plate }>(`/plates/${plateId}`, {
       name: platePayload.name,
       groupCount: platePayload.groupCount,
+      stageFor: platePayload.stageFor,
       items: platePayload.items,
     })
 
