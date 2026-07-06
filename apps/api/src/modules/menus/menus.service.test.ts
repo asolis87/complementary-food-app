@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { computeBalanceScore, serializeMenu } from './menus.service.js'
+import { computeBalanceScore, serializeMenu, resolveMealSlotFks } from './menus.service.js'
 import { MealType } from '@pakulab/shared'
 import type { Plate } from '@prisma/client'
 import type { FoodGroup } from '@pakulab/shared'
@@ -60,11 +60,13 @@ describe('computeBalanceScore', () => {
         menuDayId: string
         mealType: MealType
         plateId: string | null
+        snackId: string | null
         notes: string | null
         servedAt: Date | null
         createdAt: Date
         updatedAt: Date
         plate: Plate | null
+        snack?: any | null
       }>
     }
 
@@ -86,11 +88,13 @@ describe('computeBalanceScore', () => {
         menuDayId: day.id,
         mealType: meal.mealType,
         plateId: meal.plate?.id ?? null,
+        snackId: null,
         notes: null,
         servedAt: null,
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         plate: meal.plate,
+        snack: null,
       })
     }
 
@@ -907,5 +911,38 @@ describe('serveMeal behavior', () => {
     }
 
     expect(expectedReServeResponse.replacedCount).toBeDefined()
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// resolveMealSlotFks — plate/snack mutual exclusion (the upsert clearing invariant)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('resolveMealSlotFks', () => {
+  it('assigning a snack sets snackId and CLEARS plateId', () => {
+    expect(resolveMealSlotFks({ snackId: 'snack-1' })).toEqual({
+      snackId: 'snack-1',
+      plateId: null,
+    })
+  })
+
+  it('assigning a plate sets plateId and CLEARS snackId', () => {
+    expect(resolveMealSlotFks({ plateId: 'plate-1' })).toEqual({
+      plateId: 'plate-1',
+      snackId: null,
+    })
+  })
+
+  it('snack wins if both are somehow present (defense — never clears to a mixed state)', () => {
+    // The Zod layer rejects both-set, but the resolver must never emit a slot
+    // carrying both FKs even if it slips through.
+    expect(resolveMealSlotFks({ plateId: 'plate-1', snackId: 'snack-1' })).toEqual({
+      snackId: 'snack-1',
+      plateId: null,
+    })
+  })
+
+  it('neither present clears both FKs', () => {
+    expect(resolveMealSlotFks({})).toEqual({ plateId: null, snackId: null })
   })
 })

@@ -29,6 +29,7 @@ model User {
   accounts               Account[]
   babyProfiles           BabyProfile[]
   plates                 Plate[]
+  snacks                 Snack[]
   subscription           Subscription?
   disclaimerAcceptances  DisclaimerAcceptance[]
 
@@ -98,6 +99,7 @@ model BabyProfile {
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   plates           Plate[]
+  snacks           Snack[]
   foodLogs         FoodLog[]
   weeklyMenus      WeeklyMenu[]
   dayObservations  DayObservation[]
@@ -154,6 +156,7 @@ model Food {
   updatedAt        DateTime         @updatedAt
 
   plateItems PlateItem[]
+  snackItems SnackItem[]
   foodLogs   FoodLog[] // New relation for simplified single-food model
 
   @@index([group])
@@ -202,6 +205,44 @@ model PlateItem {
   food  Food  @relation(fields: [foodId], references: [id], onDelete: Restrict)
 
   @@index([plateId])
+  @@index([foodId])
+}
+
+// ==========================================
+// DOMAIN: Snacks (Colaciones)
+// ==========================================
+
+model Snack {
+  id            String      @id @default(cuid())
+  userId        String
+  babyProfileId String?
+  name          String      @default("Mi colación")
+  stageFor      PlateStage? // Target age stage (reuses existing PlateStage enum)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?   // Soft delete
+
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  babyProfile BabyProfile? @relation(fields: [babyProfileId], references: [id], onDelete: SetNull)
+  items       SnackItem[]
+  menuMeals   MenuMeal[]
+
+  @@index([userId, deletedAt])
+  @@index([babyProfileId])
+}
+
+model SnackItem {
+  id              String    @id @default(cuid())
+  snackId         String
+  foodId          String
+  groupAssignment FoodGroup // app-validated: HEALTHY_FAT | CEREAL_TUBER | FRUIT
+  servingAmount   String?   // e.g., "2 cucharadas", "1/4 taza"
+  createdAt       DateTime  @default(now())
+
+  snack Snack @relation(fields: [snackId], references: [id], onDelete: Cascade)
+  food  Food  @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@index([snackId])
   @@index([foodId])
 }
 
@@ -321,12 +362,14 @@ model MenuMeal {
   menuDayId String
   mealType  MealType
   plateId   String?   // Optional link to a saved plate
+  snackId   String?   // Optional link to a saved snack
   notes     String?
   servedAt  DateTime? // When the meal was served (marks it as "comido")
   createdAt DateTime  @default(now())
 
   menuDay MenuDay @relation(fields: [menuDayId], references: [id], onDelete: Cascade)
   plate   Plate?  @relation(fields: [plateId], references: [id], onDelete: SetNull)
+  snack   Snack?  @relation(fields: [snackId], references: [id], onDelete: SetNull)
 
   @@unique([menuDayId, mealType])
 }

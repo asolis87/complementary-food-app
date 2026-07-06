@@ -26,6 +26,7 @@ export type {
 
 export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput, PlateStage } from './types/plate.js'
 export { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedGroupCount, getSuggestedStageForAge } from './types/plate.js'
+export type { SnackItem, SnackItemSummary, Snack, CreateSnackInput } from './types/snack.js'
 export type { AllergenEntry, AllergenStatusResponse } from './types/allergen.js'
 
 export type {
@@ -90,6 +91,9 @@ export {
   DAY_KEYS,
 } from './constants/mealType.js'
 export type { MealKey, DayKey } from './constants/mealType.js'
+
+export { SNACK_GROUPS, getSnackGroupsForAge, getMissingSnackGroups } from './constants/snack.js'
+export type { SnackGroup } from './constants/snack.js'
 
 // Dashboard constants
 export {

@@ -57,8 +57,34 @@ export const patchMealSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   mealType: z.nativeEnum(MealType),
   plateId: z.string().cuid().nullable(), // null = remove plate from slot
+  snackId: z.string().cuid().nullable().optional(), // null = remove snack from slot
   notes: z.string().max(500).optional().transform(sanitizeOptional),
 })
+  .refine(
+    (data) => {
+      // SNACK slots can ONLY have snackId (reject plateId on snack slots)
+      if (['SNACK_1', 'SNACK_2', 'SNACK'].includes(data.mealType)) {
+        return data.plateId === null || data.plateId === undefined
+      }
+      // MEAL slots can ONLY have plateId (reject snackId on meal slots)
+      if (['BREAKFAST', 'LUNCH', 'DINNER'].includes(data.mealType)) {
+        return !data.snackId || data.snackId === null
+      }
+      return true
+    },
+    {
+      message: 'SNACK slots cannot accept plates; MEAL slots cannot accept snacks',
+    },
+  )
+  .refine(
+    (data) => {
+      // Cannot have both plateId and snackId set simultaneously
+      return !(data.plateId && data.snackId)
+    },
+    {
+      message: 'A slot cannot have both plateId and snackId',
+    },
+  )
 
 export const menuIdParamSchema = z.object({
   menuId: z.string().cuid(),
