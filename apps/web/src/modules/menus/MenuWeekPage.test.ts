@@ -503,4 +503,59 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       expect(exportFrame.props('weekStats')).toBeDefined()
     })
   })
+
+  describe('T-05-08: stage label derivation (birthDate → stageLabel)', () => {
+    // getAgeMonths derives age from birthDate against the CURRENT date. Pin the
+    // birth day to 1 and shift whole months back from now so the computed age is
+    // deterministic (ref.getDate() < 1 is always false → no day-based subtraction,
+    // no end-of-month rollover).
+    const birthDateForAge = (months: number): Date => {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth() - months, 1)
+    }
+
+    it('derives the current stage label from the baby birthDate and passes it to MenuExportFrame', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        // 15 months old → THIRTEEN_TO_TWENTY_THREE_MONTHS → "13-23 meses"
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(15) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      expect(exportFrame.props('stageLabel')).toBe('13-23 meses')
+    })
+
+    it('passes an empty stage label when the baby has no birthDate (age-0 guard)', async () => {
+      const store = mockMenuStore({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        // No birthDate → getAgeMonths falls back to 0 → stage label omitted
+        activeProfile: { id: 'profile-1', name: 'Tomás' },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      expect(exportFrame.props('stageLabel')).toBe('')
+    })
+  })
 })

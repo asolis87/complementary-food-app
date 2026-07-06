@@ -817,13 +817,17 @@ Foundations: pure functions en shared + updates a consumers existentes.
 - **TDD**: render + interaction
 - **Depends on**: T-05-05
 
-### T-05-08: Export PDF incluye `stageFor`
+### T-05-08: Export PDF incluye `stageFor` ✅ (PR-12)
 
 - **Spec**: REQ-5-D1
-- **Files**: ruta de export de menú (probablemente en `apps/api/src/modules/menus/`)
-- **Deliverable**: PDF header incluye "Menú semanal — [nombre] — [etapa]"
-- **Tests** (1): PDF generado contiene la etapa
-- **TDD**: integration test con PDF parse
+- **Reality**: Export is **client-side PNG via html2canvas** (NOT backend PDF). See PR-12 exploration.
+- **Files**: 
+  - `apps/web/src/modules/menus/MenuWeekPage.vue` — added computed `babyAgeMonths` / `babyStageLabel` (derives from birthDate via `getAgeMonths` → `getSuggestedStageForAge` → `PLATE_STAGE_LABELS`)
+  - `apps/web/src/modules/menus/components/MenuExportFrame.vue` — added optional `stageLabel` prop, renders in header as single line "Menú semanal... [babyName] — [stageLabel]" when stageLabel is non-empty
+- **Deliverable**: Baby's current stage (not plate's `stageFor`) shown in export header per REQ-D1 scenario: "Menú semanal — Tomás — 13-23 meses"
+- **Tests** (6): MenuExportFrame.test.ts "Stage label rendering (T-05-08)" (4) — renders stage when provided (single-line em-dash format), omits when empty/absent; MenuWeekPage.test.ts "stage label derivation" (2) — derives correct stage label from birthDate and passes it via prop, age-0 guard passes empty label when birthDate missing
+- **TDD**: strict TDD — tests written first (RED confirmed), implementation added (GREEN confirmed), refactor not needed
+- **Total LOC**: ~30 prod/test + 2 parent-derivation tests added in 4R review (R3 coverage gap)
 
 ---
 

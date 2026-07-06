@@ -337,6 +337,50 @@ describe('MenuExportFrame', () => {
     })
   })
 
+  describe('3.3: Stage label rendering (T-05-08)', () => {
+    it('renders baby name with stage label in single line when stageLabel is provided', () => {
+      const wrapper = mountComponent({
+        babyName: 'Tomás',
+        stageLabel: '13-23 meses'
+      })
+
+      const babyElement = wrapper.find('.export-baby')
+      expect(babyElement.exists()).toBe(true)
+      expect(babyElement.text()).toBe('Tomás — 13-23 meses')
+    })
+
+    it('renders only baby name when stageLabel is empty', () => {
+      const wrapper = mountComponent({
+        babyName: 'Martina',
+        stageLabel: ''
+      })
+
+      const babyElement = wrapper.find('.export-baby')
+      expect(babyElement.exists()).toBe(true)
+      expect(babyElement.text()).toBe('Martina')
+    })
+
+    it('renders only baby name when stageLabel is absent', () => {
+      const wrapper = mountComponent({
+        babyName: 'Lucas'
+        // stageLabel intentionally omitted
+      })
+
+      const babyElement = wrapper.find('.export-baby')
+      expect(babyElement.exists()).toBe(true)
+      expect(babyElement.text()).toBe('Lucas')
+    })
+
+    it('omits entire baby section when both babyName and stageLabel are empty', () => {
+      const wrapper = mountComponent({
+        babyName: '',
+        stageLabel: ''
+      })
+
+      expect(wrapper.find('.export-baby').exists()).toBe(false)
+    })
+  })
+
   describe('Events', () => {
     it('emits done event when capture succeeds', async () => {
       const wrapper = mountComponent()
