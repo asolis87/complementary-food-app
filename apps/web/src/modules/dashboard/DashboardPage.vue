@@ -115,6 +115,12 @@
         :loading="loading"
         @view-weekly-detail="handleViewWeeklyDetail"
       />
+
+      <!-- Full width: Stage Tip (CRITICAL-2 REQ-D2) -->
+      <StageTipCard
+        v-if="dashboardData"
+        :baby-age-months="dashboardData.baby.ageInMonths"
+      />
     </template>
   </div>
 </template>
@@ -136,6 +142,7 @@ import TextureGuideCard from './components/TextureGuideCard.vue'
 import AllergenTrackerCard from './components/AllergenTrackerCard.vue'
 import SnackSuggestionCard from './components/SnackSuggestionCard.vue'
 import BalanceInsightCard from './components/BalanceInsightCard.vue'
+import StageTipCard from './components/StageTipCard.vue'
 import DashboardSkeleton from './components/DashboardSkeleton.vue'
 import DashboardErrorBoundary from './components/DashboardErrorBoundary.vue'
 import StageTransitionBanner from './components/StageTransitionBanner.vue'
