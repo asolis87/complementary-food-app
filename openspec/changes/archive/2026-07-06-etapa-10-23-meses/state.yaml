@@ -1,7 +1,8 @@
 # SDD state for etapa-10-23-meses
 change: etapa-10-23-meses
-status: apply
+status: archived
 created: 2026-06-18
+archived_at: 2026-07-06
 active_change_source: user_request
 
 preflight:
@@ -100,22 +101,20 @@ phases:
       - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
       - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
   verify:
-    status: not_started
+    status: complete
     artifact: verify-report.md
-  sync:
-    status: not_started
+    completed_at: 2026-07-06
+    verdict: READY FOR ARCHIVE
   archive:
-    status: not_started
+    status: complete
+    artifact: archive-report.md
+    completed_at: 2026-07-06
 
 action_context:
   mode: workspace-planning
   workspace_root: /Users/alvasolis/DEV/poc/complementary-food
   allowed_edit_roots:
-    - apps/api/src/
-    - apps/web/src/
-    - packages/shared/src/
-    - prisma/
-    - openspec/changes/etapa-10-23-meses/
+    - openspec/changes/archive/2026-07-06-etapa-10-23-meses/
   warnings: []
 
-next_recommended: verify
+next_recommended: none
