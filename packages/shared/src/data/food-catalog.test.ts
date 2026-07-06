@@ -131,6 +131,21 @@ describe('BLOQUE 1 (PR-3): 10-23m Age Audit — 6 Target Foods', () => {
     it('should have at least 154 foods in the catalog (post-expansion minimum)', () => {
       expect(foods.length).toBeGreaterThanOrEqual(154)
     })
+
+    // PR-11 iron priority (REQ-06/E1) ranks iron-rich foods for babies >=10m and
+    // relies on every iron-rich food being introducible by then. If a future edit
+    // tags an iron-rich food with ageMonths > 10, it could never surface in the
+    // >=10m ranking — this invariant locks that guarantee.
+    it('should keep every iron-rich food introducible by 10 months (ageMonths <= 10)', () => {
+      const lateIronFoods = foods
+        .filter((food) => food.isIronRich && food.ageMonths > 10)
+        .map((food) => `${food.name} (${food.ageMonths}m)`)
+
+      expect(
+        lateIronFoods,
+        `Iron-rich foods must be introducible by 10m for the iron priority ranking; found late: ${lateIronFoods.join(', ')}`,
+      ).toHaveLength(0)
+    })
   })
 })
 

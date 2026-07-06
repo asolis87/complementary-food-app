@@ -57,8 +57,6 @@ export function useDashboardActions() {
     /** Fetch food suggestions (cached 24h) */
     fetchSuggestions: (babyProfileId: string, limit?: number) =>
       store.fetchSuggestions(babyProfileId, limit),
-    /** Fetch allergen alerts (cached 1h, PRO only) */
-    fetchAllergens: (babyProfileId: string) => store.fetchAllergens(babyProfileId),
     /** Fetch roadmap progress (cached 15min) */
     fetchRoadmap: (babyProfileId: string) => store.fetchRoadmap(babyProfileId),
     /** Fetch today's logs + slots (no cache) */

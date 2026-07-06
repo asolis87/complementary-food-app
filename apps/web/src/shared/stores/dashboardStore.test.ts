@@ -8,7 +8,7 @@
  * - refreshDashboard clears cache and re-fetches
  * - clearCache resets all state
  * - isStale getter based on lastFetched + TTL
- * - Section-level cache helpers (fetchSuggestions, fetchAllergens, fetchRoadmap, fetchBalance)
+ * - Section-level cache helpers (fetchSuggestions, fetchRoadmap, fetchBalance)
  * - OfflineError fallback to cached data
  */
 
@@ -224,20 +224,6 @@ describe('dashboardStore', () => {
 
     const first = await store.fetchSuggestions(VALID_BABY_ID)
     const second = await store.fetchSuggestions(VALID_BABY_ID)
-
-    expect(mockGet).toHaveBeenCalledTimes(1)
-    expect(first).toEqual(second)
-  })
-
-  // ── fetchAllergens (cached 1h) ──────────────────────────────────────────────
-
-  it('fetchAllergens returns cached data when fresh', async () => {
-    mockGet.mockResolvedValueOnce({
-      data: [{ allergenKey: 'huevo', nameEs: 'Huevo', icon: '🥚', minAgeMonths: 6, urgency: 'normal' }],
-    })
-
-    const first = await store.fetchAllergens(VALID_BABY_ID)
-    const second = await store.fetchAllergens(VALID_BABY_ID)
 
     expect(mockGet).toHaveBeenCalledTimes(1)
     expect(first).toEqual(second)
