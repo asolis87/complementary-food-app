@@ -15,6 +15,12 @@ export const PLATE_LIMITS: Record<UserTier, number> = {
   PRO: Infinity,
 }
 
+/** Maximum saved snacks per tier (FREE = 0, locked out) */
+export const SNACK_LIMITS: Record<UserTier, number> = {
+  FREE: 0,
+  PRO: Infinity,
+}
+
 /** Maximum baby profiles per tier (FREE = 0, locked out) */
 export const BABY_PROFILE_LIMITS: Record<UserTier, number> = {
   FREE: 0,
