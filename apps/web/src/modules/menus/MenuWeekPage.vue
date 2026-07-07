@@ -606,21 +606,46 @@
                 <p>No tienes colaciones guardadas todavía.</p>
               </div>
 
-              <!-- Snack list -->
+              <!-- Snack list (collapsible: tap to preview contents, then select) -->
               <ul v-else class="picker-list" role="listbox" aria-label="Colaciones disponibles">
                 <li
                   v-for="snack in snackStore.savedSnacks"
                   :key="snack.id"
                   class="picker-item"
+                  :class="{ 'picker-item--expanded': expandedSnackId === snack.id }"
                   role="option"
                   :aria-selected="false"
+                  :aria-expanded="expandedSnackId === snack.id"
                 >
-                  <div class="picker-item__header" @click="assignSnack(snack)">
+                  <div class="picker-item__header" @click="toggleSnackPreview(snack.id)">
                     <span class="picker-item__name">{{ snack.name }}</span>
                     <span class="picker-item__meta">
                       {{ snack.items?.length ?? 0 }} alimentos
                     </span>
-                    <span class="material-symbols-outlined picker-item__arrow" aria-hidden="true">add_circle</span>
+                    <span
+                      class="material-symbols-outlined picker-item__arrow"
+                      :class="{ 'picker-item__arrow--open': expandedSnackId === snack.id }"
+                      aria-hidden="true"
+                    >expand_more</span>
+                  </div>
+
+                  <!-- Expanded: food list + select button -->
+                  <div v-if="expandedSnackId === snack.id" class="picker-item__detail">
+                    <ul v-if="snack.items?.length" class="picker-food-list">
+                      <li
+                        v-for="item in snack.items"
+                        :key="item.id"
+                        class="picker-food-item"
+                      >
+                        <span class="picker-food-item__name">{{ item.food?.name ?? 'Alimento' }}</span>
+                        <span class="picker-food-item__group">{{ formatGroup(item.groupAssignment) }}</span>
+                      </li>
+                    </ul>
+                    <p v-else class="picker-food-empty">Sin alimentos</p>
+                    <button class="picker-select-btn" @click="assignSnack(snack)">
+                      <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                      Seleccionar colación
+                    </button>
                   </div>
                 </li>
               </ul>
@@ -1501,6 +1526,7 @@ const expandedPlateId = ref<string | null>(null)
 
 /** Snack picker dialog state (separate from the plate picker). */
 const snackPicker = ref<PickerState>({ open: false, dayKey: null, mealKey: null })
+const expandedSnackId = ref<string | null>(null)
 
 /**
  * Route a slot's "+" button: snack slots open the snack picker, everything
@@ -1509,6 +1535,7 @@ const snackPicker = ref<PickerState>({ open: false, dayKey: null, mealKey: null 
 function openPicker(dayKey: DayKey, mealKey: MealKey): void {
   if (isSnackSlot(mealKey)) {
     snackPicker.value = { open: true, dayKey, mealKey }
+    expandedSnackId.value = null
     return
   }
   picker.value = { open: true, dayKey, mealKey }
@@ -1522,6 +1549,12 @@ function closePicker(): void {
 
 function closeSnackPicker(): void {
   snackPicker.value = { open: false, dayKey: null, mealKey: null }
+  expandedSnackId.value = null
+}
+
+/** Toggle the collapsible content preview for a snack in the picker. */
+function toggleSnackPreview(snackId: string): void {
+  expandedSnackId.value = expandedSnackId.value === snackId ? null : snackId
 }
 
 /**

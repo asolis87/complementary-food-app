@@ -6,7 +6,22 @@
         <p class="header-subtitle">Registro de alimentación</p>
         <h1 class="header-title">Mis Platos</h1>
       </div>
+      <!-- Colaciones tab: header button opens the snack drawer (single button, no extra visual noise) -->
+      <button
+        v-if="activeTab === 'snacks'"
+        type="button"
+        class="create-btn-desktop"
+        :class="{ disabled: atLimit }"
+        :disabled="atLimit"
+        :title="atLimit ? 'Límite de colaciones alcanzado. Actualiza a Pro.' : 'Crear nueva colación'"
+        @click="openSnackDrawer"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        <span class="btn-text">Crear Colación</span>
+      </button>
+      <!-- Platos tab: navigate to the plate builder -->
       <RouterLink
+        v-else
         to="/plate/new"
         class="create-btn-desktop"
         :class="{ disabled: atLimit }"
@@ -231,10 +246,23 @@
     </template>
 
     <!-- Colaciones tab content (REQ-SC1) -->
-    <SnackListSection
-      v-else-if="activeTab === 'snacks'"
-      :baby-age-months="babyAgeMonths ?? 0"
-    />
+    <template v-else-if="activeTab === 'snacks'">
+      <SnackListSection
+        ref="snackSection"
+        :baby-age-months="babyAgeMonths ?? 0"
+      />
+
+      <!-- Mobile FAB: Create new snack (mirrors the plate FAB; opens the drawer) -->
+      <button
+        v-if="!atLimit"
+        type="button"
+        class="plate-list-fab mobile-only"
+        aria-label="Crear nueva colación"
+        @click="openSnackDrawer"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      </button>
+    </template>
   </div>
 </template>
 
@@ -256,9 +284,27 @@ const authStore = useAuthStore()
 const profileStore = useProfileStore()
 
 const plateLimit = computed(() => PLATE_LIMITS[authStore.tier])
-const atLimit = computed(
+const platesAtLimit = computed(
   () => plateStore.savedPlates.length >= plateLimit.value,
 )
+
+/** Ref to the mounted SnackListSection so the header/FAB can open its drawer. */
+const snackSection = ref<{ openDrawer: () => void; atLimit: boolean } | null>(null)
+
+/**
+ * Tab-aware "at limit" for the header/FAB create affordance:
+ * plates limit on the Platos tab, snacks limit (from the child) on Colaciones.
+ */
+const atLimit = computed(() =>
+  activeTab.value === 'snacks'
+    ? (snackSection.value?.atLimit ?? false)
+    : platesAtLimit.value,
+)
+
+/** Open the snack builder drawer owned by SnackListSection (Colaciones tab). */
+function openSnackDrawer(): void {
+  snackSection.value?.openDrawer()
+}
 
 // ─── Tab Management (REQ-SC1) ──────────────────────────────────────────────
 

@@ -1,7 +1,8 @@
 /**
- * Tests for SnackVisualization.vue (REQ-SC7 — NO A/L balance indicator).
- * Verifies the dedicated 3-zone circular layout (HEALTHY_FAT, CEREAL_TUBER, FRUIT),
- * zone tap emits select event, suggested zones are emphasized, and NO balance indicator exists.
+ * Tests for SnackVisualization.vue — bento-box layout (REQ-SC7: NO A/L balance).
+ * Verifies the 3-cell bento (HEALTHY_FAT, CEREAL_TUBER, FRUIT), age-based cell
+ * locking (a cell is enabled only when its group is age-suggested), tap emits
+ * only for enabled cells, the <10m all-locked age hint, and NO balance indicator.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -41,26 +42,32 @@ function mountVisualization(items: PlateItemDraft[], suggestedGroups: FoodGroup[
   })
 }
 
-describe('SnackVisualization — 3-zone dedicated component (REQ-SC7)', () => {
-  it('renders exactly 3 zones: HEALTHY_FAT, CEREAL_TUBER, FRUIT', () => {
-    const wrapper = mountVisualization([])
+// All three snack groups suggested → the ≥13m case (every cell enabled).
+const ALL_GROUPS: FoodGroup[] = ['HEALTHY_FAT', 'CEREAL_TUBER', 'FRUIT']
+// The 10-12m case → fruit is not suggested (locked).
+const TWO_GROUPS: FoodGroup[] = ['HEALTHY_FAT', 'CEREAL_TUBER']
 
-    expect(wrapper.find('.segment-fat').exists()).toBe(true)
-    expect(wrapper.find('.segment-cereal').exists()).toBe(true)
-    expect(wrapper.find('.segment-fruit').exists()).toBe(true)
+describe('SnackVisualization — bento box (REQ-SC7)', () => {
+  it('renders exactly 3 bento cells: HEALTHY_FAT, CEREAL_TUBER, FRUIT', () => {
+    const wrapper = mountVisualization([], ALL_GROUPS)
 
-    // Should NOT have VEGETABLE or PROTEIN zones
-    expect(wrapper.find('.segment-vegetable').exists()).toBe(false)
-    expect(wrapper.find('.segment-protein').exists()).toBe(false)
+    expect(wrapper.find('.cell-fat').exists()).toBe(true)
+    expect(wrapper.find('.cell-cereal').exists()).toBe(true)
+    expect(wrapper.find('.cell-fruit').exists()).toBe(true)
+    expect(wrapper.findAll('.cell')).toHaveLength(3)
+
+    // No VEGETABLE or PROTEIN cells
+    expect(wrapper.find('.cell-vegetable').exists()).toBe(false)
+    expect(wrapper.find('.cell-protein').exists()).toBe(false)
   })
 
-  it('displays food name in the correct zone when an item is assigned', () => {
+  it('displays food name in the correct cell when an item is assigned', () => {
     const items = [
       makeDraftItem('HEALTHY_FAT', 'Aguacate'),
       makeDraftItem('CEREAL_TUBER', 'Avena'),
       makeDraftItem('FRUIT', 'Manzana'),
     ]
-    const wrapper = mountVisualization(items)
+    const wrapper = mountVisualization(items, ALL_GROUPS)
 
     const html = wrapper.html()
     expect(html).toContain('Aguacate')
@@ -68,37 +75,75 @@ describe('SnackVisualization — 3-zone dedicated component (REQ-SC7)', () => {
     expect(html).toContain('Manzana')
   })
 
-  it('shows "Vacío" placeholder in empty zones', () => {
-    const wrapper = mountVisualization([])
+  it('shows "Vacío" only in enabled empty cells', () => {
+    // ≥13m: all 3 enabled and empty → 3 "Vacío"
+    const all = mountVisualization([], ALL_GROUPS)
+    expect((all.html().match(/Vacío/g) || []).length).toBe(3)
 
-    const html = wrapper.html()
-    const emptyCount = (html.match(/Vacío/g) || []).length
-    expect(emptyCount).toBe(3) // All 3 zones empty
+    // 10-12m: fruit locked → the locked cell shows no "Vacío" hint (2 enabled)
+    const two = mountVisualization([], TWO_GROUPS)
+    expect((two.html().match(/Vacío/g) || []).length).toBe(2)
   })
 
-  it('emits "select-group" event when a zone is tapped', async () => {
-    const wrapper = mountVisualization([])
+  describe('age-based cell locking', () => {
+    it('≥13m: all three cells enabled (not locked)', () => {
+      const wrapper = mountVisualization([], ALL_GROUPS)
+      expect(wrapper.find('.cell-fat').classes()).not.toContain('cell--locked')
+      expect(wrapper.find('.cell-cereal').classes()).not.toContain('cell--locked')
+      expect(wrapper.find('.cell-fruit').classes()).not.toContain('cell--locked')
+      expect(wrapper.find('.cell-fruit').attributes('disabled')).toBeUndefined()
+    })
 
-    await wrapper.find('.segment-fat').trigger('click')
-    expect(wrapper.emitted('select-group')).toEqual([['HEALTHY_FAT']])
+    it('10-12m: fruit cell is locked and disabled, the other two enabled', () => {
+      const wrapper = mountVisualization([], TWO_GROUPS)
+      expect(wrapper.find('.cell-fat').classes()).not.toContain('cell--locked')
+      expect(wrapper.find('.cell-cereal').classes()).not.toContain('cell--locked')
 
-    await wrapper.find('.segment-cereal').trigger('click')
-    expect(wrapper.emitted('select-group')).toEqual([['HEALTHY_FAT'], ['CEREAL_TUBER']])
+      const fruit = wrapper.find('.cell-fruit')
+      expect(fruit.classes()).toContain('cell--locked')
+      expect(fruit.attributes('disabled')).toBeDefined()
+    })
 
-    await wrapper.find('.segment-fruit').trigger('click')
-    expect(wrapper.emitted('select-group')).toEqual([['HEALTHY_FAT'], ['CEREAL_TUBER'], ['FRUIT']])
+    it('<10m: all cells locked + shows the age hint', () => {
+      const wrapper = mountVisualization([], []) // no suggested groups
+      expect(wrapper.find('.cell-fat').classes()).toContain('cell--locked')
+      expect(wrapper.find('.cell-cereal').classes()).toContain('cell--locked')
+      expect(wrapper.find('.cell-fruit').classes()).toContain('cell--locked')
+      expect(wrapper.find('.bento-age-hint').exists()).toBe(true)
+      expect(wrapper.text()).toContain('a partir de los 10 meses')
+    })
+
+    it('does not show the age hint when at least one group is suggested', () => {
+      expect(mountVisualization([], TWO_GROUPS).find('.bento-age-hint').exists()).toBe(false)
+      expect(mountVisualization([], ALL_GROUPS).find('.bento-age-hint').exists()).toBe(false)
+    })
   })
 
-  it('emphasizes suggested zones (11m baby: HEALTHY_FAT + CEREAL_TUBER)', () => {
-    const wrapper = mountVisualization([], ['HEALTHY_FAT', 'CEREAL_TUBER'])
+  describe('tap behavior respects the age gate', () => {
+    it('emits "select-group" for enabled cells', async () => {
+      const wrapper = mountVisualization([], ALL_GROUPS)
 
-    const fatZone = wrapper.find('.segment-fat')
-    const cerealZone = wrapper.find('.segment-cereal')
-    const fruitZone = wrapper.find('.segment-fruit')
+      await wrapper.find('.cell-fat').trigger('click')
+      await wrapper.find('.cell-cereal').trigger('click')
+      await wrapper.find('.cell-fruit').trigger('click')
 
-    expect(fatZone.classes()).toContain('segment--suggested')
-    expect(cerealZone.classes()).toContain('segment--suggested')
-    expect(fruitZone.classes()).not.toContain('segment--suggested')
+      expect(wrapper.emitted('select-group')).toEqual([
+        ['HEALTHY_FAT'],
+        ['CEREAL_TUBER'],
+        ['FRUIT'],
+      ])
+    })
+
+    it('does NOT emit when a locked cell is tapped (10-12m fruit)', async () => {
+      const wrapper = mountVisualization([], TWO_GROUPS)
+
+      await wrapper.find('.cell-fruit').trigger('click')
+      expect(wrapper.emitted('select-group')).toBeUndefined()
+
+      // The enabled cells still emit
+      await wrapper.find('.cell-fat').trigger('click')
+      expect(wrapper.emitted('select-group')).toEqual([['HEALTHY_FAT']])
+    })
   })
 
   it('does NOT render any A/L balance indicator (REQ-SC7)', () => {
@@ -107,9 +152,8 @@ describe('SnackVisualization — 3-zone dedicated component (REQ-SC7)', () => {
       makeDraftItem('CEREAL_TUBER', 'Avena'),
       makeDraftItem('FRUIT', 'Manzana'),
     ]
-    const wrapper = mountVisualization(items)
+    const wrapper = mountVisualization(items, ALL_GROUPS)
 
-    // Search for any balance-related elements that PlateVisualization might have
     expect(wrapper.find('.balance-bar').exists()).toBe(false)
     expect(wrapper.find('.balance-indicator').exists()).toBe(false)
     expect(wrapper.find('[class*="balance"]').exists()).toBe(false)

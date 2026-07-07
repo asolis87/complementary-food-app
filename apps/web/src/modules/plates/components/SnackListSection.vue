@@ -44,23 +44,28 @@
       <ul class="snack-grid" role="list" aria-label="Mis colaciones guardadas">
         <li v-for="snack in snackStore.savedSnacks" :key="snack.id" class="snack-item" role="listitem">
           <div class="snack-card">
+            <!-- Bento preview (mirrors the builder's bento visual language) -->
+            <SnackBentoThumbnail :items="snack.items" class="snack-card-bento" />
+
             <!-- Card Content -->
             <div class="card-content">
-              <h3 class="card-name">{{ snack.name }}</h3>
-              <p class="card-meta">
-                {{ snack.items.length }} {{ snack.items.length === 1 ? 'alimento' : 'alimentos' }}
-              </p>
-            </div>
+              <div class="card-text">
+                <h3 class="card-name">{{ snack.name }}</h3>
+                <p class="card-meta">
+                  {{ snack.items.length }} {{ snack.items.length === 1 ? 'alimento' : 'alimentos' }}
+                </p>
+              </div>
 
-            <!-- Delete button -->
-            <button
-              data-test="delete-snack-btn"
-              class="delete-btn"
-              :aria-label="`Eliminar ${snack.name}`"
-              @click="openDeleteModal(snack.id)"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
-            </button>
+              <!-- Delete button -->
+              <button
+                data-test="delete-snack-btn"
+                class="delete-btn"
+                :aria-label="`Eliminar ${snack.name}`"
+                @click="openDeleteModal(snack.id)"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              </button>
+            </div>
           </div>
         </li>
 
@@ -91,16 +96,8 @@
         </li>
       </ul>
 
-      <!-- Create FAB (mobile) -->
-      <button
-        v-if="!atLimit"
-        class="snack-fab mobile-only"
-        data-test="create-snack-btn"
-        aria-label="Crear nueva colación"
-        @click="openDrawer"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true">add</span>
-      </button>
+      <!-- Mobile create affordance is handled by the parent header FAB
+           (single persistent "Crear Colación" button per tab). -->
     </div>
 
     <!-- Delete confirmation modal (REQ-SC5 — mirrors PlateDetailPage pattern) -->
@@ -149,6 +146,7 @@ import { useSnackStore } from '@/shared/stores/snackStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { SNACK_LIMITS } from '@pakulab/shared'
 import SnackBuilderDrawer from '@/shared/components/SnackBuilderDrawer.vue'
+import SnackBentoThumbnail from '@/modules/snacks/components/SnackBentoThumbnail.vue'
 import type { Snack } from '@pakulab/shared'
 
 interface Props {
@@ -220,6 +218,10 @@ onMounted(() => {
     snackStore.fetchSavedSnacks()
   }
 })
+
+// Expose the drawer control + limit state so the parent header/FAB can drive
+// snack creation (single persistent "Crear Colación" button lives in the header).
+defineExpose({ openDrawer, atLimit })
 </script>
 
 <style scoped>
@@ -307,7 +309,7 @@ onMounted(() => {
 }
 
 .create-btn:hover {
-  background: var(--md3-primary-dark);
+  background: var(--md3-primary-dim);
 }
 
 /* ─── Upsell Banner ─────────────────────────────────────────── */
@@ -390,8 +392,7 @@ onMounted(() => {
   border-radius: var(--md3-rounded-lg);
   padding: var(--md3-space-4);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--md3-space-3);
   transition: background var(--md3-transition-fast);
 }
@@ -400,7 +401,20 @@ onMounted(() => {
   background: var(--md3-surface-container);
 }
 
+/* Bento preview sits at the top of the card (the "hero", mirrors plate cards) */
+.snack-card-bento {
+  width: 100%;
+}
+
+/* Text + delete row below the bento */
 .card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--md3-space-3);
+}
+
+.card-text {
   flex: 1;
   min-width: 0;
 }
@@ -484,38 +498,6 @@ onMounted(() => {
   border-top-color: var(--md3-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
-}
-
-/* ─── FAB (mobile) ───────────────────────────────────────── */
-
-.snack-fab {
-  position: fixed;
-  right: var(--md3-space-4);
-  bottom: var(--md3-space-4);
-  width: 56px;
-  height: 56px;
-  padding: 0;
-  background: var(--md3-primary);
-  color: var(--md3-on-primary);
-  border: none;
-  border-radius: var(--md3-rounded-full);
-  box-shadow: var(--md3-shadow-3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--md3-transition-fast);
-  z-index: 10;
-}
-
-.snack-fab:hover {
-  background: var(--md3-primary-dark);
-}
-
-@media (min-width: 768px) {
-  .mobile-only {
-    display: none;
-  }
 }
 
 /* ─── Modal (mirrors PlateDetailPage) ───────────────────────── */

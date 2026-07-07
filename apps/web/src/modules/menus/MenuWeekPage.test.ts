@@ -877,5 +877,41 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       const backdrop = document.body
       expect(backdrop.textContent).toContain('No tienes colaciones guardadas todavía')
     })
+
+    it('snack picker is collapsible: tapping a snack reveals its foods + select button', async () => {
+      mountAt(11, {}, [
+        {
+          id: 'snack-1',
+          name: 'Fruta y nuez',
+          items: [
+            { id: 'i1', groupAssignment: 'FRUIT', food: { id: 'f1', name: 'Manzana', group: 'FRUIT' } },
+            { id: 'i2', groupAssignment: 'HEALTHY_FAT', food: { id: 'f2', name: 'Nuez', group: 'HEALTHY_FAT' } },
+          ],
+        },
+      ])
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // Open the snack picker
+      await wrapper.find('[data-slot="lun:snack1"]').find('.add-slot-btn').trigger('click')
+      await flushPromises()
+
+      const dialog = document.body
+      // Collapsed initially: snack name visible, but food details + select hidden
+      expect(dialog.textContent).toContain('Fruta y nuez')
+      expect(dialog.querySelector('.picker-item__detail')).toBeNull()
+
+      // Tap the snack header to expand
+      const header = dialog.querySelector('.picker-item__header') as HTMLElement
+      header.click()
+      await flushPromises()
+
+      // Now the foods + the select button are shown
+      const detail = dialog.querySelector('.picker-item__detail')
+      expect(detail).not.toBeNull()
+      expect(detail?.textContent).toContain('Manzana')
+      expect(detail?.textContent).toContain('Nuez')
+      expect(detail?.querySelector('.picker-select-btn')).not.toBeNull()
+    })
   })
 })
