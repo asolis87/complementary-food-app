@@ -47,8 +47,8 @@ export const snackRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const input = createSnackSchema.parse(request.body)
       const tier = request.user!.tier === 'PRO' ? 'PRO' : 'FREE'
-      const snack = await createSnack(fastify.prisma, request.user!.id, tier, input)
-      reply.status(201).send({ data: snack })
+      const { snack, warnings } = await createSnack(fastify.prisma, request.user!.id, tier, input)
+      reply.status(201).send({ data: snack, warnings })
     },
   )
 

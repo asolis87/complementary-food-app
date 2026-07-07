@@ -6,6 +6,11 @@
  */
 
 import type { PrismaClient } from '@prisma/client'
+import {
+  getAgeMonths,
+  getMissingSnackGroups,
+  getExtraSnackGroups,
+} from '@pakulab/shared'
 import { TierLimitError } from '../../shared/errors/index.js'
 import type { CreateSnackInput, ListSnacksQuery } from './snack.schemas.js'
 
@@ -61,6 +66,12 @@ export async function getSnackById(prisma: PrismaClient, id: string, userId: str
  * Create a new snack for the user.
  * Enforces tier limits: FREE users can have max 5 snacks, PRO users unlimited.
  * No balance calculation (snacks don't have A/L scoring).
+ *
+ * REQ-SM4: returns non-blocking `warnings` describing how the snack composition
+ * differs from the age-suggested set. Age is derived from the linked baby
+ * profile (same lookup the dashboard uses). If no babyProfileId is provided or
+ * the profile isn't found, there is no age context → `warnings` is empty and
+ * the snack still saves. Warnings never block the save.
  */
 export async function createSnack(
   prisma: PrismaClient,
@@ -79,7 +90,12 @@ export async function createSnack(
     }
   }
 
-  return prisma.snack.create({
+  // Compute advisory warnings BEFORE persisting so a warnings-lookup failure
+  // can never leave an orphaned snack behind (warnings are read-only metadata
+  // and do not depend on the saved snack).
+  const warnings = await computeSnackWarnings(prisma, userId, input)
+
+  const snack = await prisma.snack.create({
     data: {
       userId,
       name: input.name ?? 'Mi colación',
@@ -95,6 +111,42 @@ export async function createSnack(
     },
     include: { items: { include: { food: true } } },
   })
+
+  return { snack, warnings }
+}
+
+/**
+ * Compute non-blocking composition warnings for a snack against the baby's
+ * age-suggested groups. Returns [] when there is no age context (no
+ * babyProfileId, or the profile isn't found/owned by the user).
+ */
+async function computeSnackWarnings(
+  prisma: PrismaClient,
+  userId: string,
+  input: CreateSnackInput,
+): Promise<string[]> {
+  if (!input.babyProfileId) {
+    return []
+  }
+
+  const profile = await prisma.babyProfile.findFirst({
+    where: { id: input.babyProfileId, userId, deletedAt: null },
+  })
+  if (!profile) {
+    return []
+  }
+
+  const ageMonths = getAgeMonths(profile.birthDate)
+  const items = input.items.map((item) => ({ groupAssignment: item.groupAssignment }))
+
+  const missing = getMissingSnackGroups(items, ageMonths).map(
+    (group) => `Suggested group ${group} is missing`,
+  )
+  const extra = getExtraSnackGroups(items, ageMonths).map(
+    (group) => `${group} is not typically suggested for ${ageMonths} months`,
+  )
+
+  return [...missing, ...extra]
 }
 
 /**
