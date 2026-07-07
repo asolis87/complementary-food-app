@@ -102,8 +102,40 @@
                 {{ meal.name }}
               </span>
 
+              <!-- ─── Snack slot (name only, no score) ─── -->
+              <template v-if="isSnackSlot(meal.key)">
+                <template v-if="getAssignedSnack(day.key, meal.key)">
+                  <div
+                    class="snack-chip"
+                    :class="{ 'snack-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }"
+                    :data-chip="`${day.key}:${meal.key}`"
+                  >
+                    <span class="snack-chip__name">{{ getAssignedSnack(day.key, meal.key)!.name }}</span>
+                    <button
+                      class="plate-chip__remove"
+                      :aria-label="`Quitar ${getAssignedSnack(day.key, meal.key)!.name}`"
+                      @click.stop="removeSnack(day.key, meal.key)"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                </template>
+                <template v-else>
+                  <button
+                    class="add-slot-btn"
+                    :class="{ 'add-slot-btn--loading': menuStore.isSlotLoading(day.key, meal.key) }"
+                    :aria-label="`Agregar colación a ${meal.name} del ${day.name}`"
+                    :disabled="menuStore.isSlotLoading(day.key, meal.key)"
+                    @click="openPicker(day.key, meal.key)"
+                  >
+                    <span v-if="menuStore.isSlotLoading(day.key, meal.key)" class="slot-spinner" aria-hidden="true" />
+                    <span v-else class="material-symbols-outlined" aria-hidden="true">add</span>
+                  </button>
+                </template>
+              </template>
+
               <!-- Assigned plate -->
-              <template v-if="getAssignedPlate(day.key, meal.key)">
+              <template v-else-if="getAssignedPlate(day.key, meal.key)">
                 <div
                   class="plate-chip"
                   :class="{ 'plate-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }"
@@ -311,8 +343,39 @@
               <span class="meal-row__name">{{ meal.name }}</span>
             </div>
 
+            <!-- ─── Snack slot (mobile, name only, no score) ─── -->
+            <template v-if="isSnackSlot(meal.key)">
+              <template v-if="getAssignedSnack(day.key, meal.key)">
+                <div class="snack-row-chip" :class="{ 'snack-row-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }">
+                  <span class="snack-row-chip__name">{{ getAssignedSnack(day.key, meal.key)!.name }}</span>
+                  <button
+                    class="plate-row-chip__remove"
+                    :aria-label="`Quitar ${getAssignedSnack(day.key, meal.key)!.name}`"
+                    @click="removeSnack(day.key, meal.key)"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <button
+                  class="add-row-btn"
+                  :class="{ 'add-row-btn--loading': menuStore.isSlotLoading(day.key, meal.key) }"
+                  :aria-label="`Agregar colación a ${meal.name}`"
+                  :disabled="menuStore.isSlotLoading(day.key, meal.key)"
+                  @click="openPicker(day.key, meal.key)"
+                >
+                  <span v-if="menuStore.isSlotLoading(day.key, meal.key)" class="slot-spinner" aria-hidden="true" />
+                  <template v-else>
+                    <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                    Agregar colación
+                  </template>
+                </button>
+              </template>
+            </template>
+
             <!-- Assigned plate -->
-            <template v-if="getAssignedPlate(day.key, meal.key)">
+            <template v-else-if="getAssignedPlate(day.key, meal.key)">
               <div class="mobile-plate-container">
                 <!-- Plate name row with inline serve -->
                 <div class="plate-row-chip" :class="{ 'plate-row-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }">
@@ -509,6 +572,63 @@
         </Transition>
       </Teleport>
 
+      <!-- ─── Snack Picker Dialog ─── -->
+      <Teleport to="body">
+        <Transition name="dialog-fade">
+          <div
+            v-if="snackPicker.open"
+            class="dialog-backdrop"
+            role="presentation"
+            @click.self="closeSnackPicker"
+          >
+            <div
+              class="dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="snack-picker-title"
+            >
+              <div class="dialog__header">
+                <h3 id="snack-picker-title" class="dialog__title">Elegir colación</h3>
+                <button class="dialog__close" aria-label="Cerrar" @click="closeSnackPicker">
+                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+              </div>
+
+              <!-- Loading -->
+              <div v-if="snackStore.loading" class="picker-loading">
+                <div class="picker-spinner" aria-hidden="true" />
+                <span>Cargando colaciones...</span>
+              </div>
+
+              <!-- Empty snacks (no create button — creation lands in a later PR) -->
+              <div v-else-if="snackStore.savedSnacks.length === 0" class="picker-empty">
+                <span class="material-symbols-outlined picker-empty__icon" aria-hidden="true">no_meals</span>
+                <p>No tienes colaciones guardadas todavía.</p>
+              </div>
+
+              <!-- Snack list -->
+              <ul v-else class="picker-list" role="listbox" aria-label="Colaciones disponibles">
+                <li
+                  v-for="snack in snackStore.savedSnacks"
+                  :key="snack.id"
+                  class="picker-item"
+                  role="option"
+                  :aria-selected="false"
+                >
+                  <div class="picker-item__header" @click="assignSnack(snack)">
+                    <span class="picker-item__name">{{ snack.name }}</span>
+                    <span class="picker-item__meta">
+                      {{ snack.items?.length ?? 0 }} alimentos
+                    </span>
+                    <span class="material-symbols-outlined picker-item__arrow" aria-hidden="true">add_circle</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
       <!-- ─── Re-serve Confirmation Dialog ─── -->
       <Teleport to="body">
         <Transition name="dialog-fade">
@@ -661,7 +781,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
-import type { Plate, PlateItemSummary } from '@pakulab/shared'
+import type { Plate, PlateItemSummary, Snack } from '@pakulab/shared'
 import { DAY_KEY_TO_INDEX, DAY_INDEX_TO_KEY, type MealKey as SharedMealKey, MEAL_TYPE_TO_KEY } from '@pakulab/shared'
 import { getAgeMonths, getSuggestedStageForAge, PLATE_STAGE_LABELS, getMealSlotsForAge } from '@pakulab/shared'
 import TierGate from '@/shared/components/TierGate.vue'
@@ -669,6 +789,7 @@ import PlateBuilderDrawer from '@/shared/components/PlateBuilderDrawer.vue'
 import MenuExportFrame from './components/MenuExportFrame.vue'
 import WarningBadge from '@/shared/components/WarningBadge.vue'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
+import { useSnackStore } from '@/shared/stores/snackStore.js'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { useUiStore } from '@/shared/stores/uiStore.js'
@@ -761,8 +882,14 @@ const exportFrameRef = ref<InstanceType<typeof MenuExportFrame> | null>(null)
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-type MealKey = 'desayuno' | 'comida' | 'cena' | 'snack1' | 'snack2'
+// Matches SharedMealKey (includes the diary-only generic 'snack' key).
+type MealKey = SharedMealKey
 type DayKey = 'lun' | 'mar' | 'mie' | 'jue' | 'vie' | 'sab' | 'dom'
+
+/** True for the two age-aware snack slot keys (SNACK_1 / SNACK_2). */
+function isSnackSlot(mealKey: MealKey): boolean {
+  return mealKey === 'snack1' || mealKey === 'snack2'
+}
 
 interface MealDef {
   key: MealKey
@@ -792,6 +919,7 @@ const MEAL_ICONS: Record<SharedMealKey, string> = {
 // ─── Stores ───────────────────────────────────────────────────────────────
 
 const plateStore = usePlateStore()
+const snackStore = useSnackStore()
 const menuStore = useMenuStore()
 const profileStore = useProfileStore()
 const uiStore = useUiStore()
@@ -1024,7 +1152,9 @@ const exportData = computed<ExportDay[]>(() => {
     const newFoodIdsToday = new Set<string>()
     const newFoodNamesToday: string[] = []
 
-    const meals: ExportMeal[] = MEALS.value.map((meal) => {
+    // Snacks are not included in the export (deferred to the snack-catalog PR):
+    // only the main meals (breakfast/lunch/dinner) are rendered.
+    const meals: ExportMeal[] = MEALS.value.filter((meal) => !isSnackSlot(meal.key)).map((meal) => {
       const plate = menuStore.getPlate(dayKey, meal.key)
       const foods: ExportFood[] = menuStore.getSlotFoods(dayKey, meal.key).map((item) => {
         const foodId = item.foodId ?? ''
@@ -1095,6 +1225,29 @@ async function removePlate(dayKey: DayKey, mealKey: MealKey): Promise<void> {
   } catch (err) {
     // Error already handled in store (rollback + toast), just log
     console.error('Failed to remove plate:', err)
+  }
+}
+
+/**
+ * Get assigned snack from store (snack slots only).
+ * Thin wrapper for template compatibility.
+ */
+function getAssignedSnack(dayKey: DayKey, mealKey: MealKey): Snack | undefined {
+  return menuStore.getSnack(dayKey, mealKey) ?? undefined
+}
+
+/**
+ * Remove snack from slot via store (with optimistic UI + API sync).
+ */
+async function removeSnack(dayKey: DayKey, mealKey: MealKey): Promise<void> {
+  const profileId = profileStore.activeProfile?.id
+  if (!profileId) return
+
+  try {
+    await menuStore.removeSnack(profileId, weekStartISO.value, dayKey, mealKey)
+  } catch (err) {
+    // Error already handled in store (rollback + toast), just log
+    console.error('Failed to remove snack:', err)
   }
 }
 
@@ -1346,7 +1499,18 @@ interface PickerState {
 const picker = ref<PickerState>({ open: false, dayKey: null, mealKey: null })
 const expandedPlateId = ref<string | null>(null)
 
+/** Snack picker dialog state (separate from the plate picker). */
+const snackPicker = ref<PickerState>({ open: false, dayKey: null, mealKey: null })
+
+/**
+ * Route a slot's "+" button: snack slots open the snack picker, everything
+ * else opens the plate picker (existing behavior).
+ */
 function openPicker(dayKey: DayKey, mealKey: MealKey): void {
+  if (isSnackSlot(mealKey)) {
+    snackPicker.value = { open: true, dayKey, mealKey }
+    return
+  }
   picker.value = { open: true, dayKey, mealKey }
   expandedPlateId.value = null
 }
@@ -1354,6 +1518,30 @@ function openPicker(dayKey: DayKey, mealKey: MealKey): void {
 function closePicker(): void {
   picker.value = { open: false, dayKey: null, mealKey: null }
   expandedPlateId.value = null
+}
+
+function closeSnackPicker(): void {
+  snackPicker.value = { open: false, dayKey: null, mealKey: null }
+}
+
+/**
+ * Assign a snack to the slot the snack picker was opened for.
+ */
+async function assignSnack(snack: Snack): Promise<void> {
+  if (!snackPicker.value.dayKey || !snackPicker.value.mealKey) return
+
+  const profileId = profileStore.activeProfile?.id
+  const dayKey = snackPicker.value.dayKey
+  const mealKey = snackPicker.value.mealKey
+
+  closeSnackPicker()
+  if (!profileId) return
+
+  try {
+    await menuStore.assignSnack(profileId, weekStartISO.value, dayKey, mealKey, snack)
+  } catch (err) {
+    console.error('Failed to assign snack:', err)
+  }
 }
 
 // ─── Plate builder drawer handlers (Menu→Builder flow) ────────────────────
@@ -1434,8 +1622,10 @@ async function confirmApplyAll(): Promise<void> {
   const { dayKey, plate } = applyAllDialog
   closeApplyAllDialog()
 
-  // Sequential assignment to avoid Pinia reactive state race conditions (UX-5)
+  // Sequential assignment to avoid Pinia reactive state race conditions (UX-5).
+  // Snack slots are excluded — plates never go into snack slots.
   for (const meal of MEALS.value) {
+    if (isSnackSlot(meal.key)) continue
     try {
       await menuStore.assignPlate(profileId, weekStartISO.value, dayKey!, meal.key, plate!)
     } catch (err) {
@@ -1575,6 +1765,11 @@ onMounted(async () => {
   // Fetch saved plates for the picker
   if (plateStore.savedPlates.length === 0) {
     await plateStore.fetchSavedPlates()
+  }
+
+  // Fetch saved snacks for the snack picker
+  if (snackStore.savedSnacks.length === 0) {
+    await snackStore.fetchSavedSnacks()
   }
 
   // Fetch menu for current week
@@ -2185,6 +2380,75 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
 }
 
 .plate-chip--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ─── Snack chip (desktop — no score, name only) ─── */
+.snack-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  padding: 4px 6px;
+  background: var(--md3-surface-container);
+  border-radius: var(--md3-rounded-sm);
+  min-height: 30px;
+  cursor: default;
+}
+
+.snack-chip__name {
+  flex: 1;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: var(--md3-label-line-height);
+}
+
+.snack-chip .plate-chip__remove {
+  opacity: 0;
+  transition: opacity var(--md3-transition-fast);
+}
+
+.snack-chip:hover .plate-chip__remove {
+  opacity: 1;
+}
+
+.snack-chip--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ─── Snack row chip (mobile — no score, name only) ─── */
+.snack-row-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-1);
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  background: var(--md3-surface-container);
+  border-radius: var(--md3-rounded-sm);
+}
+
+.snack-row-chip__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snack-row-chip--loading {
   opacity: 0.6;
   pointer-events: none;
 }

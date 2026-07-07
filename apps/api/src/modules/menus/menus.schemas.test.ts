@@ -291,20 +291,21 @@ describe('patchMealSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('accepts all valid MealType enum values', () => {
-    const mealTypes = [
-      MealType.BREAKFAST,
-      MealType.LUNCH,
-      MealType.DINNER,
-      MealType.SNACK_1,
-      MealType.SNACK_2,
-      MealType.SNACK,
+  it('accepts all valid MealType enum values (with correct plateId/snackId)', () => {
+    const mealSlots = [
+      { mealType: MealType.BREAKFAST, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.LUNCH, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.DINNER, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.SNACK_1, plateId: null, snackId: VALID_PLATE_CUID },
+      { mealType: MealType.SNACK_2, plateId: null, snackId: VALID_PLATE_CUID },
+      { mealType: MealType.SNACK, plateId: null, snackId: VALID_PLATE_CUID },
     ]
-    for (const mealType of mealTypes) {
+    for (const { mealType, plateId, snackId } of mealSlots) {
       const result = patchMealSchema.safeParse({
         dayOfWeek: 1,
         mealType,
-        plateId: VALID_PLATE_CUID,
+        plateId,
+        snackId,
       })
       expect(result.success, `Expected mealType=${mealType} to be valid`).toBe(true)
     }
@@ -392,6 +393,45 @@ describe('patchMealSchema', () => {
       plateId: VALID_PLATE_CUID,
     })
     expect(result.success).toBe(false)
+  })
+
+  // REQ-WM5: Mutual exclusion tests
+  it('rejects plateId on SNACK_1 slot', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.SNACK_1,
+      plateId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('SNACK slots cannot accept plates'))).toBe(true)
+    }
+  })
+
+  it('rejects snackId on LUNCH slot', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.LUNCH,
+      plateId: null,
+      snackId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('MEAL slots cannot accept snacks'))).toBe(true)
+    }
+  })
+
+  it('rejects both plateId and snackId set simultaneously', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.BREAKFAST,
+      plateId: VALID_PLATE_CUID,
+      snackId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('A slot cannot have both plateId and snackId'))).toBe(true)
+    }
   })
 })
 

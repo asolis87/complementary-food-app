@@ -41,6 +41,7 @@ type PlateWithItems = Plate & {
 type MenuMealWithServedAt = MenuMeal & {
   servedAt: Date | null
   plate: PlateWithItems | null
+  snack?: any | null
 }
 
 type MenuWithDaysAndMeals = WeeklyMenu & {
@@ -154,13 +155,15 @@ function serializePlateItems(items: PlateWithItems['items'] | undefined): PlateI
 
 /**
  * Serializes a Prisma MenuMeal to the API response type.
+ * REQ-WM1: Include snackId and snack in response.
  */
-function serializeMenuMeal(meal: MenuMeal & { plate: PlateWithItems | null }): MenuMealResponse {
+function serializeMenuMeal(meal: MenuMeal & { plate: PlateWithItems | null; snack?: any | null }): MenuMealResponse {
   return {
     id: meal.id,
     menuDayId: meal.menuDayId,
     mealType: meal.mealType as MealType,
     plateId: meal.plateId,
+    snackId: meal.snackId ?? undefined,
     notes: meal.notes,
     servedAt: meal.servedAt?.toISOString() ?? null,
     plate: meal.plate
@@ -181,6 +184,33 @@ function serializeMenuMeal(meal: MenuMeal & { plate: PlateWithItems | null }): M
           items: serializePlateItems(meal.plate.items) as unknown as import('@pakulab/shared').PlateItem[],
         }
       : null,
+    snack: meal.snack
+      ? {
+          id: meal.snack.id,
+          userId: meal.snack.userId,
+          babyProfileId: meal.snack.babyProfileId,
+          name: meal.snack.name,
+          stageFor: meal.snack.stageFor,
+          createdAt: meal.snack.createdAt.toISOString(),
+          updatedAt: meal.snack.updatedAt.toISOString(),
+          deletedAt: meal.snack.deletedAt?.toISOString() ?? null,
+          items: meal.snack.items?.map((item: any) => ({
+            id: item.id,
+            snackId: item.snackId,
+            foodId: item.foodId,
+            groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount,
+            createdAt: item.createdAt.toISOString(),
+            food: item.food
+              ? {
+                  id: item.food.id,
+                  name: item.food.name,
+                  group: item.food.group,
+                }
+              : undefined,
+          })) ?? [],
+        }
+      : undefined,
   }
 }
 
@@ -256,6 +286,15 @@ export async function getWeekMenu(
                       groupAssignment: true,
                       servingAmount: true,
                       food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                    }
+                  }
+                }
+              },
+              snack: {
+                include: {
+                  items: {
+                    include: {
+                      food: { select: { id: true, name: true, group: true } }
                     }
                   }
                 }
@@ -339,10 +378,29 @@ export async function createWeekMenu(
 }
 
 /**
- * Upserts a meal slot — assigns, replaces, or clears a plate for a specific day+mealType.
+ * Upserts a meal slot — assigns, replaces, or clears a plate/snack for a specific day+mealType.
  * Creates the MenuDay defensively if it doesn't exist (shouldn't happen, but for data integrity).
  * Fully transactional: MenuDay ensure + MenuMeal upsert are in one transaction.
+ * REQ-WM3: Assign snack to SNACK slot.
+ * REQ-WM5: Mutual exclusion between plateId and snackId.
  */
+/**
+ * Resolve the plate/snack foreign keys for a meal-slot assignment, enforcing
+ * mutual exclusion: setting one FK always clears the other. Pure + exported so
+ * the invariant is unit-testable without mocking the Prisma upsert.
+ */
+export function resolveMealSlotFks(
+  payload: { plateId?: string | null; snackId?: string | null },
+): { plateId: string | null; snackId: string | null } {
+  if (payload.snackId) {
+    return { snackId: payload.snackId, plateId: null }
+  }
+  if (payload.plateId) {
+    return { plateId: payload.plateId, snackId: null }
+  }
+  return { plateId: null, snackId: null }
+}
+
 export async function upsertMealSlot(
   prisma: PrismaClient,
   userId: string,
@@ -368,6 +426,22 @@ export async function upsertMealSlot(
     }
   }
 
+  // If assigning a snack, verify it exists and belongs to user (outside transaction)
+  if (payload.snackId) {
+    const snack = await prisma.snack.findFirst({
+      where: {
+        id: payload.snackId,
+        userId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    })
+
+    if (!snack) {
+      throw new NotFoundError('Snack')
+    }
+  }
+
   // Everything below runs in a single transaction for data integrity
   const result = await prisma.$transaction(async (tx: TxClient) => {
     // Find or create the MenuDay for this dayOfWeek (inside transaction)
@@ -388,7 +462,10 @@ export async function upsertMealSlot(
       })
     }
 
-    if (payload.plateId === null) {
+    // Determine clear vs assign/replace logic
+    const isClearing = payload.plateId === null && (payload.snackId === null || payload.snackId === undefined)
+
+    if (isClearing) {
       // Clear slot: delete the MenuMeal if it exists
       await tx.menuMeal.deleteMany({
         where: {
@@ -399,7 +476,21 @@ export async function upsertMealSlot(
 
       return { meal: null }
     } else {
-      // Assign/replace plate: upsert the MenuMeal
+      // Assign/replace: resolve which FK to set, clearing the other (mutual exclusion).
+      const fks = resolveMealSlotFks(payload)
+      const updateData: { plateId?: string | null; snackId?: string | null; notes?: string | null } = {
+        ...fks,
+      }
+      const createData: { plateId?: string | null; snackId?: string | null; notes?: string | null } = {
+        ...fks,
+      }
+
+      if (payload.notes !== undefined) {
+        updateData.notes = payload.notes
+        createData.notes = payload.notes ?? null
+      }
+
+      // Upsert the MenuMeal
       const meal = await tx.menuMeal.upsert({
         where: {
           menuDayId_mealType: {
@@ -407,15 +498,11 @@ export async function upsertMealSlot(
             mealType: payload.mealType,
           },
         },
-        update: {
-          plateId: payload.plateId,
-          ...(payload.notes !== undefined && { notes: payload.notes }),
-        },
+        update: updateData,
         create: {
           menuDayId: menuDay.id,
           mealType: payload.mealType,
-          plateId: payload.plateId,
-          notes: payload.notes ?? null,
+          ...createData,
         },
          include: {
            plate: {
@@ -423,6 +510,15 @@ export async function upsertMealSlot(
                items: {
                  include: {
                     food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                 }
+               }
+             }
+           },
+           snack: {
+             include: {
+               items: {
+                 include: {
+                    food: { select: { id: true, name: true, group: true } }
                  }
                }
              }
