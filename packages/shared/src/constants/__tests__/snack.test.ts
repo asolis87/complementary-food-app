@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { getSnackGroupsForAge, getMissingSnackGroups } from '../snack.js'
+import { getSnackGroupsForAge, getMissingSnackGroups, getExtraSnackGroups } from '../snack.js'
 
 describe('getSnackGroupsForAge', () => {
   it('should return empty array for baby under 10 months', () => {
@@ -96,5 +96,48 @@ describe('getMissingSnackGroups', () => {
       { groupAssignment: 'HEALTHY_FAT' as const },
     ]
     expect(getMissingSnackGroups(dupeFat, 11)).toEqual(['CEREAL_TUBER'])
+  })
+})
+
+describe('getExtraSnackGroups', () => {
+  it('should return empty array when all present groups are within the suggestion', () => {
+    const items11m = [
+      { groupAssignment: 'HEALTHY_FAT' as const },
+      { groupAssignment: 'CEREAL_TUBER' as const },
+    ]
+    expect(getExtraSnackGroups(items11m, 11)).toEqual([])
+  })
+
+  it('should return the extra group for a 10-month-old with an unsuggested FRUIT', () => {
+    // 10m suggestion is [FAT, CEREAL]; FRUIT (a 13m+ group) is extra.
+    const items = [
+      { groupAssignment: 'HEALTHY_FAT' as const },
+      { groupAssignment: 'CEREAL_TUBER' as const },
+      { groupAssignment: 'FRUIT' as const },
+    ]
+    expect(getExtraSnackGroups(items, 10)).toEqual(['FRUIT'])
+  })
+
+  it('should return empty array when a 15-month-old includes fruit (within suggestion)', () => {
+    const items = [
+      { groupAssignment: 'HEALTHY_FAT' as const },
+      { groupAssignment: 'CEREAL_TUBER' as const },
+      { groupAssignment: 'FRUIT' as const },
+    ]
+    expect(getExtraSnackGroups(items, 15)).toEqual([])
+  })
+
+  it('should collapse duplicate extra groups to a single entry', () => {
+    const dupeFruit = [
+      { groupAssignment: 'FRUIT' as const },
+      { groupAssignment: 'FRUIT' as const },
+    ]
+    expect(getExtraSnackGroups(dupeFruit, 11)).toEqual(['FRUIT'])
+  })
+
+  it('should return empty array for babies under 10 months (no snack age context)', () => {
+    // No groups suggested under 10m → no age context to flag extras against.
+    const items = [{ groupAssignment: 'FRUIT' as const }]
+    expect(getExtraSnackGroups(items, 8)).toEqual([])
   })
 })

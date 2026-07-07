@@ -49,3 +49,34 @@ export function getMissingSnackGroups(
   const present = new Set(items.map((item) => item.groupAssignment))
   return suggested.filter((group) => !present.has(group))
 }
+
+/**
+ * Get the extra snack groups for a given list of items and baby's age.
+ * Returns the present groups that are NOT part of the age-suggested set
+ * (deduplicated, in first-seen order). Used for non-blocking warnings in the
+ * API response.
+ *
+ * When no groups are suggested for the age (< 10 months), there is no snack
+ * guidance to compare against, so nothing is flagged as extra (returns []).
+ */
+export function getExtraSnackGroups(
+  items: { groupAssignment: FoodGroup }[],
+  ageMonths: number,
+): FoodGroup[] {
+  const suggested = getSnackGroupsForAge(ageMonths)
+  // No age context (no snacks suggested) → nothing is "extra".
+  if (suggested.length === 0) {
+    return []
+  }
+  const suggestedSet = new Set(suggested)
+  const extra: FoodGroup[] = []
+  const seen = new Set<FoodGroup>()
+  for (const item of items) {
+    const group = item.groupAssignment
+    if (!suggestedSet.has(group) && !seen.has(group)) {
+      seen.add(group)
+      extra.push(group)
+    }
+  }
+  return extra
+}

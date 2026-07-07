@@ -17,8 +17,23 @@ const mockPrisma = {
     findFirst: vi.fn(),
     update: vi.fn(),
   },
+  babyProfile: {
+    findFirst: vi.fn(),
+  },
   $transaction: vi.fn(),
 } as unknown as PrismaClient
+
+/**
+ * Build a birthDate that yields exactly `ageMonths` complete months against
+ * the real current clock, so createSnack's internal getAgeMonths(now) call
+ * derives the intended age deterministically. Sets the day-of-month to 1 to
+ * avoid month-boundary rounding on end-of-month reference dates.
+ */
+function birthDateForAge(ageMonths: number): Date {
+  const now = new Date()
+  const d = new Date(now.getFullYear(), now.getMonth() - ageMonths, 1)
+  return d
+}
 
 describe('createSnack', () => {
   beforeEach(() => {
@@ -69,10 +84,15 @@ describe('createSnack', () => {
 
     mockPrisma.snack.count = vi.fn().mockResolvedValue(2)
     mockPrisma.snack.create = vi.fn().mockResolvedValue(mockCreatedSnack)
+    // 2-group snack for an 11m profile matches the suggestion → no warnings.
+    mockPrisma.babyProfile.findFirst = vi.fn().mockResolvedValue({
+      birthDate: birthDateForAge(11),
+    })
 
     const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
 
-    expect(result).toEqual(mockCreatedSnack)
+    expect(result.snack).toEqual(mockCreatedSnack)
+    expect(result.warnings).toEqual([])
     expect(mockPrisma.snack.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-123',
@@ -145,8 +165,10 @@ describe('createSnack', () => {
 
     const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
 
-    expect(result).toEqual(mockCreatedSnack)
-    expect(result.items).toHaveLength(3)
+    // No babyProfileId → no age context → no warnings.
+    expect(result.snack).toEqual(mockCreatedSnack)
+    expect(result.warnings).toEqual([])
+    expect(result.snack.items).toHaveLength(3)
   })
 
   it('should enforce FREE tier limit of 5 snacks', async () => {
@@ -161,6 +183,148 @@ describe('createSnack', () => {
     await expect(createSnack(mockPrisma, 'user-123', 'FREE', input)).rejects.toThrow(
       'Has alcanzado el límite de 5 colaciones para el plan gratuito',
     )
+  })
+
+  it('should warn about a missing suggested group (11m profile, only HEALTHY_FAT)', async () => {
+    const input = {
+      name: 'Colación Ana',
+      babyProfileId: 'profile-ana',
+      items: [{ foodId: 'food-fat', groupAssignment: 'HEALTHY_FAT' as const }],
+    }
+
+    const mockCreatedSnack = {
+      id: 'snack-ana',
+      userId: 'user-123',
+      babyProfileId: 'profile-ana',
+      name: 'Colación Ana',
+      stageFor: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      items: [
+        {
+          id: 'item-1',
+          snackId: 'snack-ana',
+          foodId: 'food-fat',
+          groupAssignment: 'HEALTHY_FAT',
+          servingAmount: null,
+          createdAt: new Date(),
+          food: { id: 'food-fat', name: 'Aguacate', group: 'HEALTHY_FAT' },
+        },
+      ],
+    }
+
+    mockPrisma.snack.count = vi.fn().mockResolvedValue(0)
+    mockPrisma.snack.create = vi.fn().mockResolvedValue(mockCreatedSnack)
+    mockPrisma.babyProfile.findFirst = vi.fn().mockResolvedValue({
+      birthDate: birthDateForAge(11),
+    })
+
+    const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
+
+    // Snack still saved.
+    expect(result.snack).toEqual(mockCreatedSnack)
+    // Non-blocking warning about the missing suggested group.
+    expect(result.warnings).toContain('Suggested group CEREAL_TUBER is missing')
+    // Age was derived from the baby profile scoped to the user.
+    expect(mockPrisma.babyProfile.findFirst).toHaveBeenCalledWith({
+      where: { id: 'profile-ana', userId: 'user-123', deletedAt: null },
+    })
+  })
+
+  it('should warn about an extra group (10m profile, includes FRUIT)', async () => {
+    const input = {
+      name: 'Colación Tomás',
+      babyProfileId: 'profile-tomas',
+      items: [
+        { foodId: 'food-fat', groupAssignment: 'HEALTHY_FAT' as const },
+        { foodId: 'food-cereal', groupAssignment: 'CEREAL_TUBER' as const },
+        { foodId: 'food-fruit', groupAssignment: 'FRUIT' as const },
+      ],
+    }
+
+    const mockCreatedSnack = {
+      id: 'snack-tomas',
+      userId: 'user-123',
+      babyProfileId: 'profile-tomas',
+      name: 'Colación Tomás',
+      stageFor: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      items: [],
+    }
+
+    mockPrisma.snack.count = vi.fn().mockResolvedValue(0)
+    mockPrisma.snack.create = vi.fn().mockResolvedValue(mockCreatedSnack)
+    mockPrisma.babyProfile.findFirst = vi.fn().mockResolvedValue({
+      birthDate: birthDateForAge(10),
+    })
+
+    const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
+
+    expect(result.snack).toEqual(mockCreatedSnack)
+    expect(result.warnings).toContain('FRUIT is not typically suggested for 10 months')
+  })
+
+  it('should return empty warnings when no babyProfileId is provided (no age context)', async () => {
+    const input = {
+      name: 'Colación sin perfil',
+      items: [{ foodId: 'food-fat', groupAssignment: 'HEALTHY_FAT' as const }],
+    }
+
+    const mockCreatedSnack = {
+      id: 'snack-noprofile',
+      userId: 'user-123',
+      babyProfileId: null,
+      name: 'Colación sin perfil',
+      stageFor: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      items: [],
+    }
+
+    mockPrisma.snack.count = vi.fn().mockResolvedValue(0)
+    mockPrisma.snack.create = vi.fn().mockResolvedValue(mockCreatedSnack)
+    mockPrisma.babyProfile.findFirst = vi.fn()
+
+    const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
+
+    expect(result.snack).toEqual(mockCreatedSnack)
+    expect(result.warnings).toEqual([])
+    // No age context to fetch when babyProfileId is absent.
+    expect(mockPrisma.babyProfile.findFirst).not.toHaveBeenCalled()
+  })
+
+  it('should return empty warnings when the baby profile is not found', async () => {
+    const input = {
+      name: 'Colación perfil inexistente',
+      babyProfileId: 'profile-missing',
+      items: [{ foodId: 'food-fat', groupAssignment: 'HEALTHY_FAT' as const }],
+    }
+
+    const mockCreatedSnack = {
+      id: 'snack-missingprofile',
+      userId: 'user-123',
+      babyProfileId: 'profile-missing',
+      name: 'Colación perfil inexistente',
+      stageFor: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      items: [],
+    }
+
+    mockPrisma.snack.count = vi.fn().mockResolvedValue(0)
+    mockPrisma.snack.create = vi.fn().mockResolvedValue(mockCreatedSnack)
+    mockPrisma.babyProfile.findFirst = vi.fn().mockResolvedValue(null)
+
+    const result = await createSnack(mockPrisma, 'user-123', 'FREE', input)
+
+    // Snack still saved; no age context → no warnings, no throw.
+    expect(result.snack).toEqual(mockCreatedSnack)
+    expect(result.warnings).toEqual([])
   })
 
   it('should NOT enforce limit for PRO tier', async () => {

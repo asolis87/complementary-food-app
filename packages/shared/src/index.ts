@@ -92,7 +92,7 @@ export {
 } from './constants/mealType.js'
 export type { MealKey, DayKey } from './constants/mealType.js'
 
-export { SNACK_GROUPS, getSnackGroupsForAge, getMissingSnackGroups } from './constants/snack.js'
+export { SNACK_GROUPS, getSnackGroupsForAge, getMissingSnackGroups, getExtraSnackGroups } from './constants/snack.js'
 export type { SnackGroup } from './constants/snack.js'
 
 // Dashboard constants
