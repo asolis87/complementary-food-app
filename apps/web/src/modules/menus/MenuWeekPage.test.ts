@@ -16,12 +16,14 @@ import { ref, computed } from 'vue'
 import MenuWeekPage from './MenuWeekPage.vue'
 import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
+import { useSnackStore } from '@/shared/stores/snackStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
 
 // Mock the stores
 vi.mock('@/shared/stores/menuStore.js')
 vi.mock('@/shared/stores/plateStore.js')
+vi.mock('@/shared/stores/snackStore.js')
 vi.mock('@/shared/stores/profileStore.js')
 
 // Mock TierGate component
@@ -61,15 +63,20 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
     }
   }
 
-  const mockMenuStore = (plates: Record<string, Plate | null> = {}) => ({
+  const mockMenuStore = (
+    plates: Record<string, Plate | null> = {},
+    snacks: Record<string, { id: string; name: string } | null> = {},
+  ) => ({
     currentWeekStart: ref('2024-01-15'),
     loading: ref(false),
     error: ref(null),
     slotLoading: ref(new Set()),
     currentMenu: ref(null),
     menuMap: computed(() => plates),
+    snackMap: computed(() => snacks),
     weekStats: computed(() => ({ total: 3, balanced: 2, empty: 18 })),
     getPlate: vi.fn((dayKey: string, mealKey: string) => plates[`${dayKey}:${mealKey}`] ?? null),
+    getSnack: vi.fn((dayKey: string, mealKey: string) => snacks[`${dayKey}:${mealKey}`] ?? null),
     getSlotFoods: vi.fn((dayKey: string, mealKey: string) => {
       const plate = plates[`${dayKey}:${mealKey}`]
       return plate?.items ?? []
@@ -81,11 +88,20 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
     clearProfileCache: vi.fn(),
     assignPlate: vi.fn(),
     removePlate: vi.fn(),
+    assignSnack: vi.fn(),
+    removeSnack: vi.fn(),
   })
 
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    // Default snack store mock (no saved snacks). Tests that need snacks
+    // override this after beforeEach runs.
+    vi.mocked(useSnackStore).mockReturnValue({
+      savedSnacks: [],
+      loading: ref(false),
+      fetchSavedSnacks: vi.fn(),
+    } as any)
   })
 
   describe('REQ-1: Food name display (existing behavior)', () => {
@@ -284,8 +300,10 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       slotLoading: ref(new Set()),
       currentMenu: ref(null),
       menuMap: computed(() => plates),
+      snackMap: computed(() => ({})),
       weekStats: computed(() => ({ total: 3, balanced: 2, empty: 18 })),
       getPlate: vi.fn((dayKey: string, mealKey: string) => plates[`${dayKey}:${mealKey}`] ?? null),
+      getSnack: vi.fn(() => null),
       getSlotFoods: vi.fn((dayKey: string, mealKey: string) => {
         const plate = plates[`${dayKey}:${mealKey}`]
         return plate?.items ?? []
@@ -297,6 +315,8 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       clearProfileCache: vi.fn(),
       assignPlate: vi.fn(),
       removePlate: vi.fn(),
+      assignSnack: vi.fn(),
+      removeSnack: vi.fn(),
     })
 
     it('renders export button', async () => {
@@ -501,6 +521,46 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       expect(exportFrame.props('babyName')).toBe('Martina')
       expect(exportFrame.props('days')).toBeDefined()
       expect(exportFrame.props('weekStats')).toBeDefined()
+    })
+
+    it('excludes snack rows from the export even when snack columns are visible', async () => {
+      // 15-month baby → grid shows 5 columns (breakfast, snack1, lunch, snack2,
+      // dinner), but the export must render only the 3 main meals.
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const store = mockMenuStoreWithExport({})
+      // Assign a snack so the (would-be) snack rows have content to leak.
+      store.getSnack = vi.fn((dayKey: string, mealKey: string) =>
+        mealKey === 'snack1' && dayKey === 'lun' ? { id: 's1', name: 'Manzana con nuez' } : null,
+      ) as any
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(15) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{ meals: Array<{ type: string }> }>
+
+      // Each exported day carries only the 3 main meals — no snack rows.
+      expect(days.length).toBe(7)
+      for (const day of days) {
+        expect(day.meals.length).toBe(3)
+        const types = day.meals.map((m) => m.type)
+        expect(types.some((t) => t.includes('Colación'))).toBe(false)
+      }
     })
   })
 
@@ -714,6 +774,108 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
 
       // Age 0 → 3 meals (safe default), not an empty/broken grid.
       expect(wrapper.findAll('.meal-slot').length).toBe(21)
+    })
+  })
+
+  describe('PR-1b: Snack slots in the menu grid', () => {
+    const birthDateForAge = (months: number): Date => {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth() - months, 1)
+    }
+
+    const mountAt = (
+      ageMonths: number,
+      snacks: Record<string, { id: string; name: string } | null> = {},
+      savedSnacks: { id: string; name: string; items: unknown[] }[] = [],
+    ) => {
+      const store = mockMenuStore({}, snacks)
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useSnackStore).mockReturnValue({
+        savedSnacks,
+        // Plain boolean: a mocked store object does not auto-unwrap refs in the
+        // template the way a real Pinia setup store does.
+        loading: false,
+        fetchSavedSnacks: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', birthDate: birthDateForAge(ageMonths) },
+        fetchProfiles: vi.fn(),
+      } as any)
+      return { store }
+    }
+
+    it('renders NO snack columns for an 8-month baby', async () => {
+      mountAt(8)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const snackSlots = wrapper.findAll('.meal-slot--snack1, .meal-slot--snack2')
+      expect(snackSlots.length).toBe(0)
+    })
+
+    it('renders a snack column (SNACK_1) for an 11-month baby', async () => {
+      mountAt(11)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const snack1Slots = wrapper.findAll('.meal-slot--snack1')
+      // 7 days
+      expect(snack1Slots.length).toBe(7)
+      expect(wrapper.findAll('.meal-slot--snack2').length).toBe(0)
+    })
+
+    it('renders two snack columns (SNACK_1 + SNACK_2) for a 15-month baby', async () => {
+      mountAt(15)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      expect(wrapper.findAll('.meal-slot--snack1').length).toBe(7)
+      expect(wrapper.findAll('.meal-slot--snack2').length).toBe(7)
+    })
+
+    it('empty snack slot shows an add affordance', async () => {
+      mountAt(11)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // The snack1 slot for Monday should offer an add button
+      const snack1Slot = wrapper.find('[data-slot="lun:snack1"]')
+      expect(snack1Slot.exists()).toBe(true)
+      expect(snack1Slot.find('.add-slot-btn').exists()).toBe(true)
+    })
+
+    it('assigned snack shows the snack name and NO score icon', async () => {
+      mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const snack1Slot = wrapper.find('[data-slot="lun:snack1"]')
+      expect(snack1Slot.exists()).toBe(true)
+      expect(snack1Slot.text()).toContain('Fruta picada')
+      // Snacks have no balance score → no score icon in the snack chip
+      expect(snack1Slot.find('.snack-chip__score').exists()).toBe(false)
+      expect(snack1Slot.find('.plate-chip__score').exists()).toBe(false)
+    })
+
+    it('opening an empty snack slot shows the snack empty-state (no create button)', async () => {
+      mountAt(11)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // Open the picker for the snack slot
+      const snack1Slot = wrapper.find('[data-slot="lun:snack1"]')
+      await snack1Slot.find('.add-slot-btn').trigger('click')
+      await flushPromises()
+
+      // Snack empty-state copy present, and NO create affordance
+      const backdrop = document.body
+      expect(backdrop.textContent).toContain('No tienes colaciones guardadas todavía')
     })
   })
 })

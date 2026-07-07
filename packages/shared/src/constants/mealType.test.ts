@@ -141,16 +141,25 @@ describe('DAY_INDEX_TO_KEY', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('ACTIVE_MEAL_KEYS', () => {
-  it('contains exactly 3 meal keys for the UI (desayuno, comida, cena)', () => {
-    expect(ACTIVE_MEAL_KEYS).toHaveLength(3)
+  // ACTIVE_MEAL_KEYS is DEPRECATED as a filter. The menu grid is driven by
+  // getMealSlotsForAge; this constant now enumerates the 5 age-aware grid keys
+  // (the generic diary-only 'snack' legacy key is excluded).
+  it('contains the 5 age-aware grid meal keys (desayuno, comida, cena, snack1, snack2)', () => {
+    expect(ACTIVE_MEAL_KEYS).toHaveLength(5)
     expect(ACTIVE_MEAL_KEYS).toContain('desayuno')
     expect(ACTIVE_MEAL_KEYS).toContain('comida')
     expect(ACTIVE_MEAL_KEYS).toContain('cena')
+    expect(ACTIVE_MEAL_KEYS).toContain('snack1')
+    expect(ACTIVE_MEAL_KEYS).toContain('snack2')
+  })
+
+  it('excludes the generic diary-only "snack" legacy key', () => {
+    expect(ACTIVE_MEAL_KEYS).not.toContain('snack')
   })
 
   it('contains only valid MealKey values', () => {
     const validMealKeys: MealKey[] = ['desayuno', 'comida', 'cena', 'snack1', 'snack2', 'snack']
-    
+
     for (const key of ACTIVE_MEAL_KEYS) {
       expect(validMealKeys).toContain(key)
     }
@@ -218,11 +227,11 @@ describe('Round-trip conversions', () => {
     }
   })
 
-  it('supports future meal types (snack1, snack2, snack) without breaking', () => {
-    // These are not in ACTIVE_MEAL_KEYS but should have valid mappings
-    const futureMealKeys: MealKey[] = ['snack1', 'snack2', 'snack']
-    
-    for (const key of futureMealKeys) {
+  it('supports the diary-only generic snack key without breaking', () => {
+    // The generic 'snack' key is not in ACTIVE_MEAL_KEYS but must have a valid mapping
+    const diaryOnlyMealKeys: MealKey[] = ['snack']
+
+    for (const key of diaryOnlyMealKeys) {
       const mealType = MEAL_KEY_TO_TYPE[key]
       expect(mealType).toBeDefined()
       expect(MEAL_TYPE_TO_KEY[mealType]).toBe(key)
