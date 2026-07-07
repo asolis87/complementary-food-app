@@ -51,11 +51,11 @@ Chain strategy: feature-branch-chain
 
 ### Phase 4: Hygiene + PR-1 Verification
 
-- [ ] 4.1 **TYPECHECK**: Rebuild shared (`pnpm --filter @pakulab/shared build`), then typecheck: `pnpm typecheck` → no errors.
-- [ ] 4.2 **ALL TESTS GREEN**: Run `pnpm --filter @pakulab/shared test`, `pnpm --filter web test:run` → all suites green (api unchanged in PR-1).
-- [ ] 4.3 **GIT STAGING**: Stage with explicit paths: `git add packages/shared/ apps/web/src/shared/` (avoids `.atl/skill-registry.md`).
-- [ ] 4.4 **COMMIT**: Conventional commit `feat(snacks): SNACK_LIMITS + store create/delete + useSnackBuilder (PR-1)`. No AI attribution.
-- [ ] 4.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr1` branch. Open PR-1 targeting `feat/snack-creation-ui` tracker branch (feature-branch-chain strategy). Title: `feat: snack creation logic (PR-1)`. Description: REQ-SC3, REQ-SC4, REQ-SC5, REQ-SC6 logic satisfied; autonomous composable/store contract; zero user-visible change.
+- [x] 4.1 **TYPECHECK**: Rebuild shared (`pnpm --filter @pakulab/shared build`), then typecheck: `pnpm typecheck` → no errors.
+- [x] 4.2 **ALL TESTS GREEN**: Run `pnpm --filter @pakulab/shared test`, `pnpm --filter web test:run` → all suites green (api unchanged in PR-1).
+- [x] 4.3 **GIT STAGING**: Stage with explicit paths: `git add packages/shared/ apps/web/src/shared/` (avoids `.atl/skill-registry.md`).
+- [x] 4.4 **COMMIT**: Conventional commit `feat(snacks): SNACK_LIMITS + store create/delete + useSnackBuilder (PR-1)`. No AI attribution.
+- [x] 4.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr1` branch. Open PR-1 targeting `feat/snack-creation-ui` tracker branch (feature-branch-chain strategy). Title: `feat: snack creation logic (PR-1)`. Description: REQ-SC3, REQ-SC4, REQ-SC5, REQ-SC6 logic satisfied; autonomous composable/store contract; zero user-visible change.
 
 **PR-1 Finish**: Shared constant + store actions + composable are stable, testable in isolation, zero UI change. Rollback = revert PR-1 branch.
 
@@ -79,9 +79,9 @@ Chain strategy: feature-branch-chain
 
 - [x] 7.1 **TYPECHECK**: Typecheck web: `pnpm --filter web typecheck` → no errors.
 - [x] 7.2 **ALL TESTS GREEN**: Run `pnpm --filter web test:run` → all suites green (37 test files, 356 tests passed; added 2 test files with 14 tests for SnackVisualization + SnackBuilderDrawer).
-- [ ] 7.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/snacks/ apps/web/src/shared/components/SnackBuilderDrawer.vue apps/web/src/shared/components/__tests__/SnackBuilderDrawer.test.ts openspec/changes/snack-creation-ui/tasks.md` (avoids `.atl/skill-registry.md`).
-- [ ] 7.4 **COMMIT**: Conventional commit `feat(snacks): SnackBuilderDrawer + SnackVisualization (PR-2)`. No AI attribution.
-- [ ] 7.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr2` branch. Open PR-2 targeting `feat/snack-creation-ui-pr1` branch (feature-branch-chain: child targets previous PR branch). Title: `feat: snack builder drawer + viz (PR-2 — size:exception)`. Description: REQ-SC3, REQ-SC4, REQ-SC7 UI satisfied; depends on PR-1 composable/store; size:exception (~550 lines) approved for cohesive UI slice; no route/tab yet (drawer not user-accessible until PR-3).
+- [x] 7.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/snacks/ apps/web/src/shared/components/SnackBuilderDrawer.vue apps/web/src/shared/components/__tests__/SnackBuilderDrawer.test.ts openspec/changes/snack-creation-ui/tasks.md` (avoids `.atl/skill-registry.md`).
+- [x] 7.4 **COMMIT**: Conventional commit `feat(snacks): SnackBuilderDrawer + SnackVisualization (PR-2)`. No AI attribution.
+- [x] 7.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr2` branch. Open PR-2 targeting `feat/snack-creation-ui-pr1` branch (feature-branch-chain: child targets previous PR branch). Title: `feat: snack builder drawer + viz (PR-2 — size:exception)`. Description: REQ-SC3, REQ-SC4, REQ-SC7 UI satisfied; depends on PR-1 composable/store; size:exception (~550 lines) approved for cohesive UI slice; no route/tab yet (drawer not user-accessible until PR-3).
 
 **PR-2 Finish**: SnackBuilderDrawer + SnackVisualization fully implemented and tested in isolation. No user-facing route yet. Rollback = revert PR-2 branch (PR-1 remains stable).
 
@@ -91,8 +91,8 @@ Chain strategy: feature-branch-chain
 
 ### Phase 8: SnackListSection Component (RED → GREEN → REFACTOR)
 
-- [x] 8.1 **TEST**: Write `apps/web/src/modules/plates/components/__tests__/SnackListSection.test.ts` — test renders snack grid (name + item summary "3 alimentos"), empty-state when zero snacks ("No tienes colaciones guardadas todavía" + tier hint "Crea hasta 5 colaciones en el plan gratuito"), delete button opens inline confirmation modal (mirror PlateDetailPage modal-overlay + modal role), confirm delete calls `snackStore.deleteSnack`, cancel closes modal, delete last snack shows empty-state, tier upsell banner when `savedSnacks.length >= SNACK_LIMITS[tier] && tier === FREE`, load-more button when `hasMore`, drawer opens on create click. Mock `snackStore.savedSnacks`, `authStore.tier`. Run `pnpm --filter web test:run` → RED. Covers REQ-SC2, REQ-SC5, REQ-SC6.
-- [x] 8.2 **COMPONENT**: Create `apps/web/src/modules/plates/components/SnackListSection.vue` — render snack grid (v-for `snackStore.savedSnacks`), card shows snack.name + summary (e.g. `${snack.items.length} alimentos`), delete button per card opens inline confirmation modal (v-if `showDeleteModal` + `deleteTargetId`, HTML structure mirrors PlateDetailPage: `<div class="modal-overlay" @click.self> → <div class="modal" role="dialog"> → modal-title/modal-body/modal-actions → btn-cancel + btn-confirm-delete`), confirm calls `snackStore.deleteSnack(deleteTargetId)`, empty-state (v-if `savedSnacks.length === 0`: icon + "No tienes colaciones guardadas todavía" + tier hint "Crea hasta 5 colaciones en el plan gratuito" + create button opens drawer), tier upsell banner (v-if `savedSnacks.length >= SNACK_LIMITS[authStore.tier] && authStore.tier === 'FREE'`: "Alcanzaste el límite de colaciones del plan gratuito. Actualiza a Pro para crear colaciones ilimitadas."), load-more button (v-if `snackStore.hasMore`, @click `snackStore.fetchMoreSnacks`), drawer host (`<SnackBuilderDrawer :visible="showDrawer" :baby-age="babyAge" @saved @close>`). → GREEN. Satisfies REQ-SC2, REQ-SC5, REQ-SC6.
+- [x] 8.1 **TEST**: Write `apps/web/src/modules/plates/components/__tests__/SnackListSection.test.ts` — test renders snack grid (name + item summary "3 alimentos"), empty-state when zero snacks ("No tienes colaciones guardadas todavía" + tier lockout hint), delete button opens inline confirmation modal (mirror PlateDetailPage modal-overlay + modal role), confirm delete calls `snackStore.deleteSnack`, cancel closes modal, delete last snack shows empty-state, tier upsell banner when `savedSnacks.length >= SNACK_LIMITS[tier] && tier === FREE`, load-more button when `hasMore`, drawer opens on create click. Mock `snackStore.savedSnacks`, `authStore.tier`. Run `pnpm --filter web test:run` → RED. Covers REQ-SC2, REQ-SC5, REQ-SC6.
+- [x] 8.2 **COMPONENT**: Create `apps/web/src/modules/plates/components/SnackListSection.vue` — render snack grid (v-for `snackStore.savedSnacks`), card shows snack.name + summary (e.g. `${snack.items.length} alimentos`), delete button per card opens inline confirmation modal (v-if `showDeleteModal` + `deleteTargetId`, HTML structure mirrors PlateDetailPage: `<div class="modal-overlay" @click.self> → <div class="modal" role="dialog"> → modal-title/modal-body/modal-actions → btn-cancel + btn-confirm-delete`), confirm calls `snackStore.deleteSnack(deleteTargetId)`, empty-state (v-if `savedSnacks.length === 0`: icon + "No tienes colaciones guardadas todavía" + tier lockout messaging + create button opens drawer), tier upsell banner (v-if `savedSnacks.length >= SNACK_LIMITS[authStore.tier] && authStore.tier === 'FREE'`: "Alcanzaste el límite de colaciones del plan gratuito. Actualiza a Pro para crear colaciones ilimitadas."), load-more button (v-if `snackStore.hasMore`, @click `snackStore.fetchMoreSnacks`), drawer host (`<SnackBuilderDrawer :visible="showDrawer" :baby-age="babyAge" @saved @close>`). → GREEN. Satisfies REQ-SC2, REQ-SC5, REQ-SC6.
 - [x] 8.3 **REFACTOR**: Extract any duplicated grid/empty-state/modal styles if shared with PlateListPage (likely modal-overlay/modal classes). Run `pnpm --filter web test:run` → GREEN.
 
 ### Phase 9: PlateListPage Tab Integration (RED → GREEN → REFACTOR)
@@ -103,11 +103,11 @@ Chain strategy: feature-branch-chain
 
 ### Phase 10: Hygiene + PR-3 Verification
 
-- [ ] 10.1 **TYPECHECK**: Typecheck web: `pnpm --filter web typecheck` → no errors.
-- [ ] 10.2 **ALL TESTS GREEN**: Run `pnpm --filter web test:run` → all suites green (shared/api unchanged in PR-3).
-- [ ] 10.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/plates/` (avoids `.atl/skill-registry.md`).
-- [ ] 10.4 **COMMIT**: Conventional commit `feat(snacks): PlateListPage Colaciones tab + SnackListSection (PR-3)`. No AI attribution.
-- [ ] 10.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr3` branch. Open PR-3 targeting `feat/snack-creation-ui-pr2` branch (feature-branch-chain: child targets previous PR branch). Title: `feat: Colaciones tab + snack list UI (PR-3)`. Description: REQ-SC1, REQ-SC2, REQ-SC5, REQ-SC6 UI satisfied; depends on PR-2 drawer; user-visible feature; end-to-end snack creation flow complete.
+- [x] 10.1 **TYPECHECK**: Typecheck web: `pnpm --filter web typecheck` → no errors.
+- [x] 10.2 **ALL TESTS GREEN**: Run `pnpm --filter web test:run` → all suites green (shared/api unchanged in PR-3).
+- [x] 10.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/plates/` (avoids `.atl/skill-registry.md`).
+- [x] 10.4 **COMMIT**: Conventional commit `feat(snacks): PlateListPage Colaciones tab + SnackListSection (PR-3)`. No AI attribution.
+- [x] 10.5 **BRANCH + PR**: Push to `feat/snack-creation-ui-pr3` branch. Open PR-3 targeting `feat/snack-creation-ui-pr2` branch (feature-branch-chain: child targets previous PR branch). Title: `feat: Colaciones tab + snack list UI (PR-3)`. Description: REQ-SC1, REQ-SC2, REQ-SC5, REQ-SC6 UI satisfied; depends on PR-2 drawer; user-visible feature; end-to-end snack creation flow complete.
 
 **PR-3 Finish**: Colaciones tab visible, user can create/delete snacks, tier gate enforced, MenuWeekPage picker sees new snacks via shared `snackStore.savedSnacks`. Rollback = revert PR-3 branch (PR-1 + PR-2 remain stable).
 
@@ -115,9 +115,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 11: Tracker PR + Merge to Release
 
-- [ ] 11.1 **MERGE CHAIN**: After PR-1, PR-2, PR-3 are merged sequentially (PR-3 → PR-2, PR-2 → PR-1, PR-1 → tracker), open a final PR from `feat/snack-creation-ui` → `release/etapa-10-23-meses`. Title: `feat: snack creation UI (Mis Colaciones)`. Description: REQ-SC1..SC7 satisfied; links to PR-1 + PR-2 + PR-3.
-- [ ] 11.2 **FINAL VERIFICATION**: CI green on tracker PR, manual QA: navigate to `/plates?tab=snacks`, create a snack (2-group for 11m baby), verify warnings display after save, delete snack with confirmation, verify tier gate blocks FREE user, verify new snack appears in MenuWeekPage snack picker.
-- [ ] 11.3 **MERGE TRACKER**: Merge `feat/snack-creation-ui` → `release/etapa-10-23-meses`. All changes now in release branch.
+- [x] 11.1 **MERGE CHAIN**: After PR-1, PR-2, PR-3 are merged sequentially (PR-3 → PR-2, PR-2 → PR-1, PR-1 → tracker), open a final PR from `feat/snack-creation-ui` → `release/etapa-10-23-meses`. Title: `feat: snack creation UI (Mis Colaciones)`. Description: REQ-SC1..SC7 satisfied; links to PR-1 + PR-2 + PR-3.
+- [x] 11.2 **FINAL VERIFICATION**: CI green on tracker PR, manual QA: navigate to `/plates?tab=snacks`, create a snack (2-group for 11m baby), verify warnings display after save, delete snack with confirmation, verify tier gate blocks FREE user, verify new snack appears in MenuWeekPage snack picker.
+- [x] 11.3 **MERGE TRACKER**: Merge `feat/snack-creation-ui` → `release/etapa-10-23-meses`. All changes now in release branch.
 
 ---
 
