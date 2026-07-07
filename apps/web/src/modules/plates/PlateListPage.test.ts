@@ -184,6 +184,50 @@ describe('PlateListPage — Tab Integration (REQ-SC1)', () => {
     })
   })
 
+  describe('Header create button follows the active tab', () => {
+    // Stub that exposes openDrawer/atLimit so we can assert the parent header
+    // button drives the child's drawer (the whole point of this tweak).
+    const openDrawer = vi.fn()
+    function snackAwareMountOptions() {
+      return {
+        global: {
+          plugins: [router],
+          stubs: {
+            RouterLink: { template: '<a><slot /></a>' },
+            SnackListSection: {
+              name: 'SnackListSection',
+              template: '<div data-test="snack-list-section" />',
+              props: ['babyAgeMonths'],
+              setup: (_: unknown, { expose }: any) => {
+                expose({ openDrawer, atLimit: false })
+              },
+            },
+          },
+        },
+      }
+    }
+
+    it('shows "Crear Nuevo Plato" on the Platos tab', async () => {
+      await router.push('/plates')
+      await router.isReady()
+      const wrapper = mount(PlateListPage, getMountOptions())
+      expect(wrapper.find('.create-btn-desktop').text()).toContain('Crear Nuevo Plato')
+    })
+
+    it('shows "Crear Colación" and opens the snack drawer on the Colaciones tab', async () => {
+      openDrawer.mockClear()
+      await router.push('/plates?tab=snacks')
+      await router.isReady()
+      const wrapper = mount(PlateListPage, snackAwareMountOptions())
+
+      const headerBtn = wrapper.find('.create-btn-desktop')
+      expect(headerBtn.text()).toContain('Crear Colación')
+
+      await headerBtn.trigger('click')
+      expect(openDrawer).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('Back button / direct link (REQ-SC1)', () => {
     // The tab follows route.query.tab reactively, so a browser back-button
     // (which restores the previous query) yields the same result as navigating
