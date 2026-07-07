@@ -34,7 +34,7 @@ interface FoodSeed {
 }
 
 // ============================================================
-// FRUTAS (32 foods)
+// FRUTAS (33 foods)
 // ============================================================
 const fruits: FoodSeed[] = [
   {
@@ -343,6 +343,17 @@ const fruits: FoodSeed[] = [
     ageMonths: 6,
     description:
       'Fruta tropical de la familia de la maracuyá, pero más dulce y menos ácida. Colar las semillas para bebés pequeños. Rica en vitamina C y fibra.',
+    needsValidation: true,
+  },
+  {
+    name: 'Pitahaya',
+    group: 'FRUIT',
+    alClassification: 'LAXATIVE',
+    alScore: 0.5,
+    isAllergen: false,
+    ageMonths: 6,
+    description:
+      'Fruta tropical rica en agua, fibra y semillas pequeñas comestibles. Efecto laxante suave a moderado. Ofrecer madura, en puré o trozos blandos; introducir gradualmente para evitar diarrea.',
     needsValidation: true,
   },
   {
@@ -751,7 +762,7 @@ const vegetables: FoodSeed[] = [
 ];
 
 // ============================================================
-// PROTEÍNAS (37 foods — incl. Cacahuate y Almendras desde Grasas; excl. Chícharo a Verduras)
+// PROTEÍNAS (38 foods — incl. Cacahuate y Almendras desde Grasas; excl. Chícharo a Verduras)
 // ============================================================
 const proteins: FoodSeed[] = [
   {
@@ -970,6 +981,18 @@ const proteins: FoodSeed[] = [
     description:
       'Queso fresco mexicano bajo en sodio (comparado con otros quesos). Efecto astringente leve por caseína. Ofrecer en trozos blandos o rallado. Alérgeno — lácteos.',
     needsValidation: false,
+  },
+  {
+    name: 'Queso Oaxaca',
+    group: 'PROTEIN',
+    alClassification: 'ASTRINGENT',
+    alScore: -0.2,
+    isAllergen: true,
+    allergenType: 'dairy',
+    ageMonths: 8,
+    description:
+      'Queso mexicano de pasta hilada. Efecto astringente leve por caseína. Elegir bajo en sodio cuando sea posible, ofrecer en tiras cortas o trozos pequeños para reducir riesgo de atragantamiento. Alérgeno — lácteos.',
+    needsValidation: true,
   },
   {
     name: 'Queso requesón',
