@@ -30,8 +30,32 @@
       <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
     </div>
 
-    <!-- Stage filter (REQ-C3, C4) -->
-    <div class="filter-controls">
+    <!-- Tab bar (REQ-SC1) -->
+    <div class="tab-bar" role="tablist">
+      <button
+        data-test="tab-plates"
+        :class="['tab', { 'tab-active': activeTab === 'platos' }]"
+        role="tab"
+        :aria-selected="activeTab === 'platos'"
+        @click="switchTab('platos')"
+      >
+        Platos
+      </button>
+      <button
+        data-test="tab-snacks"
+        :class="['tab', { 'tab-active': activeTab === 'snacks' }]"
+        role="tab"
+        :aria-selected="activeTab === 'snacks'"
+        @click="switchTab('snacks')"
+      >
+        Colaciones
+      </button>
+    </div>
+
+    <!-- Platos tab content -->
+    <template v-if="activeTab === 'platos'">
+      <!-- Stage filter (REQ-C3, C4) -->
+      <div class="filter-controls">
       <label for="stage-filter" class="filter-label">Filtrar por etapa:</label>
       <select
         id="stage-filter"
@@ -204,18 +228,29 @@
         <RouterLink to="/pricing" class="upsell-banner-btn">Hacete Pro</RouterLink>
       </div>
     </div>
+    </template>
+
+    <!-- Colaciones tab content (REQ-SC1) -->
+    <SnackListSection
+      v-else-if="activeTab === 'snacks'"
+      :baby-age-months="babyAgeMonths ?? 0"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { PLATE_LIMITS, BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@pakulab/shared'
 import { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedStageForAge, getAgeMonths } from '@pakulab/shared'
 import type { Plate, PlateItem, FoodGroup, PlateStage } from '@pakulab/shared'
+import SnackListSection from './components/SnackListSection.vue'
 
+const route = useRoute()
+const router = useRouter()
 const plateStore = usePlateStore()
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -224,6 +259,29 @@ const plateLimit = computed(() => PLATE_LIMITS[authStore.tier])
 const atLimit = computed(
   () => plateStore.savedPlates.length >= plateLimit.value,
 )
+
+// ─── Tab Management (REQ-SC1) ──────────────────────────────────────────────
+
+/** Active tab derived from URL query: ?tab=snacks → 'snacks', otherwise 'platos' */
+const activeTab = computed<'platos' | 'snacks'>(() => {
+  // route.query.tab may be a string or (for a repeated ?tab=…&tab=…) an array —
+  // normalize to the first value so a malformed URL still resolves a tab.
+  const tab = route?.query?.tab
+  const normalized = Array.isArray(tab) ? tab[0] : tab
+  return normalized === 'snacks' ? 'snacks' : 'platos'
+})
+
+/** Switch tabs by updating URL query param (shareable, back-button friendly) */
+function switchTab(tab: 'platos' | 'snacks'): void {
+  // Preserve any other query params — only add/remove the `tab` key.
+  const query = { ...route.query }
+  if (tab === 'platos') {
+    delete query.tab
+  } else {
+    query.tab = 'snacks'
+  }
+  router.replace({ query })
+}
 
 // ─── Stage Filter (REQ-C3, C4) ─────────────────────────────────────────────
 /** Selected stage filter (null = "Todas") */
@@ -1163,5 +1221,50 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 
 .plate-list-fab .material-symbols-outlined {
   font-size: 1.5rem;
+}
+
+/* ─── Tab Bar (REQ-SC1) ───────────────────────────────────────── */
+
+.tab-bar {
+  display: flex;
+  gap: var(--md3-space-2);
+  border-bottom: 1px solid var(--md3-outline-variant);
+  margin-bottom: var(--md3-space-4);
+}
+
+.tab {
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface-variant);
+  cursor: pointer;
+  transition: all var(--md3-transition-fast);
+  position: relative;
+  margin-bottom: -1px; /* Overlap the border-bottom of tab-bar */
+}
+
+.tab:hover {
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container);
+}
+
+.tab-active {
+  color: var(--md3-primary);
+  border-bottom-color: var(--md3-primary);
+  font-weight: var(--md3-weight-semibold);
+}
+
+.tab-active:hover {
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .tab-bar {
+    margin-bottom: var(--md3-space-5);
+  }
 }
 </style>
