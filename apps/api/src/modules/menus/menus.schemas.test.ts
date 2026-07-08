@@ -26,20 +26,25 @@ const VALID_MENU_CUID = 'clh3x7y8z0002p6rm5b4d8e9f'
 const VALID_PLATE_CUID = 'clh3x7y8z0003p6rm5b4d8e9f'
 
 // Helper to get Monday of current week
+// NOTE: compute in UTC to stay consistent with the schema's `isMonday`
+// (which uses getUTCDay). Mixing local getDay()/setDate() with a UTC
+// toISOString() made these date strings flaky across timezones.
 function getMondayDate(): string {
   const now = new Date()
-  const day = now.getDay() // 0 = Sunday, 1 = Monday, ...
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Adjust to get Monday
-  const monday = new Date(now.setDate(diff))
+  const day = now.getUTCDay() // 0 = Sunday, 1 = Monday, ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1) // Adjust to get Monday
+  const monday = new Date(now)
+  monday.setUTCDate(diff)
   return monday.toISOString().split('T')[0]!
 }
 
-// Helper to get Sunday of current week
+// Helper to get Sunday of current week (UTC, matching getMondayDate)
 function getSundayDate(): string {
   const now = new Date()
-  const day = now.getDay()
-  const diff = now.getDate() - day // Sunday
-  const sunday = new Date(now.setDate(diff))
+  const day = now.getUTCDay()
+  const diff = now.getUTCDate() - day // Sunday
+  const sunday = new Date(now)
+  sunday.setUTCDate(diff)
   return sunday.toISOString().split('T')[0]!
 }
 

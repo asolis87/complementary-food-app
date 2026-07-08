@@ -84,6 +84,7 @@ export const menusRoutes: FastifyPluginAsync = async (fastify) => {
       dayOfWeek: input.dayOfWeek,
       mealType: input.mealType,
       plateId: input.plateId,
+      snackId: input.snackId,
       notes: input.notes,
     })
 
