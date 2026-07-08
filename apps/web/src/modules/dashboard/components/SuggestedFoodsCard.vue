@@ -46,7 +46,7 @@
         <!-- Food icon with status indicator -->
         <div class="suggestion-icon-wrapper">
           <FoodIcon
-            :food="{ id: food.foodId, name: food.name, group: food.group, alClassification: 'NEUTRAL', alScore: 0, isAllergen: food.isAllergen, ageMonths: food.ageMonths, needsValidation: false, createdAt: '', updatedAt: '' }"
+            :food="{ id: food.foodId, name: food.name, group: food.group, alClassification: 'NEUTRAL', alScore: 0, isAllergen: food.isAllergen, isIronRich: false, ageMonths: food.ageMonths, needsValidation: false, warningTags: [], createdAt: '', updatedAt: '' }"
             :size="28"
             weight="bold"
           />

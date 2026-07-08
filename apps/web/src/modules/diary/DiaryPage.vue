@@ -153,10 +153,10 @@
 
           <article
             v-for="(item, idx) in timelineItems"
-            :key="item.type === 'plate' ? item.group.plateId : item.entry.id"
+            :key="item.type === 'group' ? item.group.id : item.entry.id"
             class="meal-card"
             :class="{
-              'plate-group-card': item.type === 'plate',
+              'plate-group-card': item.type === 'group',
               'meal-card--allergen': item.type === 'standalone' && entryHasAllergen(item.entry)
             }"
           >
@@ -166,8 +166,8 @@
               <div v-if="idx < timelineItems.length - 1" class="connector-line" />
             </div>
 
-            <!-- Card content (Plate) -->
-            <div v-if="item.type === 'plate'" class="meal-card-body">
+            <!-- Card content (grouped plate or snack) -->
+            <div v-if="item.type === 'group'" class="meal-card-body">
               <!-- Card header: meal type + time + balance badge -->
               <div class="meal-card-header">
                 <span class="meal-type-badge" :class="`meal-badge--${mealTypeKey(item.group.mealType)}`">
@@ -475,6 +475,7 @@
       v-model="showAddModal"
       :baby-profile-id="activeProfileId"
       :date="diaryStore.selectedDate"
+      :age-in-months="ageInMonths"
       @logged="onLogged"
     />
 
@@ -482,6 +483,7 @@
       v-if="editingEntry"
       :entry="editingEntry"
       :open="showEditModal"
+      :age-in-months="ageInMonths"
       @update:open="showEditModal = $event"
       @updated="onEntryUpdated"
     />
@@ -514,6 +516,7 @@ import DayObservationBlock from './components/DayObservationBlock.vue'
 import DayObservationSheet from './components/DayObservationSheet.vue'
 import DayDetailSection from './components/DayDetailSection.vue'
 import { useDiaryExport } from './export/useDiaryExport.js'
+import { groupDiaryEntries, type MealGroup } from './groupEntries.js'
 
 // ── Stores ─────────────────────────────────────────────────────────────────
 
@@ -554,6 +557,21 @@ function onEntryUpdated() {
 
 const activeProfileId = computed(() => profileStore.activeProfile?.id ?? '')
 
+/**
+ * Age of the active baby in completed months, derived from `birthDate`.
+ * Used by the diary modals to render age-aware meal type pickers
+ * (see T-XX-DIARY-PICKER-AGE-AWARE). Falls back to 0 if no active
+ * profile, which renders the 3-meal layout (safe default).
+ */
+const ageInMonths = computed(() => {
+  const birth = profileStore.activeProfile?.birthDate
+  if (!birth) return 0
+  const b = new Date(birth)
+  if (Number.isNaN(b.getTime())) return 0
+  const now = new Date()
+  return (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth())
+})
+
 const entriesForDate = computed(() => diaryStore.entriesForDate)
 
 /**
@@ -591,55 +609,23 @@ watch(
 )
 
 // ── Grouped entries (T-5.2) ────────────────────────────────────────────────
+// Pure grouping logic lives in ./groupEntries so it can be regression-tested
+// without mounting this component (see groupEntries.test.ts).
 
-interface PlateGroup {
-  plateId: string
-  mealType: MealType
-  time?: string
-  balanceLabel: string | null
-  entries: MealLog[]
-}
-
-const groupedEntries = computed(() => {
-  const forDate = entriesForDate.value
-  const plateMap = new Map<string, MealLog[]>()
-  const standalone: MealLog[] = []
-
-  for (const entry of forDate) {
-    if (entry.plateId) {
-      // Group by plateId + mealType so the same plate in different meals stays separate
-      const key = `${entry.plateId}|${entry.mealType}`
-      const group = plateMap.get(key) ?? []
-      group.push(entry)
-      plateMap.set(key, group)
-    } else {
-      standalone.push(entry)
-    }
-  }
-
-  const plateGroups: PlateGroup[] = [...plateMap.entries()].map(([_key, entries]) => ({
-    plateId: entries[0].plateId!,
-    mealType: entries[0].mealType,
-    time: entries[0].time ?? undefined,
-    balanceLabel: entries[0].plateBalanceLabel ?? null,
-    entries,
-  }))
-
-  return { plateGroups, standalone }
-})
+const groupedEntries = computed(() => groupDiaryEntries(entriesForDate.value))
 
 // Unified and sorted timeline items (desayuno -> colación 1 -> almuerzo -> colación 2 -> cena)
 const timelineItems = computed(() => {
-  const { plateGroups, standalone } = groupedEntries.value
+  const { mealGroups, standalone } = groupedEntries.value
   const items: Array<
-    | { id: string; type: 'plate'; mealType: MealType; time?: string; group: PlateGroup; createdAt: string }
+    | { id: string; type: 'group'; mealType: MealType; time?: string; group: MealGroup; createdAt: string }
     | { id: string; type: 'standalone'; mealType: MealType; time?: string; entry: MealLog; createdAt: string }
   > = []
 
-  for (const group of plateGroups) {
+  for (const group of mealGroups) {
     items.push({
-      id: group.plateId,
-      type: 'plate',
+      id: group.id,
+      type: 'group',
       mealType: group.mealType,
       time: group.time,
       group,

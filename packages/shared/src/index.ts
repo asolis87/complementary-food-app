@@ -6,11 +6,12 @@
  */
 
 // Types
-export type { ALClassification, FoodGroup, Food, FoodSummary } from './types/food.js'
-export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from './types/food.js'
+export type { ALClassification, FoodGroup, Food, FoodSummary, WarningTag } from './types/food.js'
+export { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS, WARNING_TAGS, WARNING_TAG_LABELS, WARNING_DISCLAIMER } from './types/food.js'
 
 export { MealType, ReactionType, StoolType, SymptomType, REACTION_TYPE_LABELS, STOOL_LABELS, SYMPTOM_LABELS } from './types/diary.js'
 export type {
+  AgeStage,
   MealLogFood,
   MealLog,
   CreateMealLogPayload,
@@ -23,7 +24,10 @@ export type {
   DayObservationDeleteInput,
 } from './types/diary.js'
 
-export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput } from './types/plate.js'
+export type { PlateItem, PlateItemSummary, Plate, CreatePlateInput, UpdatePlateInput, PlateStage } from './types/plate.js'
+export { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedGroupCount, getSuggestedStageForAge } from './types/plate.js'
+export type { SnackItem, SnackItemSummary, Snack, CreateSnackInput } from './types/snack.js'
+export type { AllergenEntry, AllergenStatusResponse } from './types/allergen.js'
 
 export type {
   WeeklyMenuResponse,
@@ -49,16 +53,18 @@ export type {
   RoadmapFood,
   BalanceInsight,
   MealSlot,
+  SnackSuggestionResponse,
 } from './types/dashboard.js'
 
 // Constants
-export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS } from './constants/allergens.js'
+export { TOP_ALLERGENS, ALLERGEN_KEYS, ALLERGEN_INTRO_WAIT_DAYS, ALLERGEN_TYPE_MAPPING } from './constants/allergens.js'
 export type { AllergenInfo } from './constants/allergens.js'
 
 export {
   TRIAL_DURATION_DAYS,
   TRIAL_PLAN,
   PLATE_LIMITS,
+  SNACK_LIMITS,
   BABY_PROFILE_LIMITS,
   DIARY_WINDOW_DAYS,
   FEATURE_TIERS,
@@ -87,16 +93,21 @@ export {
 } from './constants/mealType.js'
 export type { MealKey, DayKey } from './constants/mealType.js'
 
+export { SNACK_GROUPS, getSnackGroupsForAge, getMissingSnackGroups, getExtraSnackGroups } from './constants/snack.js'
+export type { SnackGroup } from './constants/snack.js'
+
 // Dashboard constants
 export {
   BALANCE_TIPS,
+  STAGE_TIPS,
   DASHBOARD_CACHE_TTL,
-  DASHBOARD_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
   FOOD_GROUP_LABELS_DASHBOARD,
+  getMealSlotsForAge,
+  LEGACY_MEAL_SLOTS,
 } from './constants/dashboard.js'
 export type { MealSlotDef } from './constants/dashboard.js'
 
@@ -110,3 +121,8 @@ export type { AllergenAgeThreshold } from './constants/allergen-age-thresholds.j
 // Utils
 export { calculateBalance, getBalanceSeverity, derivePlateBalanceLabel } from './utils/balance.js'
 export { ageInMonths, formatAgeEs, isFoodAgeAppropriate } from './utils/age.js'
+export { getAgeMonths } from './utils/date.js'
+
+// Data
+export { foods } from './data/food-catalog.js'
+export type { FoodSeed } from './data/food-catalog.js'

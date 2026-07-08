@@ -65,10 +65,11 @@ export const DAY_INDEX_TO_KEY: Record<number, DayKey> = {
 } as const
 
 /**
- * Active meal types currently shown in the UI.
- * The MenuWeekPage component uses these 3 meal slots per day.
+ * @deprecated as a UI filter. The menu grid is driven by `getMealSlotsForAge`;
+ * this constant is retained for the barrel / back-compat and now enumerates the
+ * 5 age-aware grid meal keys. It excludes the generic diary-only `'snack'` key.
  */
-export const ACTIVE_MEAL_KEYS: MealKey[] = ['desayuno', 'comida', 'cena'] as const
+export const ACTIVE_MEAL_KEYS: MealKey[] = ['desayuno', 'comida', 'cena', 'snack1', 'snack2'] as const
 
 /**
  * All day keys in order (Monday to Sunday).

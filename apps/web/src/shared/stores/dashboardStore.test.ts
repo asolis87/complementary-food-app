@@ -8,7 +8,7 @@
  * - refreshDashboard clears cache and re-fetches
  * - clearCache resets all state
  * - isStale getter based on lastFetched + TTL
- * - Section-level cache helpers (fetchSuggestions, fetchAllergens, fetchRoadmap, fetchBalance)
+ * - Section-level cache helpers (fetchSuggestions, fetchRoadmap, fetchBalance)
  * - OfflineError fallback to cached data
  */
 
@@ -18,7 +18,7 @@ import type { DashboardData, SuggestedFood, AllergenAlert, RoadmapProgress, Bala
 import { MealType } from '@pakulab/shared'
 
 // Mock the api client
-const mockGet = vi.fn()
+const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }))
 vi.mock('@/shared/api/client.js', () => ({
   apiClient: {
     get: mockGet,
@@ -79,15 +79,6 @@ function createMockDashboardData(overrides: Partial<DashboardData> = {}): Dashbo
         isAllergen: true,
         allergenType: 'huevo',
         status: 'pending' as const,
-      },
-    ],
-    pendingAllergens: [
-      {
-        allergenKey: 'huevo',
-        nameEs: 'Huevo',
-        icon: '🥚',
-        minAgeMonths: 6,
-        urgency: 'normal' as const,
       },
     ],
     roadmapProgress: [
@@ -169,10 +160,15 @@ describe('dashboardStore', () => {
   // ── refreshDashboard ────────────────────────────────────────────────────────
 
   it('refreshDashboard clears state and re-fetches', async () => {
+    vi.useFakeTimers()
+
     // First fetch
     mockGet.mockResolvedValueOnce({ data: createMockDashboardData() })
     await store.fetchDashboard(VALID_BABY_ID)
     const firstFetchTime = store.lastFetched
+
+    // Advance time so the refreshed timestamp is guaranteed to differ
+    vi.advanceTimersByTime(5)
 
     // Second fetch (refresh)
     const newData = createMockDashboardData({ userTier: 'FREE' })
@@ -181,6 +177,8 @@ describe('dashboardStore', () => {
 
     expect(store.dashboardData).toEqual(newData)
     expect(store.lastFetched).not.toBe(firstFetchTime)
+
+    vi.useRealTimers()
   })
 
   // ── clearCache ──────────────────────────────────────────────────────────────
@@ -226,20 +224,6 @@ describe('dashboardStore', () => {
 
     const first = await store.fetchSuggestions(VALID_BABY_ID)
     const second = await store.fetchSuggestions(VALID_BABY_ID)
-
-    expect(mockGet).toHaveBeenCalledTimes(1)
-    expect(first).toEqual(second)
-  })
-
-  // ── fetchAllergens (cached 1h) ──────────────────────────────────────────────
-
-  it('fetchAllergens returns cached data when fresh', async () => {
-    mockGet.mockResolvedValueOnce({
-      data: [{ allergenKey: 'huevo', nameEs: 'Huevo', icon: '🥚', minAgeMonths: 6, urgency: 'normal' }],
-    })
-
-    const first = await store.fetchAllergens(VALID_BABY_ID)
-    const second = await store.fetchAllergens(VALID_BABY_ID)
 
     expect(mockGet).toHaveBeenCalledTimes(1)
     expect(first).toEqual(second)

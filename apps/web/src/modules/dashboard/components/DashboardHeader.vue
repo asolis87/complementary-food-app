@@ -6,7 +6,12 @@
     </h1>
 
     <!-- Right side: Baby profile capsule -->
-    <div class="baby-capsule">
+    <!-- ponytail: aria-label lives on the parent, not on the inner
+         spans, because AT engines announce the label and ignore the
+         visible text. The inner spans are visible-text-only; the
+         parent label "Perfil del bebé" is the screen-reader cue,
+         and the inner text ("Mateo", "8 meses") is read as-is. -->
+    <div class="baby-capsule" aria-label="Perfil del bebé">
       <div class="baby-avatar">
         <span class="baby-emoji" aria-hidden="true">👶</span>
         <span class="baby-name">{{ babyName }}</span>

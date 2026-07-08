@@ -174,6 +174,7 @@
           <span v-if="food.isAllergen" class="allergen-chip" title="Alérgeno potencial">
             <span class="material-symbols-outlined">warning</span>
           </span>
+          <WarningBadge :tags="food.warningTags" />
         </div>
 
         <!-- Meta row: group tag + age -->
@@ -215,6 +216,7 @@ import { useRouter } from 'vue-router'
 import type { FoodGroup, ALClassification } from '@pakulab/shared'
 import { FOOD_GROUP_LABELS, AL_CLASSIFICATION_LABELS } from '@pakulab/shared'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
+import WarningBadge from '@/shared/components/WarningBadge.vue'
 
 const router = useRouter()
 const store = useFoodStore()

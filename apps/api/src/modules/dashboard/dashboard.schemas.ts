@@ -39,6 +39,11 @@ export const balanceQuerySchema = z.object({
   babyProfileId: z.string().min(1, 'babyProfileId es requerido'),
 })
 
+/** GET /api/dashboard/snack-suggestions — snack suggestions query params */
+export const snackSuggestionsQuerySchema = z.object({
+  babyProfileId: z.string().min(1, 'babyProfileId es requerido'),
+})
+
 // ── Inferred Types ────────────────────────────────────────────────────────────
 
 export type DashboardQuery = z.infer<typeof dashboardQuerySchema>
@@ -47,3 +52,4 @@ export type AllergensQuery = z.infer<typeof allergensQuerySchema>
 export type RoadmapQuery = z.infer<typeof roadmapQuerySchema>
 export type TodayQuery = z.infer<typeof todayQuerySchema>
 export type BalanceQuery = z.infer<typeof balanceQuerySchema>
+export type SnackSuggestionsQuery = z.infer<typeof snackSuggestionsQuerySchema>

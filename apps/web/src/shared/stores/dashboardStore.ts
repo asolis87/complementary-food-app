@@ -10,7 +10,7 @@
  * babyProfileId convention: callers pass babyProfileId explicitly.
  */
 
-import type { DashboardData, SuggestedFood, AllergenAlert, RoadmapProgress, BalanceInsight, TodayLog, MealSlot } from '@pakulab/shared'
+import type { DashboardData, SuggestedFood, RoadmapProgress, BalanceInsight, TodayLog, MealSlot } from '@pakulab/shared'
 import { DASHBOARD_CACHE_TTL } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -110,28 +110,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
       if (limit) params.set('limit', String(limit))
       const result = await apiClient.get<{ data: SuggestedFood[] }>(
         `/dashboard/suggestions?${params.toString()}`,
-      )
-      _setCache(cacheKey, result.data)
-      return result.data
-    } catch (err) {
-      if (err instanceof OfflineError && cached !== null) return cached
-      throw err
-    }
-  }
-
-  /**
-   * Fetch allergen alerts (GET /api/dashboard/allergens).
-   * Requires PRO tier (403 if FREE). Cached 1h.
-   */
-  async function fetchAllergens(babyProfileId: string): Promise<AllergenAlert[]> {
-    const cacheKey = `allergens:${babyProfileId}`
-    const cached = _getCached<AllergenAlert[]>(cacheKey, DASHBOARD_CACHE_TTL.allergens * 1000)
-    if (cached !== null) return cached
-
-    try {
-      const params = new URLSearchParams({ babyProfileId })
-      const result = await apiClient.get<{ data: AllergenAlert[] }>(
-        `/dashboard/allergens?${params.toString()}`,
       )
       _setCache(cacheKey, result.data)
       return result.data
@@ -272,7 +250,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     fetchDashboard,
     refreshDashboard,
     fetchSuggestions,
-    fetchAllergens,
     fetchRoadmap,
     fetchToday,
     fetchBalance,

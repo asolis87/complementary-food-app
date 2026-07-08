@@ -18,7 +18,7 @@ import type {
 } from '@pakulab/shared'
 import { MealType, derivePlateBalanceLabel } from '@pakulab/shared'
 import type { PrismaClient, WeeklyMenu, MenuDay, MenuMeal, Plate, Food, ALClassification } from '@prisma/client'
-import { NotFoundError, ForbiddenError, ConflictError, AppError } from '../../shared/errors/index.js'
+import { NotFoundError, ForbiddenError, ConflictError, AppError, BadRequestError } from '../../shared/errors/index.js'
 
 // =============================================================================
 // Types
@@ -33,14 +33,37 @@ type PlateWithItems = Plate & {
     plateId: string
     foodId: string
     groupAssignment: string
-    food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen'> | null
+    servingAmount: string | null
+    food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen' | 'ageMonths' | 'allergenType' | 'warningTags'> | null
   })[]
+}
+
+type SnackItemWithFood = {
+  id: string
+  snackId: string
+  foodId: string
+  groupAssignment: string
+  servingAmount: string | null
+  food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen' | 'ageMonths' | 'allergenType' | 'warningTags'> | null
+}
+
+type SnackWithItems = {
+  id: string
+  userId: string
+  name: string
+  items?: SnackItemWithFood[]
 }
 
 type MenuMealWithServedAt = MenuMeal & {
   servedAt: Date | null
   plate: PlateWithItems | null
+  snack?: SnackWithItems | null
 }
+
+/** Internal type for serveMeal — meal source (plate or snack) */
+type ServeSource =
+  | { kind: 'plate'; items: PlateWithItems['items']; plateId: string; snackId: null; label: string | null }
+  | { kind: 'snack'; items: SnackWithItems['items']; plateId: null; snackId: string; label: null }
 
 type MenuWithDaysAndMeals = WeeklyMenu & {
   days: (MenuDay & {
@@ -135,13 +158,17 @@ function serializePlateItems(items: PlateWithItems['items'] | undefined): PlateI
     id: item.id,
     foodId: item.foodId,
     groupAssignment: item.groupAssignment as import('@pakulab/shared').FoodGroup,
+    servingAmount: item.servingAmount,
     food: item.food
       ? {
           id: item.food.id,
           name: item.food.name,
           group: item.food.group,
           alClassification: item.food.alClassification,
+          ageMonths: item.food.ageMonths,
           isAllergen: item.food.isAllergen,
+          allergenType: item.food.allergenType,
+          warningTags: item.food.warningTags,
         }
       : undefined,
   }))
@@ -149,32 +176,62 @@ function serializePlateItems(items: PlateWithItems['items'] | undefined): PlateI
 
 /**
  * Serializes a Prisma MenuMeal to the API response type.
+ * REQ-WM1: Include snackId and snack in response.
  */
-function serializeMenuMeal(meal: MenuMeal & { plate: PlateWithItems | null }): MenuMealResponse {
+function serializeMenuMeal(meal: MenuMeal & { plate: PlateWithItems | null; snack?: any | null }): MenuMealResponse {
   return {
     id: meal.id,
     menuDayId: meal.menuDayId,
     mealType: meal.mealType as MealType,
     plateId: meal.plateId,
+    snackId: meal.snackId ?? undefined,
     notes: meal.notes,
     servedAt: meal.servedAt?.toISOString() ?? null,
     plate: meal.plate
       ? {
           id: meal.plate.id,
           userId: meal.plate.userId,
-          babyProfileId: meal.plate.babyProfileId ?? undefined,
+          babyProfileId: meal.plate.babyProfileId,
           name: meal.plate.name,
           groupCount: meal.plate.groupCount as 4 | 5,
+          stageFor: meal.plate.stageFor,
           balanceScore: meal.plate.balanceScore,
           astringentCount: meal.plate.astringentCount,
           laxativeCount: meal.plate.laxativeCount,
           neutralCount: meal.plate.neutralCount,
           createdAt: meal.plate.createdAt.toISOString(),
           updatedAt: meal.plate.updatedAt.toISOString(),
-          deletedAt: meal.plate.deletedAt?.toISOString(),
+          deletedAt: meal.plate.deletedAt?.toISOString() ?? null,
           items: serializePlateItems(meal.plate.items) as unknown as import('@pakulab/shared').PlateItem[],
         }
       : null,
+    snack: meal.snack
+      ? {
+          id: meal.snack.id,
+          userId: meal.snack.userId,
+          babyProfileId: meal.snack.babyProfileId,
+          name: meal.snack.name,
+          stageFor: meal.snack.stageFor,
+          createdAt: meal.snack.createdAt.toISOString(),
+          updatedAt: meal.snack.updatedAt.toISOString(),
+          deletedAt: meal.snack.deletedAt?.toISOString() ?? null,
+          items: meal.snack.items?.map((item: any) => ({
+            id: item.id,
+            snackId: item.snackId,
+            foodId: item.foodId,
+            groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount,
+            createdAt: item.createdAt.toISOString(),
+            food: item.food
+              ? {
+                  id: item.food.id,
+                  name: item.food.name,
+                  group: item.food.group,
+                }
+              : undefined,
+          })) ?? [],
+        }
+      : undefined,
   }
 }
 
@@ -243,8 +300,22 @@ export async function getWeekMenu(
               plate: {
                 include: {
                   items: {
+                    select: {
+                      id: true,
+                      plateId: true,
+                      foodId: true,
+                      groupAssignment: true,
+                      servingAmount: true,
+                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                    }
+                  }
+                }
+              },
+              snack: {
+                include: {
+                  items: {
                     include: {
-                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
                     }
                   }
                 }
@@ -311,7 +382,7 @@ export async function createWeekMenu(
                    include: {
                      items: {
                        include: {
-                          food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                          food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
                        }
                      }
                    }
@@ -328,10 +399,29 @@ export async function createWeekMenu(
 }
 
 /**
- * Upserts a meal slot — assigns, replaces, or clears a plate for a specific day+mealType.
+ * Upserts a meal slot — assigns, replaces, or clears a plate/snack for a specific day+mealType.
  * Creates the MenuDay defensively if it doesn't exist (shouldn't happen, but for data integrity).
  * Fully transactional: MenuDay ensure + MenuMeal upsert are in one transaction.
+ * REQ-WM3: Assign snack to SNACK slot.
+ * REQ-WM5: Mutual exclusion between plateId and snackId.
  */
+/**
+ * Resolve the plate/snack foreign keys for a meal-slot assignment, enforcing
+ * mutual exclusion: setting one FK always clears the other. Pure + exported so
+ * the invariant is unit-testable without mocking the Prisma upsert.
+ */
+export function resolveMealSlotFks(
+  payload: { plateId?: string | null; snackId?: string | null },
+): { plateId: string | null; snackId: string | null } {
+  if (payload.snackId) {
+    return { snackId: payload.snackId, plateId: null }
+  }
+  if (payload.plateId) {
+    return { plateId: payload.plateId, snackId: null }
+  }
+  return { plateId: null, snackId: null }
+}
+
 export async function upsertMealSlot(
   prisma: PrismaClient,
   userId: string,
@@ -357,6 +447,22 @@ export async function upsertMealSlot(
     }
   }
 
+  // If assigning a snack, verify it exists and belongs to user (outside transaction)
+  if (payload.snackId) {
+    const snack = await prisma.snack.findFirst({
+      where: {
+        id: payload.snackId,
+        userId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    })
+
+    if (!snack) {
+      throw new NotFoundError('Snack')
+    }
+  }
+
   // Everything below runs in a single transaction for data integrity
   const result = await prisma.$transaction(async (tx: TxClient) => {
     // Find or create the MenuDay for this dayOfWeek (inside transaction)
@@ -377,7 +483,10 @@ export async function upsertMealSlot(
       })
     }
 
-    if (payload.plateId === null) {
+    // Determine clear vs assign/replace logic
+    const isClearing = payload.plateId === null && (payload.snackId === null || payload.snackId === undefined)
+
+    if (isClearing) {
       // Clear slot: delete the MenuMeal if it exists
       await tx.menuMeal.deleteMany({
         where: {
@@ -388,7 +497,21 @@ export async function upsertMealSlot(
 
       return { meal: null }
     } else {
-      // Assign/replace plate: upsert the MenuMeal
+      // Assign/replace: resolve which FK to set, clearing the other (mutual exclusion).
+      const fks = resolveMealSlotFks(payload)
+      const updateData: { plateId?: string | null; snackId?: string | null; notes?: string | null } = {
+        ...fks,
+      }
+      const createData: { plateId?: string | null; snackId?: string | null; notes?: string | null } = {
+        ...fks,
+      }
+
+      if (payload.notes !== undefined) {
+        updateData.notes = payload.notes
+        createData.notes = payload.notes ?? null
+      }
+
+      // Upsert the MenuMeal
       const meal = await tx.menuMeal.upsert({
         where: {
           menuDayId_mealType: {
@@ -396,22 +519,27 @@ export async function upsertMealSlot(
             mealType: payload.mealType,
           },
         },
-        update: {
-          plateId: payload.plateId,
-          ...(payload.notes !== undefined && { notes: payload.notes }),
-        },
+        update: updateData,
         create: {
           menuDayId: menuDay.id,
           mealType: payload.mealType,
-          plateId: payload.plateId,
-          notes: payload.notes ?? null,
+          ...createData,
         },
          include: {
            plate: {
              include: {
                items: {
                  include: {
-                    food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                    food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                 }
+               }
+             }
+           },
+           snack: {
+             include: {
+               items: {
+                 include: {
+                    food: { select: { id: true, name: true, group: true } }
                  }
                }
              }
@@ -435,7 +563,7 @@ export async function upsertMealSlot(
                  include: {
                    items: {
                      include: {
-                        food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                        food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
                      }
                    }
                  }
@@ -494,6 +622,9 @@ export class EmptyPlateError extends AppError {
     super('El plato no tiene alimentos para registrar', 400, 'EMPTY_PLATE')
   }
 }
+
+// Re-export BadRequestError for test convenience
+export { BadRequestError }
 
 /**
  * Computes the UTC date for a given weekStart (Monday) and dayOfWeek offset.
@@ -557,7 +688,7 @@ export async function serveMeal(
   // Step 1b: Verify babyProfileId ownership (security check)
   await assertOwnedBabyProfile(prisma, userId, payload.babyProfileId)
 
-  // Step 2 & 3: Find MenuDay and MenuMeal with plate items in a single query
+  // Step 2 & 3: Find MenuDay and MenuMeal with plate AND snack items in a single query
   const menuDay = await prisma.menuDay.findFirst({
     where: {
       menuId,
@@ -573,7 +704,16 @@ export async function serveMeal(
             include: {
               items: {
                 include: {
-                   food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true } }
+                   food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                }
+              }
+            }
+          },
+          snack: {
+            include: {
+              items: {
+                include: {
+                  food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
                 }
               }
             }
@@ -589,12 +729,32 @@ export async function serveMeal(
 
   const menuMeal = menuDay.meals[0]!
 
-  // Check if there's a plate assigned
-  if (!menuMeal.plateId || !menuMeal.plate) {
-    throw new NotFoundError('No hay plato asignado a esta comida')
-  }
+  // Resolve meal source (plate or snack)
+  let source: ServeSource
 
-  const plate = menuMeal.plate
+  if (menuMeal.snackId && menuMeal.snack) {
+    // Snack ownership check (snacks are user-scoped via Snack.userId)
+    if (menuMeal.snack.userId !== userId) {
+      throw new ForbiddenError('No tienes permiso para servir esta colación')
+    }
+    source = {
+      kind: 'snack',
+      items: menuMeal.snack.items,
+      plateId: null,
+      snackId: menuMeal.snack.id,
+      label: null,
+    }
+  } else if (menuMeal.plateId && menuMeal.plate) {
+    source = {
+      kind: 'plate',
+      items: menuMeal.plate.items,
+      plateId: menuMeal.plate.id,
+      snackId: null,
+      label: null, // will compute later
+    }
+  } else {
+    throw new NotFoundError('No hay plato ni colación asignada a esta comida')
+  }
 
   // Step 4: Check servedAt status
   if (menuMeal.servedAt && !force) {
@@ -624,22 +784,29 @@ export async function serveMeal(
     })
     replacedCount = deletedLogs.count
 
-    // Check for empty plate
-    if (!plate.items || plate.items.length === 0) {
-      throw new EmptyPlateError()
+    // Check for empty items
+    if (!source.items || source.items.length === 0) {
+      if (source.kind === 'plate') {
+        throw new EmptyPlateError()
+      } else {
+        throw new BadRequestError('La colación no tiene alimentos asignados')
+      }
     }
 
-    // Compute plate balance label
-    const plateBalanceLabel = derivePlateBalanceLabel(plate.balanceScore)
+    // Compute label only for plates
+    const plateBalanceLabel = source.kind === 'plate' && source.plateId
+      ? derivePlateBalanceLabel((menuMeal.plate as PlateWithItems).balanceScore)
+      : null
 
-    // Create FoodLog entries for each plate item
-    const foodLogData = plate.items.map((item) => ({
+    // Create FoodLog entries for each item (generic over source)
+    const foodLogData = source.items.map((item) => ({
       userId,
       babyProfileId: payload.babyProfileId,
       foodId: item.foodId,
       date: serveDate,
       mealType: payload.mealType,
-      plateId: plate.id,
+      plateId: source.plateId,
+      snackId: source.snackId,
       plateBalanceLabel,
       // reaction, accepted, notes are null — filled during review moment
     }))

@@ -1,0 +1,120 @@
+# SDD state for etapa-10-23-meses
+change: etapa-10-23-meses
+status: archived
+created: 2026-06-18
+archived_at: 2026-07-06
+active_change_source: user_request
+
+preflight:
+  execution_mode: interactive
+  artifact_store: openspec
+  chained_pr_strategy: auto-forecast
+  review_budget_lines: 400
+  product_decisions:
+    allergen_tier: PRO
+    plate_stage_tag: in_scope
+    stage_transition_ux: soft_cutover_banner
+    perceptive_feeding: dashboard_expandable_card
+
+phases:
+  explore:
+    status: complete
+    artifact: explore.md
+    completed_at: 2026-06-18
+  proposal:
+    status: complete
+    artifact: proposal.md
+    completed_at: 2026-06-18
+  spec:
+    status: complete
+    artifact: specs/req-{01..06}-*.md
+    completed_at: 2026-06-18
+    index: spec.md
+  design:
+    status: complete
+    artifact: design.md
+    completed_at: 2026-06-18
+  tasks:
+    status: complete
+    artifact: tasks.md
+    completed_at: 2026-06-18
+    total_tasks: 52
+    pr_forecast: 10
+    completed_prs:
+      - PR-1
+      - PR-1.5
+      - PR-1.6a
+      - PR-1.6b
+      - PR-1.6c
+      - PR-1.7
+      - PR-1.8a
+      - PR-1.8b
+      - PR-1.8c
+      - PR-2
+      - PR-3
+      - PR-4
+      - PR-5
+      - PR-6
+      - PR-7
+      - PR-8
+      - PR-9
+      - PR-10
+      - PR-11
+      - PR-12
+      - PR-13
+    tasks_per_bloque:
+      bloque_0: 12
+      bloque_1: 3
+      bloque_2: 5
+      bloque_3: 5
+      bloque_4: 19
+      bloque_5: 8
+  apply:
+    status: complete
+    artifact: apply-progress.md
+    current_pr: null
+    next_pr: null
+    in_progress_branch: null
+    notes:
+      - PR-3 (Bloque 1 seed audit, PR #77, merge cd44095) merged — RE-SCOPED (foods pre-existed; audit + DB-free integrity test; no data changes).
+      - PR-4 (Bloque 2 allergens backend, PR #79, merge 4804dad) merged — GET /api/allergens/status (PRO), derived from FoodLog+Food, no new table. 4R review fixed celery silent-drop (now explicit exclude + log.warn for unmapped), deterministic ordering, isAllergen-bounded query, boundary tests. ALLERGEN_TYPE_MAPPING bridges seed English→shared Spanish keys. fish/shellfish split into pescado/mariscos in TOP_ALLERGENS. api 415/415, shared 127/127 green.
+      - STALE-PLAN WARNING — tasks.md was written 2026-06-18, before the 154-food catalog expansion. Bloque 1 was largely already done. VERIFY actual code/schema before each further bloque (sdd-explore first).
+      - PR-5 (Bloque 3 BACKEND, PR #81, merge 917d435) merged — WarningTag enum + Food.warningTags @default([]) (additive, db-push deploy). T-03-01..04 only. Clinical backfill of 15 foods (CHOKING_HAZARD_UNDER_5Y + REQUIRES_PREPARATION) from PDF page 7. Moved the 154-food catalog + FoodSeed type to packages/shared/src/data/food-catalog.ts so its integrity tests run in CI (prisma/ is not a workspace package). Added seed.ts entrypoint guard. Moved ALLERGEN_TYPE_MAPPING to @pakulab/shared. Two 4R rounds fixed seed-not-persisting-warningTags, clinical false-negatives (tree nuts + elote), vacuous escape-hatch tests, never-run-in-CI test. CI fix — packages/shared must NOT import @prisma/client (build order); Prisma<->shared sync test moved to apps/api/src/modules/foods/warning-tags-sync.test.ts. Final green typecheck + api 416, shared 171, web 244.
+      - PR-5 SCOPE NOTE — tasks.md mapped PR-5 = Bloque 3 (T-03-01..04) + T-04-11..15 (warning badge UI). Only the BACKEND (T-03-01..04) shipped. T-04-11..15 (WarningBadge.vue + integrations in FoodSearchPage/FoodSearchModal/MenuWeekPage/PlateBuilderDrawer) shipped in PR-6 (see below). Garbanzo intentionally left UNTAGGED (not verbatim on PDF page 7; awaiting product confirmation) — see seed comment.
+      - PR-6 (Bloque 4 warning-badge UI, PR #83, merge 8829fbd) merged — T-04-11..15. WarningBadge.vue (flat shared atom, ⚠️ + native title tooltip) integrated into FoodSearchPage, FoodSearchModal (+ safety panel), MenuWeekPage (via menu API contract widening: PlateItemSummary.food.warningTags + Pick/select/serialize), PlateVisualization. WARNING_TAG_LABELS + WARNING_DISCLAIMER centralized in @pakulab/shared. 4R caught + fixed a BLOCKER (same class as PR-2 dead-banner) — usePlateBuilder.ts:172 loadPlateIntoDraft hardcoded warningTags:[] with a false comment, silently dropping choking/honey badges when editing a saved plate; fixed to item.food.warningTags ?? [] with RED→GREEN regression test. Final green: typecheck exit 0, shared 175, api 416, web 260, 0 invalid-prop warnings.
+      - PR-6 DEFERRED — MenuWeekPage badge has no dedicated template render test (API data path proven end-to-end; template test still missing). Icon inconsistency left as cosmetic deferral: emoji ⚠️ (WarningBadge) vs material-symbols "warning" (FoodSearchModal panel) — design call. Bloque 4 remainder NOT done: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions).
+      - PR-7 (Bloque 5 plate stage, PR #85, merge 60bd586) merged — RE-SCOPED to backend + stage selector only (T-05-01..06). PlateStage enum (SIX_TO_NINE_MONTHS..FAMILY_TABLE) + Plate.stageFor? (additive, db-push). Shared PLATE_STAGES + PLATE_STAGE_LABELS (es-MX) + getSuggestedGroupCount + getSuggestedStageForAge (tested, consumed by PR-8). API Zod stageFor+servingAmount, getUserPlates stageFor filter ("null"/"" query param → IS NULL via z.preprocess), create/update persist stageFor+servingAmount, menus.service select widening. Web "Etapa objetivo" selector in PlateBuilderPage; usePlateBuilder edit path preserves stageFor+servingAmount with RED→GREEN regression tests. plate-stage-sync.test.ts (Prisma↔shared enum sync) in apps/api. 4R fixed: type regressions (warningTags/groupCount/PlateItem.food loosening), food:undefined-as-any anti-pattern, C1 stageFor query-param null coercion, false comments. ~292 LOC, under 400 (no size:exception). Final green: typecheck exit 0, api 431, web 263, shared 187.
+      - PR-7 DEFERRED to PR-8 — serving-amount UI (T-04-02 per-slot selector, T-04-03 total "X cdas", T-04-04 non-blocking >4cdas amber banner), groupCount suggestion badge (T-04-A2; reuse ageInMonths computed from birthDate at DiaryPage.vue:565), stage filter UI in PlateListPage (T-05-07). PDF export with stage / Capability D (T-05-08) still deferred. Shared helpers getSuggestedGroupCount/getSuggestedStageForAge already landed (tested) awaiting these consumers.
+      - PR-8 (Bloque 4+5 remaining UI, PR #87, merge 2cc719e) merged — T-04-02..04 + T-04-A2 + T-05-07. New getAgeMonths(birthDate, referenceDate?) in packages/shared/src/utils/date.ts (invalid-date guard → 0, avoids NaN leak). usePlateBuilder derived state (totalServingAmount/groupServingCounts/hasExcessServing/updateServingAmount) shared by PlateBuilderPage AND PlateBuilderDrawer. PlateContents per-slot serving selector (1-4 cdas, default 1, preserved on edit); PlateBuilderPage "X cdas en total" + non-blocking >4cdas/group amber banner + "Sugerido para X meses" groupCount badge; PlateListPage stage filter (default = baby's stage) via plateStore.fetchSavedPlates(stageFor?). 4R (R3) caught + fixed 2 BLOCKERs the apply missed: (1) getAgeMonths NaN leak → wrong clinical stage/groupCount suggestion for corrupt birthDate; (2) PlateListPage double-fetch race on mount (watch now registered inside onMounted after the initial fetch). R2 clean (es-MX verbatim). ~369 prod LOC (under 400) + ~342 test LOC. Final green: typecheck exit 0, shared 196, api 431, web 271. EXPLORE CORRECTION recorded: PlateBuilderDrawer.vue is REAL (shared/components/), not the "phantom" PR-7 explore claimed.
+      - PR-8 DEFERRED / epic remainder — Bloque 4: T-04-05..10 (C1/C2 features), T-04-16..20 (E1/E2 suggestions). Bloque 5: T-05-08 (PDF export with stage / Capability D — export route still unverified). Next_pr=PR-9 (likely Bloque 4 C1/C2 features) — run sdd-explore FIRST (tasks.md is stale from 2026-06-18).
+      - PR-9 (Snack Suggestions BACKEND, PR #89, merge 42062b2) merged — RE-SCOPED to backend-only (T-04-18..19). getSnackSuggestions(babyProfileId) in dashboard.service.ts + GET /api/dashboard/snack-suggestions (FREE tier, verifyBabyOwnership, Zod) + shared SnackSuggestionResponse type + cache TTL. <10m → SNACKS_NOT_YET; >=10m → up to 5 snack foods (soft fruit + cooked VEGETABLE + yogur/queso), 12m+ adds galleta/pan/cereal/arroz; always excludes CHOKING_HAZARD_UNDER_5Y; deterministic order (orderBy name + core-before-extras). Derived from existing catalog, no seed changes. 4R: R1 risk CLEAN (ownership before data, FREE tier, no IDOR/injection). R3 caught + fixed: (1) CLINICAL BUG — VEGETABLE group was omitted (REQ-B1 requires cooked veg from 10m); (2) VACUOUS/FRAGILE tests — absolute birthDate literals with wrong age comments passing by accident; rewrote with UTC mid-month birthDateForAge(months) helper (avoids TZ skew from birthDate.toISOString().split + end-of-month rollover; ageInMonths ignores day-of-month) + edge tests (profile-not-found, <5 candidates, veg inclusion). ~120 prod LOC. Final green: typecheck exit 0, shared 196, api 439, web 271.
+      - PR-9 SCOPE NOTE — the ORIGINAL PR-9 scope (allergen tracker card + snack card web UI) was NOT shipped; only the snack backend. Web cards → PR-10 (allergen card replaces old AllergenAlertsCard, silently fixing the pre-existing ES/EN allergen-key bug; snack card consumes GET /api/dashboard/snack-suggestions). Iron priority E1 (T-04-16..17) → PR-11, still BLOCKED on isIronRich schema decision. Full context at engram sdd/etapa-10-23-meses/pr9-scope + pr9-explore + pr9-apply-progress.
+      - PR-10 (Dashboard cards UI, PR #91, merge 5201634) merged — T-04-06..10 + T-04-20. AllergenTrackerCard.vue (consumes GET /api/allergens/status PR-4, PRO-gated via TierGate, per-allergen status chips, closingWindow exposure-reminder banner) + SnackSuggestionCard.vue (consumes GET /api/dashboard/snack-suggestions PR-9, shown only >=10m AND available). REPLACED old AllergenAlertsCard in DashboardPage (silently fixes pre-existing ES/EN allergen-key bug); deleted the orphaned old card + test. Moved AllergenStatusResponse/AllergenEntry to packages/shared/src/types/allergen.ts (single source; api service imports + re-exports). Cards fetch their own dedicated endpoints (not the dashboard bundle); receive babyProfileId/tier/babyAgeMonths as props. 4R: R1 risk CLEAN (server gates + verifyBabyOwnership intact, client TierGate is UX-only, card skips fetch for FREE). R2 clean (es-MX tuteo verbatim). Orchestrator fixes: shared-type move (dedup), orphan card delete, RouterLinkStub for test warning. ~556 prod LOC (mostly Vue template/CSS), size:exception. Final green: typecheck exit 0, shared 196, api 439, web 283.
+      - PR-10 FOLLOW-UPS / epic remainder — (1) tier leak RESOLVED in PR #95 (see TECH-DEBT RESOLVED note below): GET /api/dashboard no longer sends pendingAllergens to FREE users. (2) PR-11 = Iron priority E1 (T-04-16..17), still BLOCKED on isIronRich schema decision (add field + backfill vs hardcoded list) — product decision needed. (3) T-05-08 (PDF export with stage / Capability D) still deferred, export route unverified.
+      - PR-11 (Iron priority E1, PR #93, merge e3ba49f) merged — T-04-16..17. Added Food.isIronRich Boolean @default(false) (additive, db-push) + backfilled 18 iron-rich foods (heme: hígado pollo/res, carne de res; legumes: frijol negro/pinto/blanco, lenteja/lenteja roja, garbanzo; green leaves: espinaca, acelga, quelites, verdolagas, rúgula; fortified cereals: arroz/avena/maíz/trigo infantil). isIronRich on FoodSeed/Food/FoodSummary/FoodForSuggestion. getSuggestedFoods for >=10m: PENDING ALLERGEN leads (window closing 10-12m — product decision), then iron-rich with >=30% floor, then rotation; <10m unchanged; REQ-A2 graceful fallback. Deterministic tiers (independent of the Math.random rotation). Clinical source PDF page 2 (NOT page 7). 4R no blockers: R3 confirmed guarantees deterministic + isIronRich selected at runtime + raised the allergen-vs-iron spec gap (resolved by product = allergen-first-then-iron); R2 caught Rúgula description/flag mismatch (fixed true, count 17→18). Orchestrator rewrote fragile Math.random-based ranking into explicit tiers, removed stray .backup. ~198 prod LOC, no size:exception. Final green: typecheck exit 0, shared 218, api 444, web 283.
+      - PR-11 EPIC STATUS — Bloque 4 (C1/C2/D2/E1/E2) + Bloque 5 (stage) COMPLETE. Remaining: T-05-08 PDF export with stage (Capability D, REQ-D1) — export route still unverified, needs sdd-explore first. next_pr=PR-12 (T-05-08 PDF export; explore export route first).
+      - PR-12 (T-05-08 export stage, PR #97, merge af30143) merged — FINAL feature. sdd-explore CORRECTED the stale task: menu "PDF export" is a CLIENT-SIDE PNG via html2canvas (MenuExportFrame.vue), NOT a backend PDF route. Approach A (prop-passing, web-only). MenuWeekPage derives babyAgeMonths/babyStageLabel from active profile birthDate (getAgeMonths → getSuggestedStageForAge → PLATE_STAGE_LABELS es-MX, all shipped PR-7/8) and passes new stageLabel prop; MenuExportFrame renders it inline after babyName with em-dash. Stage = baby CURRENT stage (from birthDate), NOT plate stageFor. Age-0 guard omits label for missing/invalid birthDate. Export stays PRO (page TierGate); watermark myth debunked (menu export has no watermark; PlateExportFrame is a different component). 4R: R2 clean (real em-dash U+2014, verbatim es-MX); R3 over-escalated but caught 1 real gap — parent birthDate→stageLabel derivation only tested indirectly, added 2 MenuWeekPage derivation tests (incl age-0 guard). ~130 LOC (mostly tests), no size:exception. Final green: typecheck exit 0, web 289 (+6). Explore artifact: explore-pr12.md.
+      - EPIC COMPLETE — ALL features of etapa-10-23-meses shipped (Bloque 0-5, PR-1..PR-13). apply phase = complete, next_pr=null. Deferred low-priority tech-debt below is NOT blocking archive but should be triaged.
+      - VERIFY ROUND 1 (release @ a1b47f0) returned NOT READY — 2 CRITICAL spec-coverage gaps: REQ-A3 (MenuWeekPage not age-aware, hardcoded 3-meal grid) + REQ-D2 (Tip de la etapa card never rendered, useStageTip unconsumed). Both were internally deferred but never removed from the REQ-01 spec. User decided to IMPLEMENT (not de-scope). Full report: verify-report.md + engram sdd/etapa-10-23-meses/verify-report.
+      - PR-13 (verify CRITICAL fixes, PR #99, merge 6463fc3) merged — FRONTEND-ONLY, ~216 LOC. CRITICAL-1: MenuWeekPage MEALS is now a computed from getMealSlotsForAge(babyAgeMonths) → 3 cols <10m / 4 @10-12m (Colación) / 5 @>=13m (Colación 1+2); MealKey extended snack1|snack2; backend already supported all MealTypes (MenuMeal.mealType enum) so no BE work; MenuExportFrame ripple-safe (v-for over day.meals). CRITICAL-2: new StageTipCard.vue wired into DashboardPage below BalanceInsightCard; useStageTip now EXPORTS its derived `stage` (single source of truth, dedup). 4R (R2+R3): R2 clean; R3 added clinical-boundary tests (exactly 10m→4, 13m→5, age-0→3) + eliminated getStageForAge duplication; fixed a Math.random-fragile reshuffle test to deterministic before review. Final green: typecheck exit 0, web 299 (+10). Explore artifact: explore-pr13.md. → RE-RUN sdd-verify expected READY.
+      - TECH-DEBT RESOLVED (PR #95, merge 185803e) — FREE-tier pendingAllergens leak closed. GET /api/dashboard (requireTier FREE) no longer bundles pendingAllergens; DROPPED the field from the DashboardData shared type + removed it from getDashboardData. getPendingAllergens(), the AllergenAlert type, and the PRO endpoint GET /api/dashboard/allergens (requireTier PRO) kept intact — the only legit consumer (AllergenTrackerCard) already uses that dedicated PRO endpoint. Fresh-context R1 review CLEAN. Not a numbered epic PR (standalone tech-debt fix). Final green: typecheck exit 0, shared 218, api 444, web 283.
+      - DEFERRED PR-4 follow-ups — ALLERGEN_TYPE_MAPPING move DONE in PR-5. STILL OPEN — dashboard PRE-EXISTING English-vs-Spanish allergen-key bug (buildAllergenAlerts never matches); reconcile ALLERGEN_AGE_THRESHOLDS with the pescado/mariscos split; allergens route tests use source-string grep not inject(); getStatus test uses wall-clock.
+      - DEFERRED PR-2 4R follow-ups still open: useStageTip has no UI consumer; forbidOnly missing in shared/api vitest configs; one Math.random test unseeded; TextureGuideCard under-6m all-future state (confirm with product).
+  verify:
+    status: complete
+    artifact: verify-report.md
+    completed_at: 2026-07-06
+    verdict: READY FOR ARCHIVE
+  archive:
+    status: complete
+    artifact: archive-report.md
+    completed_at: 2026-07-06
+
+action_context:
+  mode: workspace-planning
+  workspace_root: /Users/alvasolis/DEV/poc/complementary-food
+  allowed_edit_roots:
+    - openspec/changes/archive/2026-07-06-etapa-10-23-meses/
+  warnings: []
+
+next_recommended: none

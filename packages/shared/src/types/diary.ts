@@ -13,6 +13,15 @@ export enum MealType {
   SNACK = 'SNACK',
 }
 
+/** Age stage for the 10–23m feature. Reserved for `STAGE_TIPS` (T-00-02)
+ *  and the cutover banner (T-00-07/T-00-08); not yet consumed in PR-1.
+ *  Not a Prisma enum — derived in shared from the integer age. */
+export type AgeStage =
+  | 'SIX_TO_NINE_MONTHS'
+  | 'TEN_TO_TWELVE_MONTHS'
+  | 'THIRTEEN_TO_SEVENTEEN_MONTHS'
+  | 'EIGHTEEN_TO_TWENTY_THREE_MONTHS'
+
 /** Reaction type — maps to the ReactionType Prisma enum (trimmed: ALLERGIC, GAS, RASH removed) */
 export enum ReactionType {
   LIKED = 'LIKED',
@@ -83,7 +92,8 @@ export interface MealLog {
   accepted?: boolean | null      // Whether parent accepted the food after review
   plateBalanceLabel?: PlateBalanceLabel | null  // Snapshot of plate A/L label at log time
   notes?: string
-  plateId?: string
+  plateId?: string      // Set when the entry came from serving a plate
+  snackId?: string      // Set when the entry came from serving a snack (colación)
   foodId: string        // Single food per entry
   food?: MealLogFood    // Populated food details
   babyProfileId: string

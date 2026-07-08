@@ -7,10 +7,11 @@
  * Design: AD-1 (cache by weekStart ISO), AD-4 (lazy creation), AD-7 (optimistic UI)
  */
 
-import type { 
-  WeeklyMenuResponse, 
-  MenuMealResponse, 
+import type {
+  WeeklyMenuResponse,
+  MenuMealResponse,
   Plate,
+  Snack,
   PlateItemSummary,
   CreateMenuPayload,
   MealSlotPatch,
@@ -24,7 +25,6 @@ import {
   GOOD_THRESHOLD,
   type MealKey,
   type DayKey,
-  ACTIVE_MEAL_KEYS,
   DAY_KEYS
 } from '@pakulab/shared'
 import { defineStore } from 'pinia'
@@ -35,6 +35,16 @@ import { usePlateStore } from './plateStore.js'
 
 /** Slot key format: `${dayKey}:${mealKey}` e.g., "lun:desayuno" */
 type SlotKey = `${DayKey}:${MealKey}`
+
+/**
+ * The 3 main-meal keys. `menuMap` and `weekStats` are restricted to these so
+ * plate math stays identical regardless of age. Snacks are tracked separately
+ * in `snackMap` and are excluded from weekStats (product decision).
+ */
+const MAIN_MEAL_KEYS: MealKey[] = ['desayuno', 'comida', 'cena']
+
+/** The age-aware snack slot keys handled by `snackMap`. */
+const SNACK_MEAL_KEYS: MealKey[] = ['snack1', 'snack2']
 
 /** Per-slot loading state */
 interface SlotLoadingState {
@@ -94,9 +104,9 @@ export const useMenuStore = defineStore('menus', () => {
 
     const map = {} as Record<SlotKey, Plate | null>
 
-    // Initialize all slots as empty
+    // Initialize all main-meal slots as empty (snacks live in snackMap)
     for (const dayKey of DAY_KEYS) {
-      for (const mealKey of ACTIVE_MEAL_KEYS) {
+      for (const mealKey of MAIN_MEAL_KEYS) {
         map[`${dayKey}:${mealKey}`] = null
       }
     }
@@ -110,9 +120,44 @@ export const useMenuStore = defineStore('menus', () => {
         // Use reverse mapping for cleaner lookup (AD-5)
         const mealKey = MEAL_TYPE_TO_KEY[meal.mealType]
 
-        if (!mealKey || !ACTIVE_MEAL_KEYS.includes(mealKey)) continue
+        if (!mealKey || !MAIN_MEAL_KEYS.includes(mealKey)) continue
 
         map[`${dayKey}:${mealKey}`] = meal.plate ?? null
+      }
+    }
+
+    return map
+  })
+
+  /**
+   * Computed snack map for snack-slot lookups.
+   * Mirrors `menuMap` but keyed over the snack slot keys (snack1/snack2) and
+   * reads `meal.snack`. Kept separate so plates/weekStats math is unaffected.
+   */
+  const snackMap = computed((): Record<SlotKey, Snack | null> => {
+    const menu = currentMenu.value
+    if (!menu) return {} as Record<SlotKey, Snack | null>
+
+    const map = {} as Record<SlotKey, Snack | null>
+
+    // Initialize all snack slots as empty
+    for (const dayKey of DAY_KEYS) {
+      for (const mealKey of SNACK_MEAL_KEYS) {
+        map[`${dayKey}:${mealKey}`] = null
+      }
+    }
+
+    // Fill in assigned snacks from menu data
+    for (const day of menu.days) {
+      const dayKey = DAY_KEYS[day.dayOfWeek]
+      if (!dayKey) continue
+
+      for (const meal of day.meals) {
+        const mealKey = MEAL_TYPE_TO_KEY[meal.mealType]
+
+        if (!mealKey || !SNACK_MEAL_KEYS.includes(mealKey)) continue
+
+        map[`${dayKey}:${mealKey}`] = meal.snack ?? null
       }
     }
 
@@ -154,6 +199,14 @@ export const useMenuStore = defineStore('menus', () => {
    */
   function getPlate(dayKey: DayKey, mealKey: MealKey): Plate | null {
     return menuMap.value[`${dayKey}:${mealKey}`] ?? null
+  }
+
+  /**
+   * Get the assigned snack for a specific snack slot.
+   * Thin wrapper over snackMap for template compatibility.
+   */
+  function getSnack(dayKey: DayKey, mealKey: MealKey): Snack | null {
+    return snackMap.value[`${dayKey}:${mealKey}`] ?? null
   }
 
   /**
@@ -397,6 +450,106 @@ export const useMenuStore = defineStore('menus', () => {
   }
 
   /**
+   * Assign a snack to a specific snack slot.
+   * Mirrors `assignPlate` but sends `snackId` and clears any plate on the slot
+   * (backend enforces mutual exclusion). Optimistic UI with rollback on error.
+   */
+  async function assignSnack(
+    babyProfileId: string,
+    weekStartISO: string,
+    dayKey: DayKey,
+    mealKey: MealKey,
+    snack: Snack
+  ): Promise<void> {
+    const slotKey = `${dayKey}:${mealKey}` as SlotKey
+
+    // Ensure we have a menu (lazy creation)
+    let menu = weekMenus.value.get(weekStartISO)
+    if (!menu) {
+      menu = await ensureMenu(babyProfileId, weekStartISO)
+    }
+
+    // Store previous state for potential rollback
+    const previousSnack = snackMap.value[slotKey]
+
+    // Optimistic update: immediately update local state
+    updateLocalSnackSlot(menu.id, dayKey, mealKey, snack)
+    slotLoading.value.add(slotKey)
+
+    try {
+      const dayOfWeek = DAY_KEY_TO_INDEX[dayKey]
+      const mealType = MEAL_KEY_TO_TYPE[mealKey]
+
+      // Clear any plate on this slot (mutual exclusion) and set the snack.
+      const payload: MealSlotPatch = {
+        dayOfWeek,
+        mealType,
+        plateId: null,
+        snackId: snack.id,
+      }
+
+      await apiClient.patch(`/menus/${menu.id}/meals`, payload)
+
+      useDashboardStore().invalidate()
+    } catch (err) {
+      // Rollback on error (AD-7)
+      updateLocalSnackSlot(menu.id, dayKey, mealKey, previousSnack)
+      error.value = err instanceof Error ? err.message : 'Error al asignar la colación'
+      throw err
+    } finally {
+      slotLoading.value.delete(slotKey)
+    }
+  }
+
+  /**
+   * Remove a snack from a specific snack slot (clear the slot).
+   * Optimistic UI with rollback on error.
+   */
+  async function removeSnack(
+    babyProfileId: string,
+    weekStartISO: string,
+    dayKey: DayKey,
+    mealKey: MealKey
+  ): Promise<void> {
+    const slotKey = `${dayKey}:${mealKey}` as SlotKey
+
+    const menu = weekMenus.value.get(weekStartISO)
+    if (!menu) {
+      // No menu exists, nothing to remove
+      return
+    }
+
+    const previousSnack = snackMap.value[slotKey]
+
+    // Optimistic update: immediately clear the slot
+    updateLocalSnackSlot(menu.id, dayKey, mealKey, null)
+    slotLoading.value.add(slotKey)
+
+    try {
+      const dayOfWeek = DAY_KEY_TO_INDEX[dayKey]
+      const mealType = MEAL_KEY_TO_TYPE[mealKey]
+
+      const payload: MealSlotPatch = {
+        dayOfWeek,
+        mealType,
+        plateId: null,
+        snackId: null, // Clear the snack
+      }
+
+      await apiClient.patch(`/menus/${menu.id}/meals`, payload)
+
+      useDashboardStore().invalidate()
+    } catch (err) {
+      // Rollback on error (AD-7)
+      updateLocalSnackSlot(menu.id, dayKey, mealKey, previousSnack)
+      error.value = err instanceof Error ? err.message : 'Error al quitar la colación'
+      throw err
+    } finally {
+      slotLoading.value.delete(slotKey)
+    }
+  }
+
+  /**
    * Serve a meal (mark as served and create food log entries).
    * Returns the servedAt timestamp on success.
    * Handles 409 conflict if already served.
@@ -570,6 +723,72 @@ export const useMenuStore = defineStore('menus', () => {
   }
 
   /**
+   * Helper: Update a snack slot in the cached menu data locally (optimistic).
+   * Mirrors `updateLocalSlot`. When assigning a snack, clears any plate on the
+   * meal entry (mutual exclusion). Uses JSON round-trip to avoid mutating
+   * reactive objects directly.
+   */
+  function updateLocalSnackSlot(
+    menuId: string,
+    dayKey: DayKey,
+    mealKey: MealKey,
+    snack: Snack | null
+  ): void {
+    const menuRef = Array.from(weekMenus.value.values()).find(m => m?.id === menuId)
+    if (!menuRef) return
+
+    // Deep clone to avoid mutating reactive object directly
+    const menu: WeeklyMenuResponse = JSON.parse(JSON.stringify(menuRef))
+
+    const dayOfWeek = DAY_KEY_TO_INDEX[dayKey]
+    const mealType = MEAL_KEY_TO_TYPE[mealKey]
+
+    // Find or create the day
+    let day = menu.days.find(d => d.dayOfWeek === dayOfWeek)
+    if (!day) {
+      day = {
+        id: `temp-${dayOfWeek}`,
+        menuId,
+        dayOfWeek,
+        createdAt: new Date().toISOString(),
+        meals: [],
+      }
+      menu.days.push(day)
+      menu.days.sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+    }
+
+    const mealIndex = day.meals.findIndex(m => m.mealType === mealType)
+
+    if (snack) {
+      // Upsert: create or update the meal, clearing any plate (mutual exclusion)
+      const mealData: MenuMealResponse = {
+        id: mealIndex >= 0 ? day.meals[mealIndex]!.id : `temp-${Date.now()}`,
+        menuDayId: day.id,
+        mealType,
+        plateId: null,
+        snackId: snack.id,
+        notes: null,
+        plate: null,
+        snack,
+      }
+
+      if (mealIndex >= 0) {
+        day.meals[mealIndex] = mealData
+      } else {
+        day.meals.push(mealData)
+      }
+    } else {
+      // Clear the snack: remove the meal entry if it exists
+      if (mealIndex >= 0) {
+        day.meals.splice(mealIndex, 1)
+      }
+    }
+
+    // Set the cloned & mutated object to trigger reactivity
+    weekMenus.value.set(menu.weekStart, menu)
+  }
+
+  /**
    * Synchronize plate changes from plateStore into all cached weekMenus.
    * When a plate is updated in plateStore.savedPlates, this watcher finds all
    * occurrences of that plate in weekMenus and updates them to reflect the changes.
@@ -612,8 +831,10 @@ export const useMenuStore = defineStore('menus', () => {
     // Getters
     currentMenu,
     menuMap,
+    snackMap,
     weekStats,
     getPlate,
+    getSnack,
     getSlotFoods,
     isSlotLoading,
     getServedAt,
@@ -624,6 +845,8 @@ export const useMenuStore = defineStore('menus', () => {
     clearProfileCache,
     assignPlate,
     removePlate,
+    assignSnack,
+    removeSnack,
     serveMeal,
     reServeMeal,
   }

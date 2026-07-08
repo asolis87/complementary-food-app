@@ -85,7 +85,7 @@
                   {{ alBadgeLabel(currentItems[0].food.alClassification) }}
                 </span>
                 <span class="food-info">
-                  <span class="food-name">{{ currentItems[0].food.name }}</span>
+                  <span class="food-name">{{ currentItems[0].food.name }} <WarningBadge :tags="currentItems[0].food.warningTags" /></span>
                   <span class="food-meta">
                     <span v-if="currentItems[0].food.isAllergen" class="allergen-warning">⚠️ Alérgeno</span>
                     <span class="age-rec">≥ {{ currentItems[0].food.ageMonths }}m</span>
@@ -160,7 +160,7 @@
                     {{ alBadgeLabel(food.alClassification) }}
                   </span>
                   <span class="food-info">
-                    <span class="food-name">{{ food.name }}</span>
+                    <span class="food-name">{{ food.name }} <WarningBadge :tags="food.warningTags" /></span>
                     <span class="food-meta">
                       <span v-if="food.isAllergen" class="allergen-warning">⚠️ Alérgeno</span>
                       <span class="age-rec">≥ {{ food.ageMonths }}m</span>
@@ -179,6 +179,19 @@
                   </span>
                   <span class="add-icon" aria-hidden="true" :style="{ background: groupColor }">{{ currentItems.length > 0 ? '⇄' : '+' }}</span>
                 </button>
+                <!-- Warning panel (REQ-4-B2: below food detail, informative, button not disabled) -->
+                <div v-if="food.warningTags.length > 0" class="warning-panel">
+                  <span class="material-symbols-outlined warning-icon">warning</span>
+                  <div class="warning-content">
+                    <p class="warning-header">Advertencia de seguridad</p>
+                    <ul class="warning-list">
+                      <li v-for="tag in food.warningTags" :key="tag">
+                        {{ WARNING_TAG_LABELS[tag] }}
+                      </li>
+                    </ul>
+                    <p class="warning-disclaimer">{{ WARNING_DISCLAIMER }}</p>
+                  </div>
+                </div>
               </li>
             </ul>
           </div>
@@ -203,8 +216,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Food, FoodGroup, ALClassification, FoodHistoryMap, FoodHistory } from '@pakulab/shared'
-import { FOOD_GROUP_LABELS, ReactionType } from '@pakulab/shared'
+import { FOOD_GROUP_LABELS, ReactionType, WARNING_TAG_LABELS, WARNING_DISCLAIMER } from '@pakulab/shared'
 import type { PlateItemDraft } from '@/shared/stores/plateStore.js'
+import WarningBadge from '@/shared/components/WarningBadge.vue'
 
 const MAX_VISIBLE = 30
 const DEBOUNCE_MS = 300
@@ -646,6 +660,15 @@ function hasAllergenReactionWarning(food: Food): boolean {
   border-radius: var(--md3-rounded-md);
 }
 
+/* Available-food rows stack their button + warning panel vertically so the
+   safety panel sits BELOW the food (not beside it, which broke the layout).
+   The "selected" row (.food-item-added) keeps the horizontal layout. */
+.food-item:not(.food-item-added) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
 /* Added items row */
 .food-item-added {
   background: var(--md3-primary-container);
@@ -954,5 +977,51 @@ function hasAllergenReactionWarning(food: Food): boolean {
 .food-item-allergen-warning {
   border-left: 3px solid var(--md3-error) !important;
   background: color-mix(in srgb, var(--md3-error-container) 40%, var(--md3-primary-container));
+}
+
+/* ─── Warning panel (T-04-13) ──────────────────────────────────────────────── */
+.warning-panel {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #fef2f2;
+  border-left: 3px solid #dc2626;
+  border-radius: 0.375rem;
+}
+
+.warning-icon {
+  color: #dc2626;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-header {
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.warning-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.warning-list li {
+  margin-bottom: 0.25rem;
+}
+
+.warning-disclaimer {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: #6b7280;
 }
 </style>

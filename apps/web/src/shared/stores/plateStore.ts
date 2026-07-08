@@ -4,7 +4,7 @@
  * Design: AD4 — Pinia for server-synced state.
  */
 
-import type { Food, FoodGroup, Plate, BalanceResult, CreatePlateInput } from '@pakulab/shared'
+import type { Food, FoodGroup, Plate, BalanceResult, CreatePlateInput, PlateStage } from '@pakulab/shared'
 import { calculateBalance, PLATE_LIMITS } from '@pakulab/shared'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -16,6 +16,7 @@ export interface PlateItemDraft {
   id: string // Local ID for list key
   food: Food
   groupAssignment: FoodGroup
+  servingAmount?: string | null
 }
 
 export const usePlateStore = defineStore('plates', () => {
@@ -125,14 +126,19 @@ export const usePlateStore = defineStore('plates', () => {
     limit: number
   }
 
-  /** Fetch the first page of saved plates (resets pagination state). */
-  async function fetchSavedPlates() {
+  /**
+   * Fetch the first page of saved plates (resets pagination state).
+   * @param stageFor - Optional stage filter (omit for all plates)
+   */
+  async function fetchSavedPlates(stageFor?: PlateStage) {
     loading.value = true
     error.value = null
     try {
-      const result = await apiClient.get<PaginatedPlatesResponse>(
-        `/plates?page=1&limit=${PLATES_PER_PAGE}`,
-      )
+      const params = new URLSearchParams({ page: '1', limit: String(PLATES_PER_PAGE) })
+      if (stageFor) {
+        params.set('stageFor', stageFor)
+      }
+      const result = await apiClient.get<PaginatedPlatesResponse>(`/plates?${params}`)
       savedPlates.value = result.data
       totalPlates.value = result.total
       currentPage.value = result.page
@@ -207,6 +213,7 @@ export const usePlateStore = defineStore('plates', () => {
       const result = await apiClient.post<{ data: Plate }>('/plates', {
         name: platePayload.name,
         groupCount: platePayload.groupCount,
+        stageFor: platePayload.stageFor,
         items: itemsPayload,
       })
       // Contract: unshift preserves descending sort order from API (UX-2).
@@ -237,11 +244,17 @@ export const usePlateStore = defineStore('plates', () => {
             astringentCount: 0,
             laxativeCount: 0,
             neutralCount: 0,
+            babyProfileId: null,
+            stageFor: platePayload.stageFor ?? null,
+            deletedAt: null,
             items: itemsPayload.map((item, idx) => ({
               id: `local-item-${idx}-${Date.now()}`,
               plateId: '',
               foodId: item.foodId,
               groupAssignment: item.groupAssignment,
+              servingAmount: item.servingAmount ?? null,
+              createdAt: new Date().toISOString(),
+              // Optimistic PlateItem without full Food — food is populated on API sync.
             })),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -263,11 +276,16 @@ export const usePlateStore = defineStore('plates', () => {
           astringentCount: draftBalance.astringent,
           laxativeCount: draftBalance.laxative,
           neutralCount: draftBalance.neutral,
+          babyProfileId: null,
+          stageFor: null,
+          deletedAt: null,
           items: draftItems.value.map((item) => ({
             id: item.id,
             plateId: '',
             foodId: item.food.id,
             groupAssignment: item.groupAssignment,
+            servingAmount: item.servingAmount ?? null,
+            createdAt: new Date().toISOString(),
             food: item.food,
           })),
           createdAt: new Date().toISOString(),
@@ -312,6 +330,7 @@ export const usePlateStore = defineStore('plates', () => {
     const result = await apiClient.put<{ data: Plate }>(`/plates/${plateId}`, {
       name: platePayload.name,
       groupCount: platePayload.groupCount,
+      stageFor: platePayload.stageFor,
       items: platePayload.items,
     })
 

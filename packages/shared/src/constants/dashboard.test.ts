@@ -9,12 +9,15 @@ import { describe, it, expect } from 'vitest'
 import {
   BALANCE_TIPS,
   DASHBOARD_CACHE_TTL,
-  DASHBOARD_MEAL_SLOTS,
+  LEGACY_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   MEAL_TYPES_FOR_SLOTS,
+  getMealSlotsForAge,
+  STAGE_TIPS,
 } from './dashboard.js'
+import { MealType, type AgeStage } from '../types/diary.js'
 
 describe('BALANCE_TIPS', () => {
   it('is an array of 8 curated tips', () => {
@@ -75,14 +78,14 @@ describe('DASHBOARD_CACHE_TTL', () => {
   })
 })
 
-describe('DASHBOARD_MEAL_SLOTS', () => {
+describe('LEGACY_MEAL_SLOTS', () => {
   it('is an array of 4 meal slots', () => {
-    expect(Array.isArray(DASHBOARD_MEAL_SLOTS)).toBe(true)
-    expect(DASHBOARD_MEAL_SLOTS).toHaveLength(4)
+    expect(Array.isArray(LEGACY_MEAL_SLOTS)).toBe(true)
+    expect(LEGACY_MEAL_SLOTS).toHaveLength(4)
   })
 
   it('each slot has label, icon, and mealType', () => {
-    for (const slot of DASHBOARD_MEAL_SLOTS) {
+    for (const slot of LEGACY_MEAL_SLOTS) {
       expect(slot).toHaveProperty('mealType')
       expect(slot).toHaveProperty('label')
       expect(slot).toHaveProperty('icon')
@@ -92,7 +95,7 @@ describe('DASHBOARD_MEAL_SLOTS', () => {
   })
 
   it('contains BREAKFAST, LUNCH, DINNER, and SNACK slots', () => {
-    const mealTypes = DASHBOARD_MEAL_SLOTS.map((s) => s.mealType)
+    const mealTypes = LEGACY_MEAL_SLOTS.map((s) => s.mealType)
     expect(mealTypes).toContain('BREAKFAST')
     expect(mealTypes).toContain('LUNCH')
     expect(mealTypes).toContain('DINNER')
@@ -120,5 +123,159 @@ describe('suggestion configuration constants', () => {
     expect(MEAL_TYPES_FOR_SLOTS).toContain('LUNCH')
     expect(MEAL_TYPES_FOR_SLOTS).toContain('DINNER')
     expect(MEAL_TYPES_FOR_SLOTS).toContain('SNACK')
+  })
+})
+
+// ponytail: age-aware meal slots (T-00-01) — minimal boundary table
+describe('getMealSlotsForAge', () => {
+  it('returns 3 meals for newborns (0m)', () => {
+    const slots = getMealSlotsForAge(0)
+    expect(slots).toHaveLength(3)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 3 meals at 9m (boundary, just below 10m window)', () => {
+    const slots = getMealSlotsForAge(9)
+    expect(slots).toHaveLength(3)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 4 meals at 10m (cross into 1-snack window)', () => {
+    const slots = getMealSlotsForAge(10)
+    expect(slots).toHaveLength(4)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.SNACK_1,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 4 meals at 12m (last month of 1-snack window) in chronological order', () => {
+    const slots = getMealSlotsForAge(12)
+    expect(slots).toHaveLength(4)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.LUNCH,
+      MealType.SNACK_1,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 5 meals at 13m (cross into 2-snack window)', () => {
+    const slots = getMealSlotsForAge(13)
+    expect(slots).toHaveLength(5)
+    expect(slots.map((s) => s.mealType)).toEqual([
+      MealType.BREAKFAST,
+      MealType.SNACK_1,
+      MealType.LUNCH,
+      MealType.SNACK_2,
+      MealType.DINNER,
+    ])
+  })
+
+  it('returns 5 meals at 23m (end of 2-snack window)', () => {
+    const slots = getMealSlotsForAge(23)
+    expect(slots).toHaveLength(5)
+    expect(slots.map((s) => s.mealType)).toContain(MealType.SNACK_2)
+  })
+
+  it('orders SNACK_1 after BREAKFAST and before LUNCH chronologically', () => {
+    const slots = getMealSlotsForAge(13)
+    const idxBreakfast = slots.findIndex((s) => s.mealType === MealType.BREAKFAST)
+    const idxSnack1 = slots.findIndex((s) => s.mealType === MealType.SNACK_1)
+    const idxLunch = slots.findIndex((s) => s.mealType === MealType.LUNCH)
+    expect(idxBreakfast).toBeLessThan(idxSnack1)
+    expect(idxSnack1).toBeLessThan(idxLunch)
+  })
+
+  it('uses "Comida" (not "Almuerzo") as LUNCH label', () => {
+    const slots = getMealSlotsForAge(13)
+    const lunch = slots.find((s) => s.mealType === MealType.LUNCH)
+    expect(lunch?.label).toBe('Comida')
+  })
+
+  it('treats negative or non-finite months as the 3-meal case (no crash)', () => {
+    expect(() => getMealSlotsForAge(-1)).not.toThrow()
+    expect(getMealSlotsForAge(-1)).toHaveLength(3)
+  })
+})
+
+// ponytail: STAGE_TIPS tests (T-00-02, REQ-D1)
+describe('STAGE_TIPS', () => {
+  it('has an entry for every AgeStage key', () => {
+    const requiredKeys: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of requiredKeys) {
+      expect(STAGE_TIPS).toHaveProperty(stage)
+    }
+  })
+
+  it('each stage has 5-6 tips (spec: 4-6, using full range)', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      expect(tips.length).toBeGreaterThanOrEqual(5)
+      expect(tips.length).toBeLessThanOrEqual(6)
+    }
+  })
+
+  it('no stage has empty or whitespace-only tip strings', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      for (const tip of tips) {
+        expect(tip.trim()).not.toBe('')
+        expect(typeof tip).toBe('string')
+      }
+    }
+  })
+
+  it('THIRTEEN_TO_SEVENTEEN_MONTHS and EIGHTEEN_TO_TWENTY_THREE_MONTHS have identical tip arrays (product decision)', () => {
+    const tips13_17 = STAGE_TIPS['THIRTEEN_TO_SEVENTEEN_MONTHS']
+    const tips18_23 = STAGE_TIPS['EIGHTEEN_TO_TWENTY_THREE_MONTHS']
+
+    // Deep equality assertion
+    expect(tips13_17).toEqual(tips18_23)
+  })
+
+  it('no duplicate tips within a single stage array (triangulation)', () => {
+    const stages: AgeStage[] = [
+      'SIX_TO_NINE_MONTHS',
+      'TEN_TO_TWELVE_MONTHS',
+      'THIRTEEN_TO_SEVENTEEN_MONTHS',
+      'EIGHTEEN_TO_TWENTY_THREE_MONTHS',
+    ]
+
+    for (const stage of stages) {
+      const tips = STAGE_TIPS[stage]
+      const uniqueTips = [...new Set(tips)]
+      expect(uniqueTips.length).toBe(tips.length)
+    }
   })
 })

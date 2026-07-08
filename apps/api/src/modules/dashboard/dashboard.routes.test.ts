@@ -40,6 +40,10 @@ describe('Dashboard cache header configuration', () => {
   it('balance endpoint has 1h TTL', () => {
     expect(DASHBOARD_CACHE_TTL.balance).toBe(60 * 60)
   })
+
+  it('snackSuggestions endpoint has 1h TTL', () => {
+    expect(DASHBOARD_CACHE_TTL.snackSuggestions).toBe(60 * 60)
+  })
 })
 
 // ── verifyBabyOwnership helper test ───────────────────────────────────────────
@@ -97,10 +101,10 @@ describe('Dashboard routes structure', () => {
     const routesPath = path.join(process.cwd(), 'src/modules/dashboard/dashboard.routes.ts')
     const sourceCode = await fs.readFile(routesPath, 'utf-8')
 
-    // Verify 6 fastify.get() calls
+    // Verify 7 fastify.get() calls
     const getCalls = sourceCode.match(/fastify\.get\(/g)
     expect(getCalls).not.toBeNull()
-    expect(getCalls!.length).toBe(6)
+    expect(getCalls!.length).toBe(7)
   })
 
   it('all endpoints require auth (requireAuth preHandler)', async () => {
@@ -206,7 +210,7 @@ describe('Dashboard routes structure', () => {
 
     // Count verifyBabyOwnership calls (excluding the function definition)
     const callMatches = (sourceCode.match(/await verifyBabyOwnership\(/g) || []).length
-    expect(callMatches).toBe(6) // All 6 endpoints call verifyBabyOwnership
+    expect(callMatches).toBe(7) // All 7 endpoints call verifyBabyOwnership
   })
 })
 

@@ -18,7 +18,6 @@ export interface DashboardData {
   userTier: 'FREE' | 'PRO'
   todayLogs: TodayLog[]
   suggestedFoods: SuggestedFood[]
-  pendingAllergens: AllergenAlert[]
   roadmapProgress: RoadmapProgress[]
   weeklyBalance: BalanceInsight
 }
@@ -112,3 +111,10 @@ export interface MealSlot {
   registeredTime: string | null // HH:mm or null
   foodCount: number
 }
+
+// ── Snack Suggestions ─────────────────────────────────────────────────────────
+
+/** Snack suggestion response — REQ-B1 */
+export type SnackSuggestionResponse =
+  | { available: false; reason: 'SNACKS_NOT_YET' }
+  | { available: true; suggestions: SuggestedFood[] }

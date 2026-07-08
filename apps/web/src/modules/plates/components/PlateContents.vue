@@ -34,40 +34,57 @@
               :key="item.id"
               class="food-chip"
             >
-              <!-- A/L dot -->
-              <span
-                class="al-dot"
-                :class="`al-dot--${item.food.alClassification.toLowerCase()}`"
-                :title="alLabel(item.food.alClassification)"
-                aria-hidden="true"
-              ></span>
+              <!-- Row 1: A/L dot + food name -->
+              <div class="food-chip__name-row">
+                <span
+                  class="al-dot"
+                  :class="`al-dot--${item.food.alClassification.toLowerCase()}`"
+                  :title="alLabel(item.food.alClassification)"
+                  aria-hidden="true"
+                ></span>
+                <span class="food-name">{{ item.food.name }}</span>
+              </div>
 
-              <!-- Food name -->
-              <span class="food-name">{{ item.food.name }}</span>
+              <!-- Row 2: serving selector + indicators + remove -->
+              <div class="food-chip__controls">
+                <!-- Serving amount selector (REQ-B1) -->
+                <select
+                  :value="item.servingAmount ?? '1'"
+                  class="serving-selector"
+                  :aria-label="`Porciones de ${item.food.name}`"
+                  @change="onServingChange(item.id, ($event.target as HTMLSelectElement).value)"
+                  @click.stop
+                >
+                  <option value="1">1 cda</option>
+                  <option value="2">2 cdas</option>
+                  <option value="3">3 cdas</option>
+                  <option value="4">4 cdas</option>
+                </select>
 
-              <!-- Allergen indicator -->
-              <span
-                v-if="item.food.isAllergen"
-                class="material-symbols-outlined allergen-icon"
-                :title="`Alérgeno: ${item.food.allergenType ?? 'Sí'}`"
-                aria-hidden="true"
-              >warning</span>
+                <!-- Allergen indicator -->
+                <span
+                  v-if="item.food.isAllergen"
+                  class="material-symbols-outlined allergen-icon"
+                  :title="`Alérgeno: ${item.food.allergenType ?? 'Sí'}`"
+                  aria-hidden="true"
+                >warning</span>
 
-              <!-- Exposure badge -->
-              <FoodExposureBadge
-                v-if="item.food.id && timesOfferedByFoodId"
-                :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
-                size="sm"
-              />
+                <!-- Exposure badge -->
+                <FoodExposureBadge
+                  v-if="item.food.id && timesOfferedByFoodId"
+                  :times-offered="timesOfferedByFoodId[item.food.id] ?? null"
+                  size="sm"
+                />
 
-              <!-- Remove button -->
-              <button
-                class="remove-btn"
-                :aria-label="`Quitar ${item.food.name}`"
-                @click.stop="emit('remove-item', item.id)"
-              >
-                <span class="material-symbols-outlined remove-icon" aria-hidden="true">close</span>
-              </button>
+                <!-- Remove button -->
+                <button
+                  class="remove-btn"
+                  :aria-label="`Quitar ${item.food.name}`"
+                  @click.stop="emit('remove-item', item.id)"
+                >
+                  <span class="material-symbols-outlined remove-icon" aria-hidden="true">close</span>
+                </button>
+              </div>
             </div>
           </div>
         </template>
@@ -95,6 +112,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'select-group': [group: FoodGroup]
   'remove-item': [itemId: string]
+  'update-serving-amount': [itemId: string, amount: string]
 }>()
 
 // ─── Active groups ─────────────────────────────────────────────────────────
@@ -180,6 +198,10 @@ function alLabel(classification: ALClassification): string {
 
 function onSlotClick(group: FoodGroup): void {
   emit('select-group', group)
+}
+
+function onServingChange(itemId: string, amount: string): void {
+  emit('update-serving-amount', itemId, amount)
 }
 </script>
 
@@ -296,11 +318,30 @@ function onSlotClick(group: FoodGroup): void {
 
 .food-chip {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.375rem;
   width: 100%;
   min-width: 0;
   overflow: hidden;
+}
+
+/* Row 1: dot + name take the full width so the name is never crowded out
+   by the controls in narrow (2-column) slots. */
+.food-chip__name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Row 2: serving selector + indicators + remove button. */
+.food-chip__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .food-name {
@@ -332,6 +373,33 @@ function onSlotClick(group: FoodGroup): void {
 
 .al-dot--neutral {
   background: var(--md3-outline);
+}
+
+/* ─── Serving amount selector ────────────────────────────────────────────── */
+.serving-selector {
+  flex-shrink: 0;
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-xs);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface-variant);
+  background: var(--md3-surface-container);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-sm);
+  padding: 0.125rem 0.25rem;
+  cursor: pointer;
+  transition:
+    border-color var(--md3-transition-fast),
+    background var(--md3-transition-fast);
+}
+
+.serving-selector:hover {
+  border-color: var(--md3-primary);
+  background: var(--md3-surface-container-high);
+}
+
+.serving-selector:focus {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 1px;
 }
 
 /* ─── Allergen indicator ─────────────────────────────────────────────────── */

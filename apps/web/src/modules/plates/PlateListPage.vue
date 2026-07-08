@@ -6,7 +6,22 @@
         <p class="header-subtitle">Registro de alimentación</p>
         <h1 class="header-title">Mis Platos</h1>
       </div>
+      <!-- Colaciones tab: header button opens the snack drawer (single button, no extra visual noise) -->
+      <button
+        v-if="activeTab === 'snacks'"
+        type="button"
+        class="create-btn-desktop"
+        :class="{ disabled: atLimit }"
+        :disabled="atLimit"
+        :title="atLimit ? 'Límite de colaciones alcanzado. Actualiza a Pro.' : 'Crear nueva colación'"
+        @click="openSnackDrawer"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        <span class="btn-text">Crear Colación</span>
+      </button>
+      <!-- Platos tab: navigate to the plate builder -->
       <RouterLink
+        v-else
         to="/plate/new"
         class="create-btn-desktop"
         :class="{ disabled: atLimit }"
@@ -28,6 +43,50 @@
     <div class="disclaimer-banner" role="note">
       <span class="material-symbols-outlined disclaimer-icon" aria-hidden="true">health_and_safety</span>
       <span>Esta información es orientativa. Consulta siempre con tu pediatra.</span>
+    </div>
+
+    <!-- Tab bar (REQ-SC1) -->
+    <div class="tab-bar" role="tablist">
+      <button
+        data-test="tab-plates"
+        :class="['tab', { 'tab-active': activeTab === 'platos' }]"
+        role="tab"
+        :aria-selected="activeTab === 'platos'"
+        @click="switchTab('platos')"
+      >
+        Platos
+      </button>
+      <button
+        data-test="tab-snacks"
+        :class="['tab', { 'tab-active': activeTab === 'snacks' }]"
+        role="tab"
+        :aria-selected="activeTab === 'snacks'"
+        @click="switchTab('snacks')"
+      >
+        Colaciones
+      </button>
+    </div>
+
+    <!-- Platos tab content -->
+    <template v-if="activeTab === 'platos'">
+      <!-- Stage filter (REQ-C3, C4) -->
+      <div class="filter-controls">
+      <label for="stage-filter" class="filter-label">Filtrar por etapa:</label>
+      <select
+        id="stage-filter"
+        v-model="selectedStageFilter"
+        class="stage-filter"
+        aria-label="Filtrar platos por etapa objetivo"
+      >
+        <option :value="null">Todas las etapas</option>
+        <option
+          v-for="stage in PLATE_STAGES"
+          :key="stage"
+          :value="stage"
+        >
+          {{ PLATE_STAGE_LABELS[stage] }}
+        </option>
+      </select>
     </div>
 
     <!-- Loading -->
@@ -184,26 +243,122 @@
         <RouterLink to="/pricing" class="upsell-banner-btn">Hacete Pro</RouterLink>
       </div>
     </div>
+    </template>
+
+    <!-- Colaciones tab content (REQ-SC1) -->
+    <template v-else-if="activeTab === 'snacks'">
+      <SnackListSection
+        ref="snackSection"
+        :baby-age-months="babyAgeMonths ?? 0"
+      />
+
+      <!-- Mobile FAB: Create new snack (mirrors the plate FAB; opens the drawer) -->
+      <button
+        v-if="!atLimit"
+        type="button"
+        class="plate-list-fab mobile-only"
+        aria-label="Crear nueva colación"
+        @click="openSnackDrawer"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      </button>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useAuthStore } from '@/shared/stores/authStore.js'
+import { useProfileStore } from '@/shared/stores/profileStore.js'
 import { PLATE_LIMITS, BALANCE_THRESHOLD, IMBALANCE_THRESHOLD } from '@pakulab/shared'
-import type { Plate, PlateItem, FoodGroup } from '@pakulab/shared'
+import { PLATE_STAGES, PLATE_STAGE_LABELS, getSuggestedStageForAge, getAgeMonths } from '@pakulab/shared'
+import type { Plate, PlateItem, FoodGroup, PlateStage } from '@pakulab/shared'
+import SnackListSection from './components/SnackListSection.vue'
 
+const route = useRoute()
+const router = useRouter()
 const plateStore = usePlateStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 
 const plateLimit = computed(() => PLATE_LIMITS[authStore.tier])
-const atLimit = computed(
+const platesAtLimit = computed(
   () => plateStore.savedPlates.length >= plateLimit.value,
 )
 
+/** Ref to the mounted SnackListSection so the header/FAB can open its drawer. */
+const snackSection = ref<{ openDrawer: () => void; atLimit: boolean } | null>(null)
+
+/**
+ * Tab-aware "at limit" for the header/FAB create affordance:
+ * plates limit on the Platos tab, snacks limit (from the child) on Colaciones.
+ */
+const atLimit = computed(() =>
+  activeTab.value === 'snacks'
+    ? (snackSection.value?.atLimit ?? false)
+    : platesAtLimit.value,
+)
+
+/** Open the snack builder drawer owned by SnackListSection (Colaciones tab). */
+function openSnackDrawer(): void {
+  snackSection.value?.openDrawer()
+}
+
+// ─── Tab Management (REQ-SC1) ──────────────────────────────────────────────
+
+/** Active tab derived from URL query: ?tab=snacks → 'snacks', otherwise 'platos' */
+const activeTab = computed<'platos' | 'snacks'>(() => {
+  // route.query.tab may be a string or (for a repeated ?tab=…&tab=…) an array —
+  // normalize to the first value so a malformed URL still resolves a tab.
+  const tab = route?.query?.tab
+  const normalized = Array.isArray(tab) ? tab[0] : tab
+  return normalized === 'snacks' ? 'snacks' : 'platos'
+})
+
+/** Switch tabs by updating URL query param (shareable, back-button friendly) */
+function switchTab(tab: 'platos' | 'snacks'): void {
+  // Preserve any other query params — only add/remove the `tab` key.
+  const query = { ...route.query }
+  if (tab === 'platos') {
+    delete query.tab
+  } else {
+    query.tab = 'snacks'
+  }
+  router.replace({ query })
+}
+
+// ─── Stage Filter (REQ-C3, C4) ─────────────────────────────────────────────
+/** Selected stage filter (null = "Todas") */
+const selectedStageFilter = ref<PlateStage | null>(null)
+
+/** Baby's age in months (null if no active profile) */
+const babyAgeMonths = computed<number | null>(() => {
+  const birthDate = profileStore.activeProfile?.birthDate
+  return birthDate ? getAgeMonths(birthDate) : null
+})
+
+/** REQ-C4: Default filter to the baby's current stage */
+function initializeStageFilter(): void {
+  if (babyAgeMonths.value !== null) {
+    selectedStageFilter.value = getSuggestedStageForAge(babyAgeMonths.value)
+  } else {
+    selectedStageFilter.value = null // "Todas"
+  }
+}
+
 onMounted(() => {
-  plateStore.fetchSavedPlates()
+  // Set the default filter (REQ-C4), then do a single initial fetch. The watch is
+  // registered afterwards so this default assignment does not trigger a second,
+  // racing fetch on mount — it only reacts to later user changes.
+  initializeStageFilter()
+  plateStore.fetchSavedPlates(selectedStageFilter.value ?? undefined)
+
+  // Refetch when the user changes the stage filter.
+  watch(selectedStageFilter, () => {
+    plateStore.fetchSavedPlates(selectedStageFilter.value ?? undefined)
+  })
 })
 
 function formatRelativeDate(iso: string): string {
@@ -453,6 +608,56 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 
 @media (min-width: 768px) {
   .disclaimer-banner {
+    margin-bottom: var(--md3-space-4);
+  }
+}
+
+/* ─── Stage Filter (REQ-C3, C4) ─── */
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--md3-space-2);
+  margin-top: var(--md3-space-3);
+  margin-bottom: var(--md3-space-2);
+}
+
+.filter-label {
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-semibold);
+  color: var(--md3-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.stage-filter {
+  flex: 1;
+  max-width: 16rem;
+  padding: 0.5rem var(--md3-space-2);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container-low);
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: var(--md3-rounded-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--md3-transition-fast),
+    background var(--md3-transition-fast);
+}
+
+.stage-filter:hover {
+  border-color: var(--md3-primary);
+  background: var(--md3-surface-container);
+}
+
+.stage-filter:focus {
+  outline: 2px solid var(--md3-primary);
+  outline-offset: 1px;
+  border-color: var(--md3-primary);
+}
+
+@media (min-width: 768px) {
+  .filter-controls {
     margin-bottom: var(--md3-space-4);
   }
 }
@@ -1062,5 +1267,50 @@ function getGroupChipStyle(group: FoodGroup): Record<string, string> {
 
 .plate-list-fab .material-symbols-outlined {
   font-size: 1.5rem;
+}
+
+/* ─── Tab Bar (REQ-SC1) ───────────────────────────────────────── */
+
+.tab-bar {
+  display: flex;
+  gap: var(--md3-space-2);
+  border-bottom: 1px solid var(--md3-outline-variant);
+  margin-bottom: var(--md3-space-4);
+}
+
+.tab {
+  padding: var(--md3-space-3) var(--md3-space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-lg);
+  font-weight: var(--md3-weight-medium);
+  color: var(--md3-on-surface-variant);
+  cursor: pointer;
+  transition: all var(--md3-transition-fast);
+  position: relative;
+  margin-bottom: -1px; /* Overlap the border-bottom of tab-bar */
+}
+
+.tab:hover {
+  color: var(--md3-on-surface);
+  background: var(--md3-surface-container);
+}
+
+.tab-active {
+  color: var(--md3-primary);
+  border-bottom-color: var(--md3-primary);
+  font-weight: var(--md3-weight-semibold);
+}
+
+.tab-active:hover {
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .tab-bar {
+    margin-bottom: var(--md3-space-5);
+  }
 }
 </style>

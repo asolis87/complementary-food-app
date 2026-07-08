@@ -26,20 +26,25 @@ const VALID_MENU_CUID = 'clh3x7y8z0002p6rm5b4d8e9f'
 const VALID_PLATE_CUID = 'clh3x7y8z0003p6rm5b4d8e9f'
 
 // Helper to get Monday of current week
+// NOTE: compute in UTC to stay consistent with the schema's `isMonday`
+// (which uses getUTCDay). Mixing local getDay()/setDate() with a UTC
+// toISOString() made these date strings flaky across timezones.
 function getMondayDate(): string {
   const now = new Date()
-  const day = now.getDay() // 0 = Sunday, 1 = Monday, ...
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Adjust to get Monday
-  const monday = new Date(now.setDate(diff))
+  const day = now.getUTCDay() // 0 = Sunday, 1 = Monday, ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1) // Adjust to get Monday
+  const monday = new Date(now)
+  monday.setUTCDate(diff)
   return monday.toISOString().split('T')[0]!
 }
 
-// Helper to get Sunday of current week
+// Helper to get Sunday of current week (UTC, matching getMondayDate)
 function getSundayDate(): string {
   const now = new Date()
-  const day = now.getDay()
-  const diff = now.getDate() - day // Sunday
-  const sunday = new Date(now.setDate(diff))
+  const day = now.getUTCDay()
+  const diff = now.getUTCDate() - day // Sunday
+  const sunday = new Date(now)
+  sunday.setUTCDate(diff)
   return sunday.toISOString().split('T')[0]!
 }
 
@@ -291,20 +296,21 @@ describe('patchMealSchema', () => {
     expect(result.success).toBe(false)
   })
 
-  it('accepts all valid MealType enum values', () => {
-    const mealTypes = [
-      MealType.BREAKFAST,
-      MealType.LUNCH,
-      MealType.DINNER,
-      MealType.SNACK_1,
-      MealType.SNACK_2,
-      MealType.SNACK,
+  it('accepts all valid MealType enum values (with correct plateId/snackId)', () => {
+    const mealSlots = [
+      { mealType: MealType.BREAKFAST, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.LUNCH, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.DINNER, plateId: VALID_PLATE_CUID, snackId: null },
+      { mealType: MealType.SNACK_1, plateId: null, snackId: VALID_PLATE_CUID },
+      { mealType: MealType.SNACK_2, plateId: null, snackId: VALID_PLATE_CUID },
+      { mealType: MealType.SNACK, plateId: null, snackId: VALID_PLATE_CUID },
     ]
-    for (const mealType of mealTypes) {
+    for (const { mealType, plateId, snackId } of mealSlots) {
       const result = patchMealSchema.safeParse({
         dayOfWeek: 1,
         mealType,
-        plateId: VALID_PLATE_CUID,
+        plateId,
+        snackId,
       })
       expect(result.success, `Expected mealType=${mealType} to be valid`).toBe(true)
     }
@@ -392,6 +398,45 @@ describe('patchMealSchema', () => {
       plateId: VALID_PLATE_CUID,
     })
     expect(result.success).toBe(false)
+  })
+
+  // REQ-WM5: Mutual exclusion tests
+  it('rejects plateId on SNACK_1 slot', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.SNACK_1,
+      plateId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('SNACK slots cannot accept plates'))).toBe(true)
+    }
+  })
+
+  it('rejects snackId on LUNCH slot', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.LUNCH,
+      plateId: null,
+      snackId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('MEAL slots cannot accept snacks'))).toBe(true)
+    }
+  })
+
+  it('rejects both plateId and snackId set simultaneously', () => {
+    const result = patchMealSchema.safeParse({
+      dayOfWeek: 1,
+      mealType: MealType.BREAKFAST,
+      plateId: VALID_PLATE_CUID,
+      snackId: VALID_PLATE_CUID,
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message.includes('A slot cannot have both plateId and snackId'))).toBe(true)
+    }
   })
 })
 

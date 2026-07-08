@@ -10,7 +10,7 @@ import {
   // Dashboard constants
   BALANCE_TIPS,
   DASHBOARD_CACHE_TTL,
-  DASHBOARD_MEAL_SLOTS,
+  LEGACY_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   MAX_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
@@ -44,7 +44,6 @@ describe('Barrel exports — Dashboard types', () => {
       userTier: 'FREE',
       todayLogs: [],
       suggestedFoods: [],
-      pendingAllergens: [],
       roadmapProgress: [],
       weeklyBalance: {
         label: 'balanced',
@@ -137,8 +136,8 @@ describe('Barrel exports — Dashboard constants', () => {
     expect(DASHBOARD_CACHE_TTL.dashboard).toBe(60)
   })
 
-  it('exports DASHBOARD_MEAL_SLOTS', () => {
-    expect(DASHBOARD_MEAL_SLOTS).toHaveLength(4)
+  it('exports LEGACY_MEAL_SLOTS', () => {
+    expect(LEGACY_MEAL_SLOTS).toHaveLength(4)
   })
 
   it('exports DEFAULT_SUGGESTIONS_LIMIT', () => {

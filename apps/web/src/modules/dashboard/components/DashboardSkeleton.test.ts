@@ -56,15 +56,8 @@ describe('DashboardSkeleton', () => {
   it('renders 3 suggestion chip skeletons', () => {
     const wrapper = mount(DashboardSkeleton)
 
-    const suggestions = wrapper.findAll('.skeleton-suggestion-chip')
+    const suggestions = wrapper.findAll('.skeleton-suggestion-item')
     expect(suggestions).toHaveLength(3)
-  })
-
-  it('renders 2 allergen item skeletons', () => {
-    const wrapper = mount(DashboardSkeleton)
-
-    const allergens = wrapper.findAll('.skeleton-allergen-item')
-    expect(allergens).toHaveLength(2)
   })
 
   it('renders 5 roadmap item skeletons (one per food group)', () => {

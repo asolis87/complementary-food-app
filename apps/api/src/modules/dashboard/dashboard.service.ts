@@ -13,7 +13,7 @@ import {
   getBalanceSeverity,
   BALANCE_TIPS,
   FOOD_GROUP_LABELS_DASHBOARD,
-  DASHBOARD_MEAL_SLOTS,
+  LEGACY_MEAL_SLOTS,
   DEFAULT_SUGGESTIONS_LIMIT,
   SUGGESTION_LOOKBACK_DAYS,
   ALLERGEN_AGE_THRESHOLDS,
@@ -31,6 +31,7 @@ import type {
   BalanceInsight,
   MealSlot,
   FoodGroup,
+  SnackSuggestionResponse,
 } from '@pakulab/shared'
 import type { FoodForSuggestion, FoodLogWithFood, FoodWithReaction } from './dashboard.types.js'
 
@@ -71,22 +72,21 @@ export async function getDashboardData(
     daysInAC,
   }
 
-  // Run independent queries in parallel
-  const [todayResult, suggestedFoods, pendingAllergens, roadmapProgress, weeklyBalance] =
-    await Promise.all([
-      getTodayLogs(prisma, babyProfileId),
-      getSuggestedFoods(prisma, babyProfileId, babyAgeMonths),
-      getPendingAllergens(prisma, babyProfileId, babyAgeMonths),
-      getRoadmapProgress(prisma, babyProfileId, babyAgeMonths),
-      getWeeklyBalance(prisma, babyProfileId),
-    ])
+  // Run independent queries in parallel.
+  // Pending allergens are a PRO-only feature exposed via GET /api/dashboard/allergens;
+  // they are intentionally excluded from this FREE-tier bundle to avoid leaking PRO data.
+  const [todayResult, suggestedFoods, roadmapProgress, weeklyBalance] = await Promise.all([
+    getTodayLogs(prisma, babyProfileId),
+    getSuggestedFoods(prisma, babyProfileId, babyAgeMonths),
+    getRoadmapProgress(prisma, babyProfileId, babyAgeMonths),
+    getWeeklyBalance(prisma, babyProfileId),
+  ])
 
   return {
     baby,
     userTier,
     todayLogs: todayResult.logs,
     suggestedFoods,
-    pendingAllergens,
     roadmapProgress,
     weeklyBalance,
   }
@@ -129,8 +129,10 @@ export async function getTodayLogs(
     notes: log.notes,
   }))
 
-  // Build meal slots from DASHBOARD_MEAL_SLOTS
-  const mealSlots: MealSlot[] = DASHBOARD_MEAL_SLOTS.map((slot) => {
+  // ponytail: API still uses the legacy 4-slot shape until PR-2 migrates
+  // to getMealSlotsForAge(ageMonths). Web ignores this field and rebuilds
+  // locally, so the legacy shape is dead data for the web for now.
+  const mealSlots: MealSlot[] = LEGACY_MEAL_SLOTS.map((slot) => {
     const slotLogs = logs.filter((l) => l.mealType === slot.mealType)
     const isRegistered = slotLogs.length > 0
     const registeredTime =
@@ -192,8 +194,8 @@ export async function getSuggestedFoods(
   // Filter out recently tried foods
   const candidateFoods = foods.filter((f) => !recentlyTriedFoodIds.has(f.id))
 
-  // Sort and limit
-  const sorted = sortSuggestions(candidateFoods, recentlyTriedFoodIds, limit)
+  // Sort and limit (pass babyAgeMonths for iron priority)
+  const sorted = sortSuggestions(candidateFoods, recentlyTriedFoodIds, limit, babyAgeMonths)
 
   // Map to response type
   return sorted.map((food) => ({
@@ -206,6 +208,86 @@ export async function getSuggestedFoods(
     allergenType: food.allergenType,
     status: recentlyTriedFoodIds.has(food.id) ? 'tried' : 'pending',
   }))
+}
+
+/**
+ * Returns snack suggestions for babies >= 10 months.
+ *
+ * Spec: REQ-06 REQ-B1
+ */
+export async function getSnackSuggestions(
+  prisma: PrismaClient,
+  babyProfileId: string,
+): Promise<import('@pakulab/shared').SnackSuggestionResponse> {
+  // Load baby profile to calculate age
+  const profile = await prisma.babyProfile.findFirst({
+    where: { id: babyProfileId, deletedAt: null },
+    select: { birthDate: true },
+  })
+
+  if (!profile) {
+    throw new Error('Baby profile not found')
+  }
+
+  const birthStr = profile.birthDate.toISOString().split('T')[0]!
+  const babyAgeMonths = ageInMonths(birthStr)
+
+  // If baby < 10 months, snacks not yet available
+  if (babyAgeMonths < 10) {
+    return { available: false, reason: 'SNACKS_NOT_YET' }
+  }
+
+  // Get age-appropriate foods, deterministically ordered by name so the 5
+  // suggestions (and the "at least 3 soft fruit/yogur/queso" guarantee) do not
+  // depend on the database's physical row order.
+  const foods = (await prisma.food.findMany({
+    where: {
+      ageMonths: { lte: babyAgeMonths },
+    },
+    orderBy: { name: 'asc' },
+  })) as FoodForSuggestion[]
+
+  const isYogurQueso = (food: FoodForSuggestion): boolean =>
+    food.group === 'PROTEIN' &&
+    (food.name.toLowerCase().includes('yogur') || food.name.toLowerCase().includes('queso'))
+
+  // "Core" snacks available from 10m (REQ-B1): soft fruit, yogur/queso, and cooked
+  // vegetables (verduras cocidas en palitos). At least 3 of the 5 must come from here.
+  const isCoreSnack = (food: FoodForSuggestion): boolean =>
+    food.group === 'FRUIT' || food.group === 'VEGETABLE' || isYogurQueso(food)
+
+  // Extra snacks unlocked at 12m+ (REQ-B1): galletas sin azúcar, pan suave, cereal de arroz.
+  const isExtraSnack = (food: FoodForSuggestion): boolean =>
+    babyAgeMonths >= 12 &&
+    food.group === 'CEREAL_TUBER' &&
+    (food.name.toLowerCase().includes('galleta') ||
+      food.name.toLowerCase().includes('pan') ||
+      food.name.toLowerCase().includes('cereal') ||
+      food.name.toLowerCase().includes('arroz'))
+
+  const notChokingHazard = (food: FoodForSuggestion): boolean =>
+    !(food.warningTags?.includes('CHOKING_HAZARD_UNDER_5Y') ?? false)
+
+  const coreCandidates = foods.filter((f) => notChokingHazard(f) && isCoreSnack(f))
+  const extraCandidates = foods.filter((f) => notChokingHazard(f) && isExtraSnack(f))
+
+  // Prefer core snacks first so the "at least 3 frutas/yogur/queso/verduras"
+  // clinical guarantee holds, then top up with the 12m+ extras.
+  const snackCandidates = [...coreCandidates, ...extraCandidates]
+
+  // Return top 5 suggestions
+  const suggestions = snackCandidates.slice(0, 5).map((food) => ({
+    foodId: food.id,
+    name: food.name,
+    group: food.group,
+    ageMonths: food.ageMonths,
+    benefit: deriveBenefit(food),
+    isAllergen: food.isAllergen,
+    allergenType: food.allergenType,
+    status: 'pending' as const,
+  }))
+
+  return { available: true, suggestions }
 }
 
 // ── Pending Allergens ─────────────────────────────────────────────────────────
@@ -397,31 +479,55 @@ export function calculateAgeAndDaysInAC(
 /**
  * Sort suggested foods by priority:
  * 1. Pending allergens (highest priority)
- * 2. Foods from groups with less variety (lower tried ratio)
- * 3. Random within same priority tier
+ * 2. Iron-rich foods (when baby >= 10 months, per REQ-A1)
+ * 3. Foods from groups with less variety (lower tried ratio)
+ * 4. Random within same priority tier
  *
- * Spec: REQ-DASH-BIZ-01
+ * Spec: REQ-DASH-BIZ-01, REQ-A1, REQ-A2
  */
 export function sortSuggestions(
   foods: FoodForSuggestion[],
   recentlyTriedFoodIds: Set<string>,
   limit: number = DEFAULT_SUGGESTIONS_LIMIT,
+  babyAgeMonths?: number,
 ): FoodForSuggestion[] {
   if (foods.length === 0) return []
 
   // Filter out recently tried foods
   const candidates = foods.filter((f) => !recentlyTriedFoodIds.has(f.id))
 
-  // Sort: allergens first, then random (Fisher-Yates shuffle with priority)
+  const ironPriorityActive = babyAgeMonths !== undefined && babyAgeMonths >= 10
+
+  // Base rotation (unchanged for < 10m): allergens first, then the existing
+  // randomized rotation within the same priority tier. Allergen candidates that
+  // survive the recently-tried filter are effectively PENDING introductions.
   const sorted = [...candidates].sort((a, b) => {
-    // Allergens have higher priority
     if (a.isAllergen && !b.isAllergen) return -1
     if (!a.isAllergen && b.isAllergen) return 1
-    // Within same priority, randomize
     return Math.random() - 0.5
   })
 
-  return sorted.slice(0, limit)
+  if (!ironPriorityActive) {
+    return sorted.slice(0, limit)
+  }
+
+  // REQ-A1 (baby >= 10m) reconciled with the allergen introduction window (REQ-03):
+  // both clinical goals peak at 10-12m, so PENDING allergens keep the lead (their
+  // window is closing) and iron-rich foods follow with a >= 30% floor to prevent
+  // anemia. Built by explicit tiers so the guarantee does not depend on the
+  // non-deterministic rotation sort. In practice the catalog has 18 iron-rich
+  // foods (all age <= 10m). REQ-A2: no iron-rich foods → normal rotation.
+  const pendingAllergens = sorted.filter((f) => f.isAllergen)
+  const ironFoods = sorted.filter((f) => !f.isAllergen && f.isIronRich)
+  const rest = sorted.filter((f) => !f.isAllergen && !f.isIronRich)
+
+  if (ironFoods.length === 0) {
+    return sorted.slice(0, limit)
+  }
+
+  // Fill iron-rich up to max(first-3, 30%-floor), bounded by availability, then the rest.
+  const minIron = Math.min(ironFoods.length, Math.max(3, Math.ceil(limit * 0.3)))
+  return [...pendingAllergens, ...ironFoods.slice(0, minIron), ...rest].slice(0, limit)
 }
 
 /**

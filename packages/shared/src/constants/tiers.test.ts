@@ -20,6 +20,7 @@ import {
   PLATE_LIMITS,
   BABY_PROFILE_LIMITS,
   DIARY_WINDOW_DAYS,
+  SNACK_LIMITS,
   PRICING,
   tierAtLeast,
 } from './tiers.js'
@@ -93,6 +94,16 @@ describe('DIARY_WINDOW_DAYS', () => {
 
   it('has PRO set to Infinity', () => {
     expect(DIARY_WINDOW_DAYS.PRO).toBe(Infinity)
+  })
+})
+
+describe('SNACK_LIMITS', () => {
+  it('has FREE set to 0 (locked out)', () => {
+    expect(SNACK_LIMITS.FREE).toBe(0)
+  })
+
+  it('has PRO set to Infinity', () => {
+    expect(SNACK_LIMITS.PRO).toBe(Infinity)
   })
 })
 

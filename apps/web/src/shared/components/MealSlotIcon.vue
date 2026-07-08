@@ -28,6 +28,8 @@ const MEAL_ICONS: Record<string, typeof PhCoffee> = {
   LUNCH: PhSun,
   DINNER: PhMoon,
   SNACK: PhCookie,
+  SNACK_1: PhCookie,
+  SNACK_2: PhCookie,
 }
 
 /** The icon component to render */

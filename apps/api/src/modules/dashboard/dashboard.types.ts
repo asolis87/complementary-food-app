@@ -17,6 +17,8 @@ export interface FoodForSuggestion {
   ageMonths: number
   isAllergen: boolean
   allergenType: string | null
+  isIronRich: boolean
+  warningTags?: string[]
 }
 
 /** A food log entry with its associated food data */
