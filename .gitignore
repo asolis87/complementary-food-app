@@ -56,3 +56,10 @@ playwright-report/
 
 # Antigravity CLI
 .antigravitycli/
+
+# Staging ops — secrets and DB dumps must NEVER be committed.
+# The backup.env.template IS committed (no secrets); the real .env is not.
+scripts/staging/.env
+scripts/staging/backups/
+*.sql
+*.dump
