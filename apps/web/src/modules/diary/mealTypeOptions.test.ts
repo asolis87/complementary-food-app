@@ -66,6 +66,31 @@ describe('getMealTypeOptions', () => {
       }
     }
   })
+
+  // REQ-SD8 (Snack Diary Integration): manual snack logging must expose the
+  // age-appropriate colación slots so a served snack can be recorded/edited in
+  // the bitácora. Regression-only: getMealTypeOptions delegates to
+  // getMealSlotsForAge, so no production change is expected here.
+  describe('REQ-SD8: age-aware snack options for manual diary logging', () => {
+    it('exposes SNACK_1 (and no SNACK_2) for an 11-month baby (stage four)', () => {
+      const values = getMealTypeOptions(11).map((o) => o.value)
+      expect(values).toContain(MealType.SNACK_1)
+      expect(values).not.toContain(MealType.SNACK_2)
+    })
+
+    it('exposes both SNACK_1 and SNACK_2 for a 15-month baby (stage five)', () => {
+      const values = getMealTypeOptions(15).map((o) => o.value)
+      expect(values).toContain(MealType.SNACK_1)
+      expect(values).toContain(MealType.SNACK_2)
+    })
+
+    it('exposes NO snack options for an 8-month baby (stage three)', () => {
+      const values = getMealTypeOptions(8).map((o) => o.value)
+      expect(values).not.toContain(MealType.SNACK_1)
+      expect(values).not.toContain(MealType.SNACK_2)
+      expect(values).not.toContain(MealType.SNACK)
+    })
+  })
 })
 
 describe('autoSelectMealTypeForAge', () => {

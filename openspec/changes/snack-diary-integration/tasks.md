@@ -113,8 +113,8 @@ Chain strategy: feature-branch-chain
 
 ### Phase 4: MenuWeekPage Snack Serve Button (RED → GREEN → REFACTOR)
 
-- [ ] 4.1 **TEST**: Write frontend component tests in `apps/web/src/modules/menus/__tests__/MenuWeekPage.test.ts` additions (or `MenuWeekPage.desktop.test.ts` / `MenuWeekPage.mobile.test.ts` if split) — test (a) serve button renders on assigned snack slot (desktop block ~L107-121, mobile block ~L348-358), (b) served snack shows "Servido ✓" / "Se lo di ✓" (mirroring plate served state), (c) empty snack slot has no serve button, (d) serve button click calls `menuStore.serveMeal(profileId, dayKey, mealKey)` with correct args, (e) button disabled during loading (`menuStore.isServeLoading(day.key, meal.key)`). Mock menuStore with `getAssignedSnack`, `serveMeal`, `isServeLoading`, `getServedAt`. Run `pnpm --filter web test:run` → RED. Covers REQ-SD6.
-- [ ] 4.2 **COMPONENT**: Modify `apps/web/src/modules/menus/MenuWeekPage.vue` — in desktop snack-chip block (L107-121), add serve button + served state AFTER snack name line, BEFORE remove button. Mirror plate-chip serve button structure (L156-168):
+- [x] 4.1 **TEST**: Write frontend component tests in `apps/web/src/modules/menus/__tests__/MenuWeekPage.test.ts` additions (or `MenuWeekPage.desktop.test.ts` / `MenuWeekPage.mobile.test.ts` if split) — test (a) serve button renders on assigned snack slot (desktop block ~L107-121, mobile block ~L348-358), (b) served snack shows "Servido ✓" / "Se lo di ✓" (mirroring plate served state), (c) empty snack slot has no serve button, (d) serve button click calls `menuStore.serveMeal(profileId, dayKey, mealKey)` with correct args, (e) button disabled during loading (`menuStore.isServeLoading(day.key, meal.key)`). Mock menuStore with `getAssignedSnack`, `serveMeal`, `isServeLoading`, `getServedAt`. Run `pnpm --filter web test:run` → RED. Covers REQ-SD6.
+- [x] 4.2 **COMPONENT**: Modify `apps/web/src/modules/menus/MenuWeekPage.vue` — in desktop snack-chip block (L107-121), add serve button + served state AFTER snack name line, BEFORE remove button. Mirror plate-chip serve button structure (L156-168):
   ```vue
   <div class="snack-chip__actions">
     <button
@@ -139,20 +139,20 @@ Chain strategy: feature-branch-chain
   </div>
   ```
   Repeat for mobile snack-chip block (L348-358). Reuse existing `handleServeClick` (already slot-generic). Add CSS classes `.snack-chip__actions`, `.snack-chip__serve`, `.snack-chip__serve--served`, `.snack-chip__serve-spinner` mirroring `.plate-chip__serve` styles. → GREEN. Satisfies REQ-SD6.
-- [ ] 4.3 **REFACTOR**: No significant refactoring needed (handleServeClick is already generic over dayKey + mealKey). Run `pnpm --filter web test:run` → all GREEN.
+- [x] 4.3 **REFACTOR**: No significant refactoring needed (handleServeClick is already generic over dayKey + mealKey). Run `pnpm --filter web test:run` → all GREEN.
 
 ### Phase 5: Diary Regression Test (SD8 — Manual Snack Logging)
 
-- [ ] 5.1 **TEST**: Write diary unit test in `apps/web/src/modules/diary/__tests__/mealTypeOptions.test.ts` additions — test `getMealTypeOptions` exposes SNACK_1 for 11m baby (stage four), exposes SNACK_1 + SNACK_2 for 15m baby (stage five), does NOT expose any snack options for 8m baby (stage three). Assert returned `MealTypeOption[]` values include `MealType.SNACK_1` / `MealType.SNACK_2` where expected. Run `pnpm --filter web test:run` → RED (may already be GREEN if prior tests cover this; if so, add explicit scenario). Covers REQ-SD8 (regression test only — no code change expected; getMealTypeOptions already uses getMealSlotsForAge from shared).
-- [ ] 5.2 **VERIFY**: Confirm `getMealTypeOptions` implementation (mealTypeOptions.ts L61-63) already delegates to `getMealSlotsForAge(ageMonths)` → test should pass (GREEN). If test is RED, investigate (should NOT be; menu-snacks already shipped SNACK_1/SNACK_2 support). Satisfies REQ-SD8.
+- [x] 5.1 **TEST**: Write diary unit test in `apps/web/src/modules/diary/__tests__/mealTypeOptions.test.ts` additions — test `getMealTypeOptions` exposes SNACK_1 for 11m baby (stage four), exposes SNACK_1 + SNACK_2 for 15m baby (stage five), does NOT expose any snack options for 8m baby (stage three). Assert returned `MealTypeOption[]` values include `MealType.SNACK_1` / `MealType.SNACK_2` where expected. Run `pnpm --filter web test:run` → RED (may already be GREEN if prior tests cover this; if so, add explicit scenario). Covers REQ-SD8 (regression test only — no code change expected; getMealTypeOptions already uses getMealSlotsForAge from shared).
+- [x] 5.2 **VERIFY**: Confirm `getMealTypeOptions` implementation (mealTypeOptions.ts L61-63) already delegates to `getMealSlotsForAge(ageMonths)` → test should pass (GREEN). If test is RED, investigate (should NOT be; menu-snacks already shipped SNACK_1/SNACK_2 support). Satisfies REQ-SD8.
 
 ### Phase 6: Hygiene + PR-2 Verification
 
-- [ ] 6.1 **TYPECHECK**: Typecheck web: `pnpm --filter web typecheck` → no errors.
-- [ ] 6.2 **ALL TESTS GREEN**: Run `pnpm --filter web test:run` → all suites green (shared/api unchanged in PR-2).
-- [ ] 6.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/menus/ apps/web/src/modules/diary/ openspec/changes/snack-diary-integration/tasks.md` (avoids `.atl/skill-registry.md`).
-- [ ] 6.4 **COMMIT**: Conventional commit `feat(diary): snack serve button + diary snack regression test (PR-2)`. No AI attribution.
-- [ ] 6.5 **BRANCH + PR**: Push to `feat/snack-diary-integration-pr2` branch. Open PR-2 targeting `feat/snack-diary-integration-pr1` branch (feature-branch-chain: child targets previous PR branch). Title: `feat: snack serve button + diary regression (PR-2)`. Description: REQ-SD6, REQ-SD8 satisfied; depends on PR-1 backend; user-visible snack serve flow complete.
+- [x] 6.1 **TYPECHECK**: Typecheck web: `pnpm --filter web typecheck` → no errors.
+- [x] 6.2 **ALL TESTS GREEN**: Run `pnpm --filter web test:run` → all suites green (shared/api unchanged in PR-2).
+- [x] 6.3 **GIT STAGING**: Stage with explicit paths: `git add apps/web/src/modules/menus/ apps/web/src/modules/diary/ openspec/changes/snack-diary-integration/tasks.md` (avoids `.atl/skill-registry.md`).
+- [x] 6.4 **COMMIT**: Conventional commit `feat(diary): snack serve button + diary snack regression test (PR-2)`. No AI attribution.
+- [x] 6.5 **BRANCH + PR**: Push to `feat/snack-diary-integration-pr2` branch. Open PR-2 targeting `feat/snack-diary-integration` tracker branch (PR-1 already merged, so the chain collapsed to the tracker). Title: `feat: snack serve button + diary regression (PR-2)`. Description: REQ-SD6, REQ-SD8 satisfied; depends on PR-1 backend; user-visible snack serve flow complete.
 
 **PR-2 Finish**: Snack serve button visible on menu, served snacks appear in diary/dashboard via existing getTodayLogs. Rollback = revert PR-2 branch (PR-1 remains stable).
 
