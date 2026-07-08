@@ -226,6 +226,7 @@ model Snack {
   babyProfile BabyProfile? @relation(fields: [babyProfileId], references: [id], onDelete: SetNull)
   items       SnackItem[]
   menuMeals   MenuMeal[]
+  foodLogs    FoodLog[]
 
   @@index([userId, deletedAt])
   @@index([babyProfileId])
@@ -285,6 +286,7 @@ model FoodLog {
   accepted          Boolean?      // Whether parent accepted the food after review
   plateBalanceLabel String?       // Snapshot of plate A/L label at log time
   plateId           String?       // Optional link to a saved plate
+  snackId           String?       // Optional link to a saved snack
   notes             String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -292,10 +294,12 @@ model FoodLog {
 
   babyProfile BabyProfile @relation(fields: [babyProfileId], references: [id], onDelete: Cascade)
   plate       Plate?      @relation(fields: [plateId], references: [id], onDelete: SetNull)
+  snack       Snack?      @relation(fields: [snackId], references: [id], onDelete: SetNull)
   food        Food        @relation(fields: [foodId], references: [id], onDelete: Restrict)
 
   @@index([userId, babyProfileId, date])
   @@index([plateId])
+  @@index([snackId])
   @@index([foodId])
 }
 

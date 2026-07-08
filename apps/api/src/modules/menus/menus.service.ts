@@ -18,7 +18,7 @@ import type {
 } from '@pakulab/shared'
 import { MealType, derivePlateBalanceLabel } from '@pakulab/shared'
 import type { PrismaClient, WeeklyMenu, MenuDay, MenuMeal, Plate, Food, ALClassification } from '@prisma/client'
-import { NotFoundError, ForbiddenError, ConflictError, AppError } from '../../shared/errors/index.js'
+import { NotFoundError, ForbiddenError, ConflictError, AppError, BadRequestError } from '../../shared/errors/index.js'
 
 // =============================================================================
 // Types
@@ -38,11 +38,32 @@ type PlateWithItems = Plate & {
   })[]
 }
 
+type SnackItemWithFood = {
+  id: string
+  snackId: string
+  foodId: string
+  groupAssignment: string
+  servingAmount: string | null
+  food: Pick<Food, 'id' | 'name' | 'group' | 'alClassification' | 'isAllergen' | 'ageMonths' | 'allergenType' | 'warningTags'> | null
+}
+
+type SnackWithItems = {
+  id: string
+  userId: string
+  name: string
+  items?: SnackItemWithFood[]
+}
+
 type MenuMealWithServedAt = MenuMeal & {
   servedAt: Date | null
   plate: PlateWithItems | null
-  snack?: any | null
+  snack?: SnackWithItems | null
 }
+
+/** Internal type for serveMeal — meal source (plate or snack) */
+type ServeSource =
+  | { kind: 'plate'; items: PlateWithItems['items']; plateId: string; snackId: null; label: string | null }
+  | { kind: 'snack'; items: SnackWithItems['items']; plateId: null; snackId: string; label: null }
 
 type MenuWithDaysAndMeals = WeeklyMenu & {
   days: (MenuDay & {
@@ -294,7 +315,7 @@ export async function getWeekMenu(
                 include: {
                   items: {
                     include: {
-                      food: { select: { id: true, name: true, group: true } }
+                      food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
                     }
                   }
                 }
@@ -602,6 +623,9 @@ export class EmptyPlateError extends AppError {
   }
 }
 
+// Re-export BadRequestError for test convenience
+export { BadRequestError }
+
 /**
  * Computes the UTC date for a given weekStart (Monday) and dayOfWeek offset.
  * 
@@ -664,7 +688,7 @@ export async function serveMeal(
   // Step 1b: Verify babyProfileId ownership (security check)
   await assertOwnedBabyProfile(prisma, userId, payload.babyProfileId)
 
-  // Step 2 & 3: Find MenuDay and MenuMeal with plate items in a single query
+  // Step 2 & 3: Find MenuDay and MenuMeal with plate AND snack items in a single query
   const menuDay = await prisma.menuDay.findFirst({
     where: {
       menuId,
@@ -684,6 +708,15 @@ export async function serveMeal(
                 }
               }
             }
+          },
+          snack: {
+            include: {
+              items: {
+                include: {
+                  food: { select: { id: true, name: true, group: true, alClassification: true, isAllergen: true, ageMonths: true, allergenType: true, warningTags: true } }
+                }
+              }
+            }
           }
         }
       }
@@ -696,12 +729,32 @@ export async function serveMeal(
 
   const menuMeal = menuDay.meals[0]!
 
-  // Check if there's a plate assigned
-  if (!menuMeal.plateId || !menuMeal.plate) {
-    throw new NotFoundError('No hay plato asignado a esta comida')
-  }
+  // Resolve meal source (plate or snack)
+  let source: ServeSource
 
-  const plate = menuMeal.plate
+  if (menuMeal.snackId && menuMeal.snack) {
+    // Snack ownership check (snacks are user-scoped via Snack.userId)
+    if (menuMeal.snack.userId !== userId) {
+      throw new ForbiddenError('No tienes permiso para servir esta colación')
+    }
+    source = {
+      kind: 'snack',
+      items: menuMeal.snack.items,
+      plateId: null,
+      snackId: menuMeal.snack.id,
+      label: null,
+    }
+  } else if (menuMeal.plateId && menuMeal.plate) {
+    source = {
+      kind: 'plate',
+      items: menuMeal.plate.items,
+      plateId: menuMeal.plate.id,
+      snackId: null,
+      label: null, // will compute later
+    }
+  } else {
+    throw new NotFoundError('No hay plato ni colación asignada a esta comida')
+  }
 
   // Step 4: Check servedAt status
   if (menuMeal.servedAt && !force) {
@@ -731,22 +784,29 @@ export async function serveMeal(
     })
     replacedCount = deletedLogs.count
 
-    // Check for empty plate
-    if (!plate.items || plate.items.length === 0) {
-      throw new EmptyPlateError()
+    // Check for empty items
+    if (!source.items || source.items.length === 0) {
+      if (source.kind === 'plate') {
+        throw new EmptyPlateError()
+      } else {
+        throw new BadRequestError('La colación no tiene alimentos asignados')
+      }
     }
 
-    // Compute plate balance label
-    const plateBalanceLabel = derivePlateBalanceLabel(plate.balanceScore)
+    // Compute label only for plates
+    const plateBalanceLabel = source.kind === 'plate' && source.plateId
+      ? derivePlateBalanceLabel((menuMeal.plate as PlateWithItems).balanceScore)
+      : null
 
-    // Create FoodLog entries for each plate item
-    const foodLogData = plate.items.map((item) => ({
+    // Create FoodLog entries for each item (generic over source)
+    const foodLogData = source.items.map((item) => ({
       userId,
       babyProfileId: payload.babyProfileId,
       foodId: item.foodId,
       date: serveDate,
       mealType: payload.mealType,
-      plateId: plate.id,
+      plateId: source.plateId,
+      snackId: source.snackId,
       plateBalanceLabel,
       // reaction, accepted, notes are null — filled during review moment
     }))
