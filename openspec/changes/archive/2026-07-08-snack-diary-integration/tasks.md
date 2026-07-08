@@ -101,9 +101,9 @@ Chain strategy: feature-branch-chain
 
 - [x] 3.1 **TYPECHECK**: Rebuild shared if touched (`pnpm --filter @pakulab/shared build`), then typecheck: `pnpm typecheck` → no errors.
 - [x] 3.2 **ALL TESTS GREEN**: Run `pnpm --filter api test` → all suites green (web unchanged in PR-1).
-- [ ] 3.3 **GIT STAGING**: Stage with explicit paths: `git add prisma/ apps/api/ openspec/changes/snack-diary-integration/tasks.md` (avoids `.atl/skill-registry.md`, `docker-compose.yml`). NEVER use `git add -A`.
-- [ ] 3.4 **COMMIT**: Conventional commit `feat(diary): serve snack from menu → FoodLog.snackId (PR-1)`. No AI attribution.
-- [ ] 3.5 **BRANCH + PR**: Push to `feat/snack-diary-integration-pr1` branch. Open PR-1 targeting `feat/snack-diary-integration` tracker branch (feature-branch-chain strategy). Title: `feat: serve snack from menu (backend — PR-1)`. Description: REQ-SD1, REQ-SD2, REQ-SD3, REQ-SD4, REQ-SD5 backend satisfied; FoodLog.snackId schema + serveMeal snack branch; plate-path regression verified; no user-visible UI change.
+- [x] 3.3 **GIT STAGING**: Stage with explicit paths: `git add prisma/ apps/api/ openspec/changes/snack-diary-integration/tasks.md` (avoids `.atl/skill-registry.md`, `docker-compose.yml`). NEVER use `git add -A`.
+- [x] 3.4 **COMMIT**: Conventional commit `feat(diary): serve snack from menu → FoodLog.snackId (PR-1)`. No AI attribution.
+- [x] 3.5 **BRANCH + PR**: Push to `feat/snack-diary-integration-pr1` branch. Open PR-1 targeting `feat/snack-diary-integration` tracker branch (feature-branch-chain strategy). Title: `feat: serve snack from menu (backend — PR-1)`. Merged as PR #115.
 
 **PR-1 Finish**: Backend snack-serve logic complete, db schema extended, zero frontend change. Rollback = revert PR-1 branch.
 
@@ -160,9 +160,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 7: Tracker PR + Merge to Release
 
-- [ ] 7.1 **MERGE CHAIN**: After PR-1, PR-2 are merged sequentially (PR-2 → PR-1, PR-1 → tracker), open a final PR from `feat/snack-diary-integration` → `release/etapa-10-23-meses`. Title: `feat: snack diary integration (serve snack from menu)`. Description: REQ-SD1..SD8 satisfied; links to PR-1 + PR-2. Includes REQ-SD7 note: served snacks appear in dashboard/bitácora without code change (getTodayLogs is mealType-agnostic).
-- [ ] 7.2 **FINAL VERIFICATION**: CI green on tracker PR, manual QA: (a) Navigate to weekly menu for a baby ≥10m, (b) Build + assign a 2-item snack to a SNACK_1 slot, (c) Click serve button → verify FoodLog entries created with snackId in DB, (d) Navigate to bitácora → verify served snack appears for that date, (e) Navigate to dashboard today → verify served snack appears in today's summary, (f) Test re-serve without force → verify 409 conflict, (g) Test re-serve with force → verify replaces prior logs, (h) Verify empty snack → 400 error, (i) Test plate serve → verify plateId set, snackId null (plate-path regression). Covers all REQ-SD scenarios.
-- [ ] 7.3 **MERGE TRACKER**: Merge `feat/snack-diary-integration` → `release/etapa-10-23-meses`. All changes now in release branch.
+- [x] 7.1 **MERGE CHAIN**: PR-1 #115 (backend) and PR-2 #116 (frontend) merged, then tracker PR #117 (`feat/snack-diary-integration` → `release/etapa-10-23-meses`) merged. REQ-SD1..SD8 satisfied.
+- [x] 7.2 **FINAL VERIFICATION**: Live QA surfaced two pre-existing/assumption gaps, fixed in release: (1) `fix(menus)` 3c97928 — PATCH /meals dropped snackId, silently clearing snack slots (blocked serve → 404); (2) `fix(diary)` 6aab5c2 — diary grouped by plateId only, fragmenting served snacks. Post-fix: assign → serve → persist → grouped diary card all verified working. api 480, web 410, typecheck 0.
+- [x] 7.3 **MERGE TRACKER**: Merged `feat/snack-diary-integration` → `release/etapa-10-23-meses` @ 94d7f2d. All changes in release.
 
 ---
 
@@ -178,6 +178,6 @@ Chain strategy: feature-branch-chain
 **Open questions resolved**:
 - Migration strategy: db push (NOT migrate dev) mirrors menu-snacks convention.
 - Combined error copy: "No hay plato ni colación asignada a esta comida" (neither-assigned), "La colación no tiene alimentos asignados" (empty snack 400).
-- Shared snackId exposure: persistence-only, NOT added to MealLog DTO (design AD5).
+- Shared snackId exposure: design AD5 planned persistence-only (NOT in MealLog DTO). **OVERRIDDEN in release**: `MealLog.snackId` WAS added to the shared DTO because the diary render must read snackId to group a served snack's foods into one card (AD5's premise "nothing renders a snack id" was falsified by live QA). REQ-SD7 therefore required frontend code (grouping by snackId), contrary to the original "no code change" note.
 
 **Next step**: Ready for `sdd-apply` (auto-chain mode: orchestrator will implement PR-1 first).
