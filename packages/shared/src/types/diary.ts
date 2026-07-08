@@ -92,7 +92,8 @@ export interface MealLog {
   accepted?: boolean | null      // Whether parent accepted the food after review
   plateBalanceLabel?: PlateBalanceLabel | null  // Snapshot of plate A/L label at log time
   notes?: string
-  plateId?: string
+  plateId?: string      // Set when the entry came from serving a plate
+  snackId?: string      // Set when the entry came from serving a snack (colación)
   foodId: string        // Single food per entry
   food?: MealLogFood    // Populated food details
   babyProfileId: string
