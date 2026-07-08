@@ -1115,3 +1115,196 @@ describe('POST /api/menus/:menuId/meals/serve', () => {
     expect(firstEntry.plateBalanceLabel).toBe('SLIGHTLY_ASTRINGENT') // balanceScore 0.5 → SLIGHTLY_ASTRINGENT
   })
 })
+
+// ────────────────────────────────────────────────────────────────────────────
+// PATCH /api/menus/:menuId/meals — assignment path (real route handler)
+//
+// Regression coverage for the snack-assignment bug: the PATCH handler parses
+// `snackId` from the body but must FORWARD it to upsertMealSlot. When the
+// handler dropped `snackId`, upsertMealSlot saw `plateId === null &&
+// snackId === undefined`, the `isClearing` branch fired, and the slot was
+// DELETED (deleteMany) instead of assigned (upsert) — so snacks never persisted
+// to MenuMeal. The serveMeal tests above call the service directly and cannot
+// catch a handler-forwarding omission, which is exactly why the bug slipped
+// through. These tests drive the REAL route via app.inject (mirroring the
+// disclaimer.routes.integration.test.ts style) so the handler wiring is
+// exercised, and assert which Prisma branch ran on the injected mock.
+// ────────────────────────────────────────────────────────────────────────────
+
+async function buildMenusTestApp(prisma: unknown): Promise<FastifyInstance> {
+  const Fastify = (await import('fastify')).default
+  const fp = (await import('fastify-plugin')).default
+  const { ZodError } = await import('zod')
+  const { AppError } = await import('../../shared/errors/index.js')
+  const { menusRoutes } = await import('./menus.routes.js')
+
+  const app = Fastify({ logger: false })
+
+  // Mirror the global error handler from app.ts.
+  app.setErrorHandler((error: unknown, _request, reply) => {
+    if (error instanceof AppError) {
+      reply.status(error.statusCode).send({ error: { code: error.code, message: error.message } })
+      return
+    }
+    if (error instanceof ZodError) {
+      reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Datos inválidos', details: error.errors } })
+      return
+    }
+    reply.status(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Error interno' } })
+  })
+
+  // Decorate prisma so route handlers read the injected mock via fastify.prisma.
+  app.decorate('prisma', prisma as never)
+
+  // Fake auth: set a PRO user so requireAuth + requireTier('PRO') both pass.
+  await app.register(
+    fp(async (f) => {
+      f.addHook('onRequest', async (request) => {
+        request.user = { id: VALID_USER_ID, email: 'test@example.com', tier: 'PRO', emailVerified: true } as never
+      })
+    }),
+    { name: 'fake-auth' },
+  )
+
+  await app.register(menusRoutes, { prefix: '/api/menus' })
+
+  await app.ready()
+  return app
+}
+
+/**
+ * Build a Prisma mock tailored to upsertMealSlot's call graph, driven from the
+ * route: weeklyMenu.findFirst (ownership + post-tx re-fetch), snack.findFirst
+ * (existence/ownership), and $transaction exposing tx.menuMeal.upsert /
+ * .deleteMany. The upsert/deleteMany spies are returned so tests can assert
+ * which branch ran.
+ */
+function createUpsertPrisma(scenarios: {
+  menu: Record<string, unknown> | null
+  snack?: Record<string, unknown> | null
+  menuDay?: Record<string, unknown> | null
+  upsertResult?: Record<string, unknown>
+}) {
+  const menuMealUpsert = vi.fn().mockResolvedValue(
+    scenarios.upsertResult ?? { id: 'meal-1', mealType: 'SNACK_1', plateId: null, snackId: VALID_SNACK_CUID, plate: null, snack: null },
+  )
+  const menuMealDeleteMany = vi.fn().mockResolvedValue({ count: 1 })
+
+  return {
+    spies: { menuMealUpsert, menuMealDeleteMany },
+    prisma: {
+      weeklyMenu: {
+        // assertOwnedMenu uses findFirst; the post-transaction balance re-fetch
+        // also uses findFirst and expects a menu with `days` (empty is fine → balance null).
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce(scenarios.menu ?? null)
+          .mockResolvedValue(scenarios.menu ? { ...scenarios.menu, days: [] } : null),
+      },
+      snack: {
+        findFirst: vi.fn().mockResolvedValue(
+          scenarios.snack !== undefined ? scenarios.snack : { id: VALID_SNACK_CUID },
+        ),
+      },
+      plate: {
+        findFirst: vi.fn().mockResolvedValue({ id: VALID_PLATE_CUID }),
+      },
+      $transaction: vi.fn(async (callback) => {
+        const tx = {
+          menuDay: {
+            findFirst: vi.fn().mockResolvedValue(scenarios.menuDay ?? { id: 'day-0', menuId: VALID_MENU_CUID, dayOfWeek: 0 }),
+            create: vi.fn().mockResolvedValue({ id: 'day-0', menuId: VALID_MENU_CUID, dayOfWeek: 0 }),
+          },
+          menuMeal: {
+            upsert: menuMealUpsert,
+            deleteMany: menuMealDeleteMany,
+          },
+        }
+        return await callback(tx)
+      }),
+    },
+  }
+}
+
+describe('PATCH /api/menus/:menuId/meals — snack assignment (real route)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('assigning a snack (plateId null, snackId set) UPSERTS the slot with that snackId — not the clear branch', async () => {
+    const mockMenu = {
+      id: VALID_MENU_CUID,
+      userId: VALID_USER_ID,
+      babyProfileId: VALID_BABY_PROFILE_CUID,
+      weekStart: new Date('2024-06-10'),
+      deletedAt: null,
+    }
+
+    const { spies, prisma } = createUpsertPrisma({ menu: mockMenu })
+    const app = await buildMenusTestApp(prisma)
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/menus/${VALID_MENU_CUID}/meals`,
+      payload: {
+        dayOfWeek: 0,
+        mealType: MealType.SNACK_1,
+        plateId: null,
+        snackId: VALID_SNACK_CUID,
+      },
+    })
+
+    expect(res.statusCode).toBe(200)
+
+    // The assign branch ran: upsert called, clear branch (deleteMany) did NOT.
+    // If the handler drops snackId, snackId arrives as undefined → isClearing true
+    // → deleteMany fires and upsert is never reached (this assertion goes RED).
+    expect(spies.menuMealUpsert).toHaveBeenCalledTimes(1)
+    expect(spies.menuMealDeleteMany).not.toHaveBeenCalled()
+
+    // The upserted data carries the snackId (with plateId cleared, per mutual exclusion).
+    const upsertArgs = spies.menuMealUpsert.mock.calls[0]?.[0] as {
+      create: { snackId: string | null; plateId: string | null; mealType: unknown }
+      update: { snackId: string | null; plateId: string | null }
+    }
+    expect(upsertArgs.create.snackId).toBe(VALID_SNACK_CUID)
+    expect(upsertArgs.create.plateId).toBeNull()
+    expect(upsertArgs.create.mealType).toBe(MealType.SNACK_1)
+    expect(upsertArgs.update.snackId).toBe(VALID_SNACK_CUID)
+    expect(upsertArgs.update.plateId).toBeNull()
+
+    await app.close()
+  })
+
+  it('clearing a slot (plateId null AND snackId null) routes to the delete branch — fix did not break clearing', async () => {
+    const mockMenu = {
+      id: VALID_MENU_CUID,
+      userId: VALID_USER_ID,
+      babyProfileId: VALID_BABY_PROFILE_CUID,
+      weekStart: new Date('2024-06-10'),
+      deletedAt: null,
+    }
+
+    const { spies, prisma } = createUpsertPrisma({ menu: mockMenu })
+    const app = await buildMenusTestApp(prisma)
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/menus/${VALID_MENU_CUID}/meals`,
+      payload: {
+        dayOfWeek: 0,
+        mealType: MealType.SNACK_1,
+        plateId: null,
+        snackId: null,
+      },
+    })
+
+    expect(res.statusCode).toBe(200)
+
+    // The clear branch ran: deleteMany called, upsert did NOT.
+    expect(spies.menuMealDeleteMany).toHaveBeenCalledTimes(1)
+    expect(spies.menuMealUpsert).not.toHaveBeenCalled()
+
+    await app.close()
+  })
+})
