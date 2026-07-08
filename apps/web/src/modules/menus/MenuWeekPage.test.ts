@@ -90,6 +90,8 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
     removePlate: vi.fn(),
     assignSnack: vi.fn(),
     removeSnack: vi.fn(),
+    serveMeal: vi.fn(),
+    reServeMeal: vi.fn(),
   })
 
   beforeEach(() => {
@@ -876,6 +878,125 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       // Snack empty-state copy present, and NO create affordance
       const backdrop = document.body
       expect(backdrop.textContent).toContain('No tienes colaciones guardadas todavía')
+    })
+
+    it('serve button renders on an assigned snack slot (desktop)', async () => {
+      mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const snack1Slot = wrapper.find('[data-slot="lun:snack1"]')
+      expect(snack1Slot.find('.snack-chip__serve').exists()).toBe(true)
+    })
+
+    it('empty snack slot has NO serve button', async () => {
+      mountAt(11)
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const snack1Slot = wrapper.find('[data-slot="lun:snack1"]')
+      expect(snack1Slot.exists()).toBe(true)
+      expect(snack1Slot.find('.snack-chip__serve').exists()).toBe(false)
+    })
+
+    it('served snack shows the served state (same "Servido ✓" tooltip as plates)', async () => {
+      const { store } = mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      // Mark this snack slot as served, mirroring how the plate served-state is driven.
+      store.getServedAt = vi.fn((dayKey: string, mealKey: string) =>
+        dayKey === 'lun' && mealKey === 'snack1' ? '2024-01-15T10:00:00.000Z' : null,
+      ) as any
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const serveBtn = wrapper.find('[data-slot="lun:snack1"] .snack-chip__serve')
+      expect(serveBtn.exists()).toBe(true)
+      // Served-state class + tooltip mirror the plate serve button exactly.
+      expect(serveBtn.classes()).toContain('snack-chip__serve--served')
+      expect(serveBtn.attributes('title')).toBe('Servido ✓')
+    })
+
+    it('unserved snack serve button uses the "Registrar colación" tooltip', async () => {
+      mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const serveBtn = wrapper.find('[data-slot="lun:snack1"] .snack-chip__serve')
+      expect(serveBtn.attributes('title')).toBe('Registrar colación')
+    })
+
+    it('clicking serve on an unserved snack routes through the serve handler → menuStore.serveMeal', async () => {
+      const { store } = mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      await wrapper.find('[data-slot="lun:snack1"] .snack-chip__serve').trigger('click')
+      await flushPromises()
+
+      // First-serve opens the confirmation dialog; confirming calls serveMeal.
+      const confirmBtn = Array.from(
+        document.body.querySelectorAll('.dialog__btn--primary'),
+      ).find((b) => (b.textContent ?? '').includes('registrar')) as HTMLElement
+      expect(confirmBtn).toBeDefined()
+      confirmBtn.click()
+      await flushPromises()
+
+      expect(store.serveMeal).toHaveBeenCalledWith('profile-1', 'lun', 'snack1')
+    })
+
+    it('serve button is disabled while the slot is serve-loading', async () => {
+      const { store } = mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      store.isServeLoading = vi.fn((dayKey: string, mealKey: string) =>
+        dayKey === 'lun' && mealKey === 'snack1',
+      ) as any
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const serveBtn = wrapper.find('[data-slot="lun:snack1"] .snack-chip__serve')
+      expect(serveBtn.attributes('disabled')).toBeDefined()
+    })
+
+    // ─── Mobile snack serve button (.snack-row-chip__serve) ───
+    // The mobile layout is hidden via a CSS media query (display:none), not v-if,
+    // so its markup is present in the jsdom-mounted DOM. The mobile snack chip is
+    // NOT under a [data-slot] node (that attribute lives only on the desktop grid),
+    // so these tests scope directly to the mobile-only .snack-row-chip__serve class.
+    it('mobile snack serve button renders on an assigned snack slot', async () => {
+      mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      expect(wrapper.find('.snack-row-chip__serve').exists()).toBe(true)
+    })
+
+    it('clicking the mobile snack serve routes through the serve handler → menuStore.serveMeal', async () => {
+      const { store } = mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      await wrapper.find('.snack-row-chip__serve').trigger('click')
+      await flushPromises()
+
+      // First-serve opens the confirmation dialog; confirming calls serveMeal.
+      const confirmBtn = Array.from(
+        document.body.querySelectorAll('.dialog__btn--primary'),
+      ).find((b) => (b.textContent ?? '').includes('registrar')) as HTMLElement
+      expect(confirmBtn).toBeDefined()
+      confirmBtn.click()
+      await flushPromises()
+
+      expect(store.serveMeal).toHaveBeenCalledWith('profile-1', 'lun', 'snack1')
+    })
+
+    it('mobile snack serve button is disabled while the slot is serve-loading', async () => {
+      const { store } = mountAt(11, { 'lun:snack1': { id: 'snack-1', name: 'Fruta picada' } })
+      store.isServeLoading = vi.fn((dayKey: string, mealKey: string) =>
+        dayKey === 'lun' && mealKey === 'snack1',
+      ) as any
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const serveBtn = wrapper.find('.snack-row-chip__serve')
+      expect(serveBtn.attributes('disabled')).toBeDefined()
     })
 
     it('snack picker is collapsible: tapping a snack reveals its foods + select button', async () => {

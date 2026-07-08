@@ -111,13 +111,27 @@
                     :data-chip="`${day.key}:${meal.key}`"
                   >
                     <span class="snack-chip__name">{{ getAssignedSnack(day.key, meal.key)!.name }}</span>
-                    <button
-                      class="plate-chip__remove"
-                      :aria-label="`Quitar ${getAssignedSnack(day.key, meal.key)!.name}`"
-                      @click.stop="removeSnack(day.key, meal.key)"
-                    >
-                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                    </button>
+                    <div class="snack-chip__actions">
+                      <button
+                        class="snack-chip__serve"
+                        :class="{ 'snack-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                        :title="menuStore.getServedAt(day.key, meal.key) ? 'Servido ✓' : 'Registrar colación'"
+                        :disabled="menuStore.isServeLoading(day.key, meal.key)"
+                        @click.stop="handleServeClick(day.key, meal.key)"
+                      >
+                        <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="snack-chip__serve-spinner" />
+                        <span v-else class="material-symbols-outlined" aria-hidden="true">
+                          {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                        </span>
+                      </button>
+                      <button
+                        class="plate-chip__remove"
+                        :aria-label="`Quitar ${getAssignedSnack(day.key, meal.key)!.name}`"
+                        @click.stop="removeSnack(day.key, meal.key)"
+                      >
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                      </button>
+                    </div>
                   </div>
                 </template>
                 <template v-else>
@@ -348,6 +362,18 @@
               <template v-if="getAssignedSnack(day.key, meal.key)">
                 <div class="snack-row-chip" :class="{ 'snack-row-chip--loading': menuStore.isSlotLoading(day.key, meal.key) }">
                   <span class="snack-row-chip__name">{{ getAssignedSnack(day.key, meal.key)!.name }}</span>
+                  <button
+                    class="snack-row-chip__serve"
+                    :class="{ 'snack-row-chip__serve--served': menuStore.getServedAt(day.key, meal.key) }"
+                    :disabled="isServeDisabled(day.key, meal.key)"
+                    :title="menuStore.getServedAt(day.key, meal.key) ? getServeTooltip(day.key, meal.key) : 'Registrar colación'"
+                    @click.stop="handleServeClick(day.key, meal.key)"
+                  >
+                    <span v-if="menuStore.isServeLoading(day.key, meal.key)" class="snack-row-chip__serve-spinner" />
+                    <span v-else class="material-symbols-outlined" aria-hidden="true">
+                      {{ menuStore.getServedAt(day.key, meal.key) ? 'check_circle' : 'restaurant' }}
+                    </span>
+                  </button>
                   <button
                     class="plate-row-chip__remove"
                     :aria-label="`Quitar ${getAssignedSnack(day.key, meal.key)!.name}`"
@@ -2443,13 +2469,64 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   line-height: var(--md3-label-line-height);
 }
 
-.snack-chip .plate-chip__remove {
+/* Snack chip actions (serve + remove) — mirrors .plate-chip__actions */
+.snack-chip__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
   opacity: 0;
   transition: opacity var(--md3-transition-fast);
 }
 
-.snack-chip:hover .plate-chip__remove {
+.snack-chip:hover .snack-chip__actions {
   opacity: 1;
+}
+
+/* Always show serve icon when already served */
+.snack-chip:has(.snack-chip__serve--served) .snack-chip__actions {
+  opacity: 1;
+}
+
+.snack-chip__serve {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--md3-primary);
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.snack-chip__serve:hover {
+  background: var(--md3-surface-container-high);
+}
+
+.snack-chip__serve--served {
+  color: var(--md3-primary);
+}
+
+.snack-chip__serve--served .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.snack-chip__serve .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.snack-chip__serve-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .snack-chip--loading {
@@ -2479,6 +2556,47 @@ watch(() => profileStore.activeProfile?.id, async (newProfileId) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Snack row serve button (mobile) — mirrors .plate-row-chip__serve */
+.snack-row-chip__serve {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--md3-primary);
+  border-radius: var(--md3-rounded-full);
+  cursor: pointer;
+  transition: background var(--md3-transition-fast), color var(--md3-transition-fast);
+}
+
+.snack-row-chip__serve:active {
+  background: var(--md3-primary-container);
+}
+
+.snack-row-chip__serve--served {
+  color: var(--md3-primary);
+}
+
+.snack-row-chip__serve--served .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.snack-row-chip__serve .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.snack-row-chip__serve-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--md3-outline-variant);
+  border-top-color: var(--md3-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .snack-row-chip--loading {
