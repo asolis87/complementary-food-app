@@ -241,6 +241,7 @@ async function flushSyncQueue() {
       await apiClient.post('/plates', {
         name: plate.name,
         groupCount: plate.groupCount,
+        stageFor: plate.stageFor ?? null,
         items: plate.items,
       })
       await removeFromQueue(plate.localId)

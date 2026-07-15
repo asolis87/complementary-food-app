@@ -6,6 +6,10 @@
  * by cherry-picking only name/groupCount/items, silently dropping stageFor —
  * so saved plates always had stageFor=null and never matched the stage filter
  * in "Mis Platos" (only appeared under "Todas las etapas").
+ *
+ * Offline path regression guard: when the API call fails because the device
+ * is offline, the plate MUST be enqueued with its stageFor (and servingAmount)
+ * preserved so the AppLayout flush posts the full payload on reconnect.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -36,8 +40,23 @@ vi.mock('@/shared/api/client.js', () => ({
   },
 }))
 
+// Mock the IndexedDB-backed sync queue so we can assert the enqueue payload
+// without needing fake-indexeddb in the test harness.
+const { mockEnqueue, mockGetPending } = vi.hoisted(() => ({
+  mockEnqueue: vi.fn(),
+  mockGetPending: vi.fn(),
+}))
+vi.mock('@/shared/services/syncQueue.js', () => ({
+  enqueuePlate: mockEnqueue,
+  getPendingPlates: mockGetPending,
+  getPendingCount: vi.fn().mockResolvedValue(0),
+  removeFromQueue: vi.fn().mockResolvedValue(undefined),
+  clearQueue: vi.fn().mockResolvedValue(undefined),
+}))
+
 // Must import after mocks
 import { usePlateStore } from './plateStore.js'
+import { OfflineError } from '@/shared/api/client.js'
 
 const draftPayload: CreatePlateInput = {
   name: 'Plato 10-12m',
@@ -109,5 +128,43 @@ describe('plateStore — payload integrity (stageFor regression)', () => {
 
     const [, body] = mockPut.mock.calls[0]
     expect(body.items[0].servingAmount).toBe('2')
+  })
+})
+
+describe('plateStore — offline enqueue preserves stageFor (regression: T-05-06 follow-up)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('enqueues with stageFor from the draft payload when POST /plates fails with OfflineError', async () => {
+    mockPost.mockRejectedValueOnce(new OfflineError())
+    mockEnqueue.mockResolvedValueOnce(undefined)
+    const store = usePlateStore()
+
+    await store.saveDraftAsPlate(draftPayload)
+
+    expect(mockEnqueue).toHaveBeenCalledTimes(1)
+    const queued = mockEnqueue.mock.calls[0]![0]
+    expect(queued.stageFor).toBe('TEN_TO_TWELVE_MONTHS')
+    expect(queued.name).toBe('Plato 10-12m')
+    expect(queued.groupCount).toBe(4)
+    expect(queued.items[0].servingAmount).toBe('2')
+    expect(queued.items[0].foodId).toBe('ckfoodid00000000000000001')
+  })
+
+  it('enqueues with stageFor=null when the draft has no stage set', async () => {
+    mockPost.mockRejectedValueOnce(new OfflineError())
+    mockEnqueue.mockResolvedValueOnce(undefined)
+    const store = usePlateStore()
+
+    const payloadWithoutStage: CreatePlateInput = {
+      ...draftPayload,
+      stageFor: undefined,
+    }
+    await store.saveDraftAsPlate(payloadWithoutStage)
+
+    const queued = mockEnqueue.mock.calls[0]![0]
+    expect(queued.stageFor).toBeNull()
   })
 })
