@@ -253,7 +253,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FoodGroup, Food, FoodHistoryMap } from '@pakulab/shared'
-import { getEffectiveGroup, getSuggestedGroupCount, getAgeMonths } from '@pakulab/shared'
+import {
+  getEffectiveGroup,
+  getSuggestedGroupCount,
+  getSuggestedStageForAge,
+  getAgeMonths,
+} from '@pakulab/shared'
 import type { Plate } from '@pakulab/shared'
 import { PLATE_STAGES, PLATE_STAGE_LABELS, type PlateStage } from '@pakulab/shared'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
@@ -300,6 +305,7 @@ const {
   removeFood,
   setGroupCount,
   setStageFor,
+  applyStageHintIfUnset,
   clearItems,
   loadPlateIntoDraft,
   savePlate,
@@ -332,6 +338,22 @@ const suggestedGroupCount = computed<4 | 5 | null>(() => {
 const showGroupCountSuggestion = computed<boolean>(() => {
   return suggestedGroupCount.value !== null && suggestedGroupCount.value !== draftGroupCount.value
 })
+
+// ─── Stage Suggestion (REQ-C2 / REQ-C4) ─────────────────────────────────────
+/**
+ * Default the Etapa objetivo selector to the baby's current stage. Sticky
+ * semantics: applies exactly once per draft and never overwrites a manual
+ * choice. Re-runs on profile change (async load) so switching babies updates
+ * the default if the user has not picked anything yet.
+ */
+watch(
+  babyAgeMonths,
+  (age) => {
+    if (age === null) return
+    applyStageHintIfUnset(getSuggestedStageForAge(age))
+  },
+  { immediate: true },
+)
 
 // ─── Food Exposure ─────────────────────────────────────────────────────────
 const foodExposure = useFoodExposure()

@@ -54,6 +54,12 @@ export interface UsePlateBuilderReturn {
   removeFood: (localId: string) => void
   setGroupCount: (count: 4 | 5) => void
   setStageFor: (stage: PlateStage | null) => void
+  /**
+   * REQ-C4: Apply a stage hint derived from the active baby's age (typically
+   * `getSuggestedStageForAge(ageMonths)`). NO-OP when the user has already
+   * picked a stage — manual choice wins on this draft.
+   */
+  applyStageHintIfUnset: (stage: PlateStage) => void
   clearItems: () => void
   resetDraft: () => void
   loadPlateIntoDraft: (plate: Plate) => void
@@ -185,6 +191,17 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
   /** Set the target stage for this plate (T-05-06) */
   function setStageFor(stage: PlateStage | null): void {
     draftStageFor.value = stage
+  }
+
+  /**
+   * Apply an age-derived stage hint ONLY if the user has not already chosen
+   * one. Sticky-once-set semantics: once the user picks a stage (or the hint
+   * has been applied), later calls become no-ops until the draft is reset.
+   */
+  function applyStageHintIfUnset(stage: PlateStage): void {
+    if (draftStageFor.value === null) {
+      draftStageFor.value = stage
+    }
   }
 
   /** Clear items and reset name, keeping group count intact */
@@ -324,6 +341,7 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
     removeFood,
     setGroupCount,
     setStageFor,
+    applyStageHintIfUnset,
     clearItems,
     resetDraft,
     loadPlateIntoDraft,

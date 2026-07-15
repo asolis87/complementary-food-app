@@ -222,11 +222,15 @@ export const usePlateStore = defineStore('plates', () => {
       return result.data
     } catch (err) {
       if (err instanceof OfflineError) {
-        // Queue the plate for sync when back online
+        // Queue the plate for sync when back online.
+        // stageFor MUST travel through the queue so the flush in AppLayout
+        // can forward it to POST /plates — otherwise the offline path silently
+        // drops the user's selected/baby-derived stage on reconnect.
         await enqueuePlate({
           localId: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           name: platePayload.name ?? 'Mi plato',
           groupCount: platePayload.groupCount ?? 4,
+          stageFor: platePayload.stageFor ?? null,
           items: itemsPayload,
           queuedAt: Date.now(),
         })

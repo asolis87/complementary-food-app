@@ -5,24 +5,34 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
-import type { FoodGroup } from '@pakulab/shared'
+import type { FoodGroup, PlateStage } from '@pakulab/shared'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * Plate persisted in the offline sync queue while the device is offline.
+ *
+ * `stageFor` is required at the type level (no `?`) so the flush path cannot
+ * silently drop it again — this is the regression that the offline enqueue +
+ * flush widening closes (see plateStore.saveDraftAsPlate / AppLayout.flushSyncQueue).
+ */
 export interface QueuedPlate {
   /** Local UUID — used to deduplicate on flush */
   localId: string
   name: string
   groupCount: 4 | 5
+  /**
+   * Target stage for the plate (REQ-C2). `null` means "Sin definir" — preserved
+   * through flush so existing behaviour is unchanged for legacy entries.
+   */
+  stageFor: PlateStage | null
   items: Array<{
     foodId: string
     groupAssignment: FoodGroup
+    /** Optional per-item serving amount in cdas; preserved through flush. */
+    servingAmount?: string | null
   }>
   queuedAt: number
-  // TODO(tech-debt): the offline queue does not persist stageFor or per-item
-  // servingAmount, so a plate saved while offline syncs (AppLayout.vue flush)
-  // with stageFor=null and default servings. The online save path handles both.
-  // Fixing requires widening this type + the enqueue call + the AppLayout flush.
 }
 
 // ─── DB Schema ────────────────────────────────────────────────────────────────

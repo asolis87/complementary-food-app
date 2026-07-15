@@ -344,3 +344,41 @@ describe('usePlateBuilder — serving amount logic (REQ-B1, B2, B3)', () => {
     expect(builder.totalServingAmount.value).toBe(3)
   })
 })
+
+describe('usePlateBuilder — applyStageHintIfUnset (REQ-C2 stage default)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('sets the stage when the draft currently has no stage (initial state)', () => {
+    const builder = usePlateBuilder()
+    expect(builder.draftStageFor.value).toBeNull()
+
+    builder.applyStageHintIfUnset('TEN_TO_TWELVE_MONTHS')
+
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+  })
+
+  it('does not overwrite an explicit manual choice (sticky-once-set)', () => {
+    const builder = usePlateBuilder()
+    builder.setStageFor('FAMILY_TABLE')
+
+    builder.applyStageHintIfUnset('TEN_TO_TWELVE_MONTHS')
+
+    expect(builder.draftStageFor.value).toBe('FAMILY_TABLE')
+  })
+
+  it('does not overwrite a previously-applied hint when the age changes', () => {
+    const builder = usePlateBuilder()
+
+    // First sync of profile data — hint applied, age=10m => TEN_TO_TWELVE_MONTHS.
+    builder.applyStageHintIfUnset('TEN_TO_TWELVE_MONTHS')
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+
+    // Profile switches to a different baby (age=18m). The user has not picked
+    // anything manually, BUT the hint was already applied to the previous baby.
+    // Contract: do NOT overwrite — the user must opt in.
+    builder.applyStageHintIfUnset('THIRTEEN_TO_TWENTY_THREE_MONTHS')
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+  })
+})
