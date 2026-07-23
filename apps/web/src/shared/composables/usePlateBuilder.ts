@@ -146,11 +146,19 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 
-  /** Reset all draft state to defaults */
+  /** Reset all draft state to defaults.
+   *
+   * REQ-C4 lifecycle contract: a NEW draft must clear its stage so the
+   * sticky-once-set `applyStageHintIfUnset` can re-derive a fresh hint
+   * when the active baby changes. Manual choices (via `setStageFor`) are
+   * preserved within the same draft; only crossing the draft boundary
+   * discards the prior stage.
+   */
   function initDraft(): void {
     draftItems.value = []
     draftName.value = 'Mi plato'
     draftGroupCount.value = 4
+    draftStageFor.value = null
   }
 
   /**
