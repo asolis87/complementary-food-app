@@ -147,7 +147,12 @@
 import { ref, computed, watch } from 'vue'
 import type { Food, FoodGroup, Plate } from '@pakulab/shared'
 import type { MealKey, DayKey } from '@pakulab/shared'
-import { getEffectiveGroup, FOOD_GROUP_LABELS } from '@pakulab/shared'
+import {
+  getEffectiveGroup,
+  FOOD_GROUP_LABELS,
+  getAgeMonths,
+  getSuggestedStageForAge,
+} from '@pakulab/shared'
 import { usePlateBuilder } from '@/shared/composables/usePlateBuilder.js'
 import { useFoodStore } from '@/shared/stores/foodStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
@@ -227,6 +232,27 @@ watch(
     if (profileId && drawerFoodIds.value.length > 0) {
       await foodExposure.fetch(drawerFoodIds.value)
     }
+  },
+)
+
+// ─── Stage Suggestion (REQ-C2 / REQ-C4) — mirror of PlateBuilderPage ───────────
+/** Baby's age in months derived from the active profile (null if none active) */
+const babyAgeMonths = computed<number | null>(() => {
+  const birthDate = profileStore.activeProfile?.birthDate
+  return birthDate ? getAgeMonths(birthDate) : null
+})
+
+/**
+ * Default the draft stage to the baby's current stage. Sticky semantics
+ * (REQ-C4): applies once and never overwrites a manual choice. Re-runs on
+ * profile change so switching babies refreshes the default until the user
+ * picks something. Same contract as PlateBuilderPage.vue.
+ */
+watch(
+  babyAgeMonths,
+  (age) => {
+    if (age === null) return
+    builder.applyStageHintIfUnset(getSuggestedStageForAge(age))
   },
 )
 
@@ -326,12 +352,28 @@ async function handleSave() {
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
-/** Reset draft on close; init fresh draft on open; ensure food catalog is loaded. */
+/** Reset draft on close; init fresh draft on open; ensure food catalog is loaded.
+ *
+ * `immediate: true` is required so the initial mount with `visible: true`
+ * AND an already-loaded active profile applies the age hint without waiting
+ * for a subsequent change. The callback is async but its synchronous
+ * prelude (`initDraft` + `applyStageHintIfUnset`) runs before any `await`,
+ * so the prior sync/async fire-order race is avoided: the hint is applied
+ * AFTER `initDraft` clears `draftStageFor`, not before.
+ */
 watch(
   () => props.visible,
   async (open) => {
     if (open) {
       builder.initDraft()
+      // REQ-C4: initDraft clears draftStageFor; re-apply the age hint for
+      // the new draft so a close+reopen starts with a fresh inferred stage.
+      // (The watcher on babyAgeMonths above picks up profile changes while
+      // the drawer is open; the composable's sticky-once-set preserves any
+      // manual choice within the same draft.)
+      if (babyAgeMonths.value !== null) {
+        builder.applyStageHintIfUnset(getSuggestedStageForAge(babyAgeMonths.value))
+      }
       if (foodStore.foods.length === 0) {
         await foodStore.fetchFoods()
       }
@@ -343,6 +385,7 @@ watch(
       builder.resetDraft()
     }
   },
+  { immediate: true },
 )
 </script>
 
