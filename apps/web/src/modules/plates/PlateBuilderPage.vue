@@ -115,8 +115,8 @@
             v-model="draftStageFor"
             class="stage-selector"
             aria-label="Seleccionar etapa objetivo del plato"
-          >
-            <option :value="null">Sin definir</option>
+                @change="onStageChange"
+              >
             <option
               v-for="stage in PLATE_STAGES"
               :key="stage"
@@ -339,6 +339,8 @@ const showGroupCountSuggestion = computed<boolean>(() => {
   return suggestedGroupCount.value !== null && suggestedGroupCount.value !== draftGroupCount.value
 })
 
+const stageManuallyEdited = ref(false)
+
 // ─── Stage Suggestion (REQ-C2 / REQ-C4) ─────────────────────────────────────
 /**
  * Default the Etapa objetivo selector to the baby's current stage. Sticky
@@ -349,7 +351,7 @@ const showGroupCountSuggestion = computed<boolean>(() => {
 watch(
   babyAgeMonths,
   (age) => {
-    if (age === null) return
+    if (age === null || stageManuallyEdited.value) return
     applyStageHintIfUnset(getSuggestedStageForAge(age))
   },
   { immediate: true },
@@ -483,10 +485,19 @@ function showToast(message: string, type: Toast['type'] = 'info', duration = 300
 /** ID of the plate being edited, or null for create mode */
 const editingPlateId = ref<string | null>(null)
 
+function onStageChange() {
+  stageManuallyEdited.value = true
+}
+
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(async () => {
   // Reset draft state first — prevents stale data from previous visits (UX-1)
+  stageManuallyEdited.value = false
   initDraft()
+  // Apply the current profile hint after initDraft, which clears the stage.
+  if (babyAgeMonths.value !== null) {
+    applyStageHintIfUnset(getSuggestedStageForAge(babyAgeMonths.value))
+  }
 
   // Fetch food catalog if not loaded
   if (foodStore.foods.length === 0) {
