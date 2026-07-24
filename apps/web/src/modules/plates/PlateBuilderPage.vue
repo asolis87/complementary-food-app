@@ -577,6 +577,16 @@ function showToast(message: string, type: Toast['type'] = 'info', duration = 300
     onMounted(async () => {
       stageManuallyEdited.value = false
       initDraft()
+
+      // Garante que el perfil activo este disponible. Si llegamos a /plates/new
+      // desde PlateListPage o un deep link, ninguna ruta previa disparo
+      // fetchProfiles y babyAgeMonths permanece null — el watcher no tendria
+      // un valor no nulo que aplicar. Fire-and-forget: el watcher aplicara el
+      // hint cuando profiles.value sea reemplazado.
+      if (profileStore.profiles.length === 0 && !profileStore.loading) {
+        profileStore.fetchProfiles().catch(() => { /* Mejor esfuerzo */ })
+      }
+
       if (babyAgeMonths.value !== null) {
         applyStageHintIfUnset(getSuggestedStageForAge(babyAgeMonths.value))
       }

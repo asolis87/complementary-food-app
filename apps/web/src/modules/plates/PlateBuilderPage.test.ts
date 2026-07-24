@@ -139,6 +139,28 @@ describe('PlateBuilderPage stage selector', () => {
         expect(stageValue(wrapper)).toBe('TEN_TO_TWELVE_MONTHS')
       })
 
+      // Real production flow: user navigates from /plates (PlateListPage) or
+      // directly to /plates/new. Neither calls fetchProfiles, so the profile
+      // store may be empty when PlateBuilderPage mounts. The page must ensure
+      // the profile is available so the stage hint applies.
+      it('create mode infers stage when no other page has called fetchProfiles yet', async () => {
+        sessionStorage.setItem('pakulab_active_profile', 'baby-1')
+        const birthDate = new Date()
+        birthDate.setMonth(birthDate.getMonth() - 24)
+        const { apiClient } = await import('@/shared/api/client.js')
+        vi.mocked(apiClient.get).mockResolvedValue({
+          data: [{
+            id: 'baby-1', userId: 'user-1', name: 'Mateo',
+            birthDate: birthDate.toISOString(),
+          } as BabyProfile],
+        })
+
+        const wrapper = mountPage()
+        await flushPromises()
+
+        expect(stageValue(wrapper)).toBe('FAMILY_TABLE')
+      })
+
 })
 
 
