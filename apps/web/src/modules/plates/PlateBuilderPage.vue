@@ -1,28 +1,31 @@
 <template>
   <div class="plate-builder-page">
     <main class="page-main">
-          <!-- ─── Hero Header ──────────────────────────────────────────── -->
-          <header class="page-header">
-            <button
-              type="button"
-              class="cancel-link"
-              data-testid="cancel-button"
-              :aria-label="cancelButtonLabel"
-              @click="handleCancel"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-              <span class="cancel-link-label">{{ cancelButtonLabel }}</span>
-            </button>
-            <div
-              v-if="editingPlateId && plateLoadError"
-              class="plate-load-error"
-              data-testid="plate-load-error"
-              role="alert"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">error</span>
-              <span>{{ plateLoadError }}</span>
-            </div>
-            <div class="header-text">
+      <div class="page-header-prelude">
+        <button
+          type="button"
+          class="cancel-link"
+          data-testid="cancel-button"
+          :aria-label="cancelButtonLabel"
+          @click="handleCancel"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+          <span class="cancel-link-label">{{ cancelButtonLabel }}</span>
+        </button>
+        <div
+          v-if="editingPlateId && plateLoadError"
+          class="plate-load-error"
+          data-testid="plate-load-error"
+          role="alert"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <span>{{ plateLoadError }}</span>
+        </div>
+      </div>
+
+      <!-- ─── Hero Header ──────────────────────────────────────────── -->
+      <header class="page-header">
+        <div class="header-text">
           <span class="eyebrow">Planificación de Comidas</span>
           <!-- Editable plate name — inline input styled as heading (AD-4, AC: A8, A9) -->
           <input
@@ -770,6 +773,14 @@ async function handleShare() {
 }
 
 /* ─── Hero Header ─────────────────────────────────────────────────────── */
+.page-header-prelude {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--md3-space-2);
+  margin-bottom: var(--md3-space-4);
+}
+
 .page-header {
   display: flex;
   flex-direction: column;
@@ -778,12 +789,10 @@ async function handleShare() {
 }
 
 .cancel-link {
-  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0;
-  margin-bottom: var(--md3-space-2);
   background: none;
   border: none;
   cursor: pointer;
@@ -809,8 +818,6 @@ async function handleShare() {
   font-weight: var(--md3-weight-semibold);
   background: var(--md3-error-container);
   color: var(--md3-on-error-container);
-  align-self: flex-start;
-  margin-bottom: var(--md3-space-2);
 }
 .plate-load-error .material-symbols-outlined { font-size: 1.1rem; }
 
