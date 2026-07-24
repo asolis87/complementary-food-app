@@ -130,6 +130,15 @@ describe('PlateBuilderPage stage selector', () => {
         expect(stageValue(wrapper)).toBe('FAMILY_TABLE')
       })
 
+      it('does NOT blank the dropdown when edit mode loads a plate with stageFor=null (legacy/backfilled plate)', async () => {
+        setupBaby(10)
+        route.params = { id: 'plate-legacy' }
+        usePlateStore().loadPlate = vi.fn().mockResolvedValue(savedPlate({ stageFor: null }))
+        const wrapper = mountPage()
+        await flushPromises()
+        expect(stageValue(wrapper)).toBe('TEN_TO_TWELVE_MONTHS')
+      })
+
 })
 
 

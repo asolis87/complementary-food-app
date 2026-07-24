@@ -224,14 +224,25 @@ export function usePlateBuilder(options?: UsePlateBuilderOptions): UsePlateBuild
   }
 
   /**
-   * Load an existing Plate into the draft for editing.
-   * Maps PlateItem → PlateItemDraft, filling missing Food fields from FoodSummary.
+   * Carga un Plate existente en el draft para edicion.
+   * Mapea PlateItem -> PlateItemDraft completando los campos faltantes de Food
+   * desde FoodSummary.
+   *
+   * Semantica de stageFor (REQ-C4): un stage guardado explicito y no nulo
+   * SIEMPRE gana y se asigna al draft. Un stage guardado en null (plates
+   * legacy / backfilled) NO debe sobrescribir un hint de edad ya aplicado ni
+   * la eleccion manual del usuario para este draft — hacerlo dejaria el
+   * select de Etapa objetivo en blanco sin re-disparo del watcher para
+   * recuperarse.
    */
   function loadPlateIntoDraft(plate: Plate): void {
     draftItems.value = []
     draftName.value = plate.name
     draftGroupCount.value = plate.groupCount
-    draftStageFor.value = plate.stageFor ?? null // Preserve stage on edit (T-05-06 dead-badge fix)
+    if (plate.stageFor !== null && plate.stageFor !== undefined) {
+      // Stage guardado explicito — gana sobre el hint o la eleccion manual (T-05-06).
+      draftStageFor.value = plate.stageFor
+    }
 
     if (plate.items?.length) {
       for (const item of plate.items) {
