@@ -1,9 +1,28 @@
 <template>
   <div class="plate-builder-page">
     <main class="page-main">
-      <!-- ─── Hero Header ──────────────────────────────────────────── -->
-      <header class="page-header">
-        <div class="header-text">
+          <!-- ─── Hero Header ──────────────────────────────────────────── -->
+          <header class="page-header">
+            <button
+              type="button"
+              class="cancel-link"
+              data-testid="cancel-button"
+              :aria-label="cancelButtonLabel"
+              @click="handleCancel"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+              <span class="cancel-link-label">{{ cancelButtonLabel }}</span>
+            </button>
+            <div
+              v-if="editingPlateId && plateLoadError"
+              class="plate-load-error"
+              data-testid="plate-load-error"
+              role="alert"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">error</span>
+              <span>{{ plateLoadError }}</span>
+            </div>
+            <div class="header-text">
           <span class="eyebrow">Planificación de Comidas</span>
           <!-- Editable plate name — inline input styled as heading (AD-4, AC: A8, A9) -->
           <input
@@ -13,6 +32,7 @@
             maxlength="100"
             placeholder="Mi plato"
             aria-label="Nombre del plato"
+            :disabled="isEditModeLocked"
             @blur="onNameBlur"
             @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
           />
@@ -38,6 +58,7 @@
                 :class="{ 'toggle-btn--active': draftGroupCount === 4 }"
                 role="radio"
                 :aria-checked="draftGroupCount === 4"
+                :disabled="isEditModeLocked"
                 @click="setGroupCount(4)"
               >
                 4 Grupos
@@ -50,20 +71,21 @@
                 </span>
               </button>
               <button
-                class="toggle-btn"
-                :class="{ 'toggle-btn--active': draftGroupCount === 5 }"
-                role="radio"
-                :aria-checked="draftGroupCount === 5"
-                @click="setGroupCount(5)"
-              >
-                5 Grupos
-                <span
-                  v-if="showGroupCountSuggestion && suggestedGroupCount === 5"
-                  class="badge-suggested"
-                  :title="`Sugerido para ${babyAgeMonths} meses`"
+                  class="toggle-btn"
+                  :class="{ 'toggle-btn--active': draftGroupCount === 5 }"
+                  role="radio"
+                  :aria-checked="draftGroupCount === 5"
+                  :disabled="isEditModeLocked"
+                  @click="setGroupCount(5)"
                 >
-                  Sugerido
-                </span>
+                  5 Grupos
+                  <span
+                    v-if="showGroupCountSuggestion && suggestedGroupCount === 5"
+                    class="badge-suggested"
+                    :title="`Sugerido para ${babyAgeMonths} meses`"
+                  >
+                    Sugerido
+                  </span>
               </button>
             </div>
           </div>
@@ -77,6 +99,7 @@
               :class="{ 'toggle-btn--active': draftGroupCount === 4 }"
               role="radio"
               :aria-checked="draftGroupCount === 4"
+              :disabled="isEditModeLocked"
               @click="setGroupCount(4)"
             >
               4 Grupos
@@ -93,8 +116,9 @@
               :class="{ 'toggle-btn--active': draftGroupCount === 5 }"
               role="radio"
               :aria-checked="draftGroupCount === 5"
+              :disabled="isEditModeLocked"
               @click="setGroupCount(5)"
-            >
+              >
               5 Grupos
               <span
                 v-if="showGroupCountSuggestion && suggestedGroupCount === 5"
@@ -115,6 +139,7 @@
             v-model="draftStageFor"
             class="stage-selector"
             aria-label="Seleccionar etapa objetivo del plato"
+            :disabled="isEditModeLocked"
                 @change="onStageChange"
               >
             <option
@@ -144,7 +169,7 @@
                 :items="draftItems"
                 :group-count="draftGroupCount"
                 :times-offered-by-food-id="timesOfferedByFoodId"
-                @remove-item="removeFood"
+                @remove-item="onRemoveFood"
                 @select-group="onGroupSelect"
               />
             </section>
@@ -152,7 +177,7 @@
             <!-- ③ Actions -->
             <section class="actions-section" aria-label="Acciones">
               <PlateActions
-                :can-save="canSave"
+                :can-save="!isEditModeLocked && canSave"
                 :has-items="hasItems"
                 :saving="saving"
                 :exporting="exporting"
@@ -186,8 +211,8 @@
                 :group-count="draftGroupCount"
                 :times-offered-by-food-id="timesOfferedByFoodId"
                 @select-group="onGroupSelect"
-                @remove-item="removeFood"
-                @update-serving-amount="updateServingAmount"
+                @remove-item="onRemoveFood"
+                @update-serving-amount="onUpdateServingAmount"
               />
             </section>
           </div>
@@ -206,7 +231,7 @@
       :history-loading="foodHistoryStore.historyLoading"
       @close="onModalClose"
       @add-food="onModalAddFood"
-      @remove-food="removeFood"
+      @remove-food="onRemoveFood"
       @search="onModalSearch"
     />
 
@@ -376,24 +401,20 @@ const timesOfferedByFoodId = computed<Record<string, number | null>>(() => {
 })
 
 /** Fetch exposure data whenever draft items change */
-watch(draftItems, async () => {
-  if (draftFoodIds.value.length > 0) {
-    await foodExposure.fetch(draftFoodIds.value)
-  }
-}, { deep: true })
-
-/** Re-fetch when active profile changes (new baby → different exposure data) */
-watch(() => profileStore.activeProfile?.id, async (profileId) => {
-  if (profileId && draftFoodIds.value.length > 0) {
-    await foodExposure.fetch(draftFoodIds.value)
-  }
-})
+async function fetchExposureSafely() {
+  if (draftFoodIds.value.length === 0) return
+  try { await foodExposure.fetch(draftFoodIds.value) }
+  catch { showToast('No se pudo cargar el historial de exposición', 'error') }
+}
+watch(draftItems, fetchExposureSafely, { deep: true })
+watch(() => profileStore.activeProfile?.id, (id) => { if (id) fetchExposureSafely() })
 
 // ─── Food Search Modal ────────────────────────────────────────────────────
 const showFoodModal = ref(false)
 const modalGroup = ref<FoodGroup>('FRUIT')
 
 function onGroupSelect(group: FoodGroup) {
+  if (isEditModeLocked.value) return
   modalGroup.value = group
   showFoodModal.value = true
   // Clear group and search filters — we filter locally using getEffectiveGroup
@@ -480,52 +501,140 @@ function showToast(message: string, type: Toast['type'] = 'info', duration = 300
   }, duration)
 }
 
-// ─── Edit mode ────────────────────────────────────────────────────────────
+    // ─── Edit mode ────────────────────────────────────────────────────────────
 
-/** ID of the plate being edited, or null for create mode */
-const editingPlateId = ref<string | null>(null)
+    const editingPlateId = ref<string | null>(null)
+    const loadingPlate = ref(false)
+    const plateLoadError = ref<string | null>(null)
+    const isEditModeLocked = computed(
+      () => editingPlateId.value !== null && (loadingPlate.value || plateLoadError.value !== null),
+    )
 
-function onStageChange() {
-  stageManuallyEdited.value = true
-}
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────
-onMounted(async () => {
-  // Reset draft state first — prevents stale data from previous visits (UX-1)
-  stageManuallyEdited.value = false
-  initDraft()
-  // Apply the current profile hint after initDraft, which clears the stage.
-  if (babyAgeMonths.value !== null) {
-    applyStageHintIfUnset(getSuggestedStageForAge(babyAgeMonths.value))
-  }
-
-  // Fetch food catalog if not loaded
-  if (foodStore.foods.length === 0) {
-    await foodStore.fetchFoods()
-  }
-
-  // Fetch exposure data for draft foods
-  if (draftFoodIds.value.length > 0) {
-    await foodExposure.fetch(draftFoodIds.value)
-  }
-
-  // If route has an id param or ?edit= query, load that plate into edit mode
-  const plateId = (route.params.id ?? route.query.edit) as string | undefined
-  if (plateId) {
-    const plate = await plateStore.loadPlate(plateId)
-    if (plate) {
-      editingPlateId.value = plateId
-      // Load plate data into composable draft (replaces manual property-by-property mapping)
-      loadPlateIntoDraft(plate)
+    function onStageChange() {
+      stageManuallyEdited.value = true
     }
-  }
-})
+
+    // ─── Cancel / back navigation (ux/platebuilder-cancel-navigation) ─────────
+    interface DraftBaseline {
+      items: string
+      name: string
+      groupCount: 4 | 5
+      stage: PlateStage | null
+    }
+    const draftBaseline = ref<DraftBaseline | null>(null)
+
+    function snapshotItems(items: typeof draftItems.value): string {
+      return JSON.stringify(
+        [...items]
+          .map((it) => ({
+            foodId: it.food.id,
+            groupAssignment: it.groupAssignment,
+            servingAmount: it.servingAmount ?? null,
+          }))
+          .sort((a, b) =>
+            `${a.groupAssignment}|${a.foodId}|${a.servingAmount ?? ''}`.localeCompare(
+              `${b.groupAssignment}|${b.foodId}|${b.servingAmount ?? ''}`,
+            ),
+          ),
+      )
+    }
+
+    function captureBaseline(): void {
+      draftBaseline.value = {
+        items: snapshotItems(draftItems.value),
+        name: draftName.value,
+        groupCount: draftGroupCount.value,
+        stage: draftStageFor.value,
+      }
+    }
+
+    const isDirty = computed<boolean>(() => {
+      const base = draftBaseline.value
+      if (!base) return false
+      return (
+        base.name !== draftName.value ||
+        base.groupCount !== draftGroupCount.value ||
+        (stageManuallyEdited.value && base.stage !== draftStageFor.value) ||
+        base.items !== snapshotItems(draftItems.value)
+      )
+    })
+
+    const cancelButtonLabel = computed<string>(() =>
+      editingPlateId.value ? 'Cancelar edición' : 'Cancelar creación',
+    )
+
+    function handleCancel(): void {
+      if (isDirty.value && !confirm('Tienes cambios sin guardar. ¿Salir y descartar los cambios?')) {
+        return
+      }
+      router.push(editingPlateId.value ? `/plates/${editingPlateId.value}` : '/plates')
+    }
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+    onMounted(async () => {
+      stageManuallyEdited.value = false
+      initDraft()
+      if (babyAgeMonths.value !== null) {
+        applyStageHintIfUnset(getSuggestedStageForAge(babyAgeMonths.value))
+      }
+
+      // Edit mode derives from route identity synchronously so the cancel
+      // destination is correct even if the plate load below rejects.
+      const plateId = (route.params.id ?? route.query.edit) as string | undefined
+      if (plateId) {
+        editingPlateId.value = plateId
+        // Lock edit controls from the start of init through loadPlate
+        // completion. The lock must cover fetchFoods() and the exposure
+        // fetch too, otherwise early user input would be overwritten by
+        // loadPlateIntoDraft() once it resolves.
+        loadingPlate.value = true
+      }
+
+      // Capture the dirty baseline BEFORE any awaits so the cancel guard is
+      // meaningful from the moment the page mounts.
+      captureBaseline()
+
+      if (foodStore.foods.length === 0) {
+        try { await foodStore.fetchFoods() }
+        catch { showToast('No se pudo cargar el catálogo de alimentos', 'error') }
+      }
+      if (draftFoodIds.value.length > 0) {
+        await fetchExposureSafely()
+      }
+
+      if (plateId) {
+        try {
+          const plate = await plateStore.loadPlate(plateId)
+          if (plate) {
+            loadPlateIntoDraft(plate)
+            captureBaseline()
+          } else {
+            plateLoadError.value = 'No se encontró el plato solicitado'
+          }
+        } catch {
+          plateLoadError.value = 'No se pudo cargar el plato. Verifica tu conexión.'
+        } finally {
+          loadingPlate.value = false
+        }
+      }
+    })
 
 // ─── Handlers ────────────────────────────────────────────────────────────
 
 function onModalAddFood(food: Food, group: FoodGroup) {
+  if (isEditModeLocked.value) return
   addFood(food, group)
   onModalClose()
+}
+
+function onRemoveFood(itemId: string) {
+  if (isEditModeLocked.value) return
+  removeFood(itemId)
+}
+
+function onUpdateServingAmount(itemId: string, amount: string) {
+  if (isEditModeLocked.value) return
+  updateServingAmount(itemId, amount)
 }
 
 /**
@@ -538,7 +647,7 @@ function onNameBlur() {
 }
 
 async function handleSave() {
-  if (!hasItems.value) return
+  if (isEditModeLocked.value || !hasItems.value) return
   // Validate plate name (AC: A9)
   if (!draftName.value.trim()) {
     showToast('El nombre no puede estar vacío', 'error')
@@ -622,6 +731,7 @@ function onExportError(message: string) {
 }
 
 function handleClear() {
+  if (isEditModeLocked.value) return
   if (!confirm('¿Borrar todos los alimentos del plato?')) return
   clearItems()
   showToast('Plato limpiado', 'info')
@@ -666,6 +776,43 @@ async function handleShare() {
   gap: var(--md3-space-4);
   margin-bottom: var(--md3-space-12);
 }
+
+.cancel-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  margin-bottom: var(--md3-space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--md3-on-surface-variant);
+  font-family: var(--md3-font-label);
+  font-size: var(--md3-label-md);
+  font-weight: var(--md3-weight-semibold);
+  border-radius: var(--md3-rounded-sm);
+  transition: color var(--md3-transition-fast);
+}
+.cancel-link:hover { color: var(--md3-primary); }
+.cancel-link:focus-visible { outline: 2px solid var(--md3-primary); outline-offset: 4px; }
+.cancel-link .material-symbols-outlined { font-size: 1.25rem; }
+
+.plate-load-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--md3-rounded-md);
+  font-family: var(--md3-font-body);
+  font-size: var(--md3-body-sm);
+  font-weight: var(--md3-weight-semibold);
+  background: var(--md3-error-container);
+  color: var(--md3-on-error-container);
+  align-self: flex-start;
+  margin-bottom: var(--md3-space-2);
+}
+.plate-load-error .material-symbols-outlined { font-size: 1.1rem; }
 
 @media (min-width: 1024px) {
   .page-header {
