@@ -381,4 +381,34 @@ describe('usePlateBuilder — applyStageHintIfUnset (REQ-C2 stage default)', () 
     builder.applyStageHintIfUnset('THIRTEEN_TO_TWENTY_THREE_MONTHS')
     expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
   })
+
+  it('loadPlateIntoDraft does NOT clobber an applied age hint when plate.stageFor is null', () => {
+    const builder = usePlateBuilder()
+
+    builder.applyStageHintIfUnset('TEN_TO_TWELVE_MONTHS')
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+
+    builder.loadPlateIntoDraft(makePlate({ stageFor: null }))
+
+    expect(builder.draftStageFor.value).toBe('TEN_TO_TWELVE_MONTHS')
+  })
+
+  it('loadPlateIntoDraft still overrides an applied hint with an explicit non-null saved stage', () => {
+    const builder = usePlateBuilder()
+    builder.applyStageHintIfUnset('TEN_TO_TWELVE_MONTHS')
+
+    builder.loadPlateIntoDraft(makePlate({ stageFor: 'SIX_TO_NINE_MONTHS' }))
+
+    expect(builder.draftStageFor.value).toBe('SIX_TO_NINE_MONTHS')
+  })
+
+  it('loadPlateIntoDraft preserves a manual Sin definir choice when plate.stageFor is null', () => {
+    const builder = usePlateBuilder()
+    builder.setStageFor(null)
+    expect(builder.draftStageFor.value).toBeNull()
+
+    builder.loadPlateIntoDraft(makePlate({ stageFor: null }))
+
+    expect(builder.draftStageFor.value).toBeNull()
+  })
 })
