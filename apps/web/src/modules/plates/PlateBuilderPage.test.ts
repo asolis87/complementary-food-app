@@ -161,6 +161,17 @@ describe('PlateBuilderPage cancel/back navigation', () => {
   })
   afterEach(() => { vi.restoreAllMocks() })
 
+  it('keeps cancel navigation outside and before the desktop hero row', () => {
+    const wrapper = mountPage()
+    const cancelButton = wrapper.find('[data-testid="cancel-button"]')
+    const pageHeader = wrapper.find('.page-header')
+
+    expect(cancelButton.element.closest('.page-header')).toBeNull()
+    expect(
+      cancelButton.element.compareDocumentPosition(pageHeader.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
   it('navigates to /plates (create) or /plates/:id (edit) on unchanged draft', async () => {
     await mountPage().find('[data-testid="cancel-button"]').trigger('click')
     await flushPromises()
