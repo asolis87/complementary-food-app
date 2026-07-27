@@ -3,8 +3,10 @@
  *
  * Tests for:
  * - Rendering with complete data (header, grid, footer)
- * - Empty slots showing "Sin plato"
- * - A/L dots with correct colors
+ * - Empty plate slots showing "Sin plato"
+ * - Empty snack slots showing "Sin colación"
+ * - Snack slots rendering name + foods without A/L dots
+ * - A/L dots with correct colors on plate slots
  * - Edge cases (partial data, all empty)
  */
 
@@ -32,16 +34,16 @@ describe('MenuExportFrame', () => {
         label: 'Lunes',
         date: '15 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Pancakes de banana', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Pancakes de banana', foods: [
             { name: 'Banana', alClassification: 'LAXATIVE' as const },
             { name: 'Avena', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Comida', plateName: 'Pollo con verduras', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Pollo con verduras', foods: [
             { name: 'Pollo', alClassification: 'ASTRINGENT' as const },
             { name: 'Zanahoria', alClassification: 'NEUTRAL' as const },
             { name: 'Arroz', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Cena', plateName: 'Sopa de calabaza', foods: [
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Sopa de calabaza', foods: [
             { name: 'Calabaza', alClassification: 'LAXATIVE' as const },
           ]},
         ],
@@ -50,12 +52,12 @@ describe('MenuExportFrame', () => {
         label: 'Martes',
         date: '16 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Yogur con frutas', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Yogur con frutas', foods: [
             { name: 'Yogur', alClassification: 'NEUTRAL' as const },
             { name: 'Frutilla', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Comida', plateName: null, foods: [] },
-          { type: 'Cena', plateName: 'Puré de papas', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: null, foods: [] },
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Puré de papas', foods: [
             { name: 'Papa', alClassification: 'ASTRINGENT' as const },
           ]},
         ],
@@ -64,26 +66,26 @@ describe('MenuExportFrame', () => {
         label: 'Miércoles',
         date: '17 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Tostadas con queso', foods: [] },
-          { type: 'Comida', plateName: 'Milanesa con puré', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Tostadas con queso', foods: [] },
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Milanesa con puré', foods: [
             { name: 'Carne', alClassification: 'ASTRINGENT' as const },
             { name: 'Papa', alClassification: 'ASTRINGENT' as const },
           ]},
-          { type: 'Cena', plateName: null, foods: [] },
+          { type: 'Cena', kind: 'plate' as const, plateName: null, foods: [] },
         ],
       },
       {
         label: 'Jueves',
         date: '18 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Cereal con leche', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Cereal con leche', foods: [
             { name: 'Cereal', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Comida', plateName: 'Pescado con arroz', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Pescado con arroz', foods: [
             { name: 'Pescado', alClassification: 'NEUTRAL' as const },
             { name: 'Arroz', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Cena', plateName: 'Sopa de verduras', foods: [
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Sopa de verduras', foods: [
             { name: 'Verduras', alClassification: 'NEUTRAL' as const },
           ]},
         ],
@@ -92,14 +94,14 @@ describe('MenuExportFrame', () => {
         label: 'Viernes',
         date: '19 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Huevo revuelto', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Huevo revuelto', foods: [
             { name: 'Huevo', alClassification: 'ASTRINGENT' as const },
           ]},
-          { type: 'Comida', plateName: 'Pastel de carne', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Pastel de carne', foods: [
             { name: 'Carne', alClassification: 'ASTRINGENT' as const },
             { name: 'Verduras', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Cena', plateName: 'Galletas con leche', foods: [
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Galletas con leche', foods: [
             { name: 'Galletas', alClassification: 'ASTRINGENT' as const },
           ]},
         ],
@@ -108,14 +110,14 @@ describe('MenuExportFrame', () => {
         label: 'Sábado',
         date: '20 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Panqueques', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Panqueques', foods: [
             { name: 'Harina', alClassification: 'NEUTRAL' as const },
           ]},
-          { type: 'Comida', plateName: 'Pollo al horno', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Pollo al horno', foods: [
             { name: 'Pollo', alClassification: 'ASTRINGENT' as const },
             { name: 'Papas', alClassification: 'ASTRINGENT' as const },
           ]},
-          { type: 'Cena', plateName: 'Leche con galletas', foods: [
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Leche con galletas', foods: [
             { name: 'Leche', alClassification: 'NEUTRAL' as const },
           ]},
         ],
@@ -124,14 +126,14 @@ describe('MenuExportFrame', () => {
         label: 'Domingo',
         date: '21 ene',
         meals: [
-          { type: 'Desayuno', plateName: 'Tortilla francesa', foods: [
+          { type: 'Desayuno', kind: 'plate' as const, plateName: 'Tortilla francesa', foods: [
             { name: 'Huevo', alClassification: 'ASTRINGENT' as const },
           ]},
-          { type: 'Comida', plateName: 'Asado con ensalada', foods: [
+          { type: 'Comida', kind: 'plate' as const, plateName: 'Asado con ensalada', foods: [
             { name: 'Carne', alClassification: 'ASTRINGENT' as const },
             { name: 'Lechuga', alClassification: 'LAXATIVE' as const },
           ]},
-          { type: 'Cena', plateName: 'Yogur natural', foods: [
+          { type: 'Cena', kind: 'plate' as const, plateName: 'Yogur natural', foods: [
             { name: 'Yogur', alClassification: 'NEUTRAL' as const },
           ]},
         ],
@@ -263,14 +265,14 @@ describe('MenuExportFrame', () => {
   })
 
   describe('3.2: Empty slots and edge cases', () => {
-    it('shows "Sin plato" for all cells when all slots are empty', () => {
+    it('shows "Sin plato" for all cells when all plate slots are empty', () => {
       const emptyDays = Array.from({ length: 7 }, (_, i) => ({
         label: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][i],
         date: `${15 + i} ene`,
         meals: [
-          { type: 'Desayuno', plateName: null as string | null, foods: [] },
-          { type: 'Comida', plateName: null as string | null, foods: [] },
-          { type: 'Cena', plateName: null as string | null, foods: [] },
+          { type: 'Desayuno', kind: 'plate' as const, plateName: null as string | null, foods: [] },
+          { type: 'Comida', kind: 'plate' as const, plateName: null as string | null, foods: [] },
+          { type: 'Cena', kind: 'plate' as const, plateName: null as string | null, foods: [] },
         ],
       }))
 
@@ -411,5 +413,227 @@ describe('MenuExportFrame', () => {
     // user-reachable way to trigger it; if we ever add one, the test
     // should call wrapper.vm.capture() against a stubbed null ref,
     // not rely on unmount.
+  })
+
+  describe('Snack slots (REQ-SK1 / Phase 3 hotfix)', () => {
+    const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+    /**
+     * 5-meal layout with assigned snacks on the two colación slots for the
+     * first day. Mirrors what `MenuWeekPage.exportData` produces for a baby
+     * ≥13 months with colaciones guardadas.
+     */
+    const buildDaysWithSnacks = () =>
+      Array.from({ length: 7 }, (_, i) => ({
+        label: dayNames[i],
+        date: `${15 + i} ene`,
+        meals: [
+          {
+            type: 'Desayuno',
+            kind: 'plate' as const,
+            plateName: 'Avena con fruta',
+            foods: [
+              { name: 'Avena', alClassification: 'NEUTRAL' as const },
+              { name: 'Plátano', alClassification: 'LAXATIVE' as const },
+            ],
+          },
+          {
+            type: 'Colación 1',
+            kind: 'snack' as const,
+            plateName: i === 0 ? 'Manzana con nuez' : null,
+            foods:
+              i === 0
+                ? [
+                    { name: 'Manzana', alClassification: 'NEUTRAL' as const },
+                    { name: 'Nuez', alClassification: 'NEUTRAL' as const },
+                  ]
+                : [],
+          },
+          {
+            type: 'Comida',
+            kind: 'plate' as const,
+            plateName: 'Pollo con verduras',
+            foods: [
+              { name: 'Pollo', alClassification: 'ASTRINGENT' as const },
+              { name: 'Zanahoria', alClassification: 'NEUTRAL' as const },
+            ],
+          },
+          {
+            type: 'Colación 2',
+            kind: 'snack' as const,
+            plateName: i === 2 ? 'Yogur con fruta' : null,
+            foods:
+              i === 2
+                ? [
+                    { name: 'Yogur', alClassification: 'NEUTRAL' as const },
+                    { name: 'Fresa', alClassification: 'NEUTRAL' as const },
+                  ]
+                : [],
+          },
+          {
+            type: 'Cena',
+            kind: 'plate' as const,
+            plateName: 'Sopa de calabaza',
+            foods: [{ name: 'Calabaza', alClassification: 'LAXATIVE' as const }],
+          },
+        ],
+      }))
+
+    it('renders the snack slot type label (e.g., "Colación 1")', () => {
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days: buildDaysWithSnacks(),
+          weekStats: { total: 28, balanced: 12, empty: 7 },
+        },
+      })
+
+      // 7 días × 5 slots = 35 celdas; el tipo "Colación 1" aparece 7 veces.
+      const types = wrapper.findAll('.export-meal__type')
+      expect(types.length).toBe(35)
+      const typeTexts = types.map((t) => t.text())
+      expect(typeTexts.filter((t) => t === 'Colación 1').length).toBe(7)
+      expect(typeTexts.filter((t) => t === 'Colación 2').length).toBe(7)
+    })
+
+    it('assigns the export-meal--snack class to snack slots and --plate to plate slots', () => {
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days: buildDaysWithSnacks(),
+          weekStats: { total: 28, balanced: 12, empty: 7 },
+        },
+      })
+
+      expect(wrapper.findAll('.export-meal--plate').length).toBe(7 * 3)
+      expect(wrapper.findAll('.export-meal--snack').length).toBe(7 * 2)
+    })
+
+    it('shows "Sin colación" for empty snack slots', () => {
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days: buildDaysWithSnacks(),
+          weekStats: { total: 28, balanced: 12, empty: 7 },
+        },
+      })
+
+      // Días sin snack asignado (e.g., martes en el fixture): el slot de colación
+      // debe mostrar "Sin colación", no "Sin plato".
+      const tuesdayColacion1 = wrapper.findAll('.export-day')[1]!.findAll('.export-meal')[1]!
+      expect(tuesdayColacion1.find('.export-meal__plate').text()).toBe('Sin colación')
+      expect(tuesdayColacion1.find('.export-meal__plate').classes()).toContain(
+        'export-meal__plate--empty',
+      )
+      expect(tuesdayColacion1.find('.export-meal__plate').classes()).toContain(
+        'export-meal__plate--snack-empty',
+      )
+    })
+
+    it('renders assigned snack name and foods WITHOUT A/L dots', () => {
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days: buildDaysWithSnacks(),
+          weekStats: { total: 28, balanced: 12, empty: 7 },
+        },
+      })
+
+      // Lunes lleva snack asignado en Colación 1
+      const mondayColacion1 = wrapper.findAll('.export-day')[0]!.findAll('.export-meal')[1]!
+      expect(mondayColacion1.find('.export-meal__plate').text()).toBe('Manzana con nuez')
+
+      const snackFoods = mondayColacion1.findAll('.export-food')
+      expect(snackFoods.length).toBe(2)
+      // Sin dot A/L para colaciones: no debe haber ningún .export-food__dot en este slot.
+      expect(mondayColacion1.findAll('.export-food__dot').length).toBe(0)
+
+      // Nombres correctos
+      const names = snackFoods.map((f) => f.find('.export-food__name').text())
+      expect(names).toEqual(['Manzana', 'Nuez'])
+    })
+
+    it('still renders A/L dots on plate slots in the same component', () => {
+      // Al incluir snacks, los slots de plato siguen llevando dot A/L.
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days: buildDaysWithSnacks(),
+          weekStats: { total: 28, balanced: 12, empty: 7 },
+        },
+      })
+
+      expect(wrapper.findAll('.export-food__dot--astringent').length).toBeGreaterThan(0)
+      expect(wrapper.findAll('.export-food__dot--laxative').length).toBeGreaterThan(0)
+      expect(wrapper.findAll('.export-food__dot--neutral').length).toBeGreaterThan(0)
+    })
+
+    it('preserves "Sin plato" copy on empty plate slots when snacks are present', () => {
+      // Construimos un día donde SÓLO el plato está vacío (todos los snacks asignados).
+      const days = [
+        {
+          label: 'Lunes',
+          date: '15 ene',
+          meals: [
+            { type: 'Desayuno', kind: 'plate' as const, plateName: null, foods: [] },
+            { type: 'Colación 1', kind: 'snack' as const, plateName: 'Manzana', foods: [{ name: 'Manzana', alClassification: 'NEUTRAL' as const }] },
+            { type: 'Comida', kind: 'plate' as const, plateName: null, foods: [] },
+            { type: 'Colación 2', kind: 'snack' as const, plateName: null, foods: [] },
+            { type: 'Cena', kind: 'plate' as const, plateName: null, foods: [] },
+          ],
+        },
+        ...Array.from({ length: 6 }, (_, i) => ({
+          label: dayNames[i + 1]!,
+          date: `${15 + i + 1} ene`,
+          meals: [
+            { type: 'Desayuno', kind: 'plate' as const, plateName: null, foods: [] },
+            { type: 'Colación 1', kind: 'snack' as const, plateName: null, foods: [] },
+            { type: 'Comida', kind: 'plate' as const, plateName: null, foods: [] },
+            { type: 'Colación 2', kind: 'snack' as const, plateName: null, foods: [] },
+            { type: 'Cena', kind: 'plate' as const, plateName: null, foods: [] },
+          ],
+        })),
+      ]
+
+      const wrapper = mount(MenuExportFrame, {
+        props: {
+          weekStart: '2024-01-15',
+          weekEnd: '2024-01-21',
+          weekLabel: '15 – 21 ene',
+          babyName: 'Tomás',
+          days,
+          weekStats: { total: 1, balanced: 0, empty: 34 },
+        },
+      })
+
+      const monday = wrapper.findAll('.export-day')[0]!
+      // Slot de Comida (índice 2) es plate vacío → "Sin plato"
+      const comida = monday.findAll('.export-meal')[2]!
+      const comidaPlate = comida.find('.export-meal__plate')
+      expect(comidaPlate.text()).toBe('Sin plato')
+      expect(comidaPlate.classes()).toContain('export-meal__plate--empty')
+      expect(comidaPlate.classes()).not.toContain('export-meal__plate--snack-empty')
+
+      // Slot de Colación 2 (índice 3) es snack vacío → "Sin colación"
+      const colacion2 = monday.findAll('.export-meal')[3]!
+      const colacion2Plate = colacion2.find('.export-meal__plate')
+      expect(colacion2Plate.text()).toBe('Sin colación')
+      expect(colacion2Plate.classes()).toContain('export-meal__plate--snack-empty')
+    })
   })
 })
