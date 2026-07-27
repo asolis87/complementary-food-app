@@ -18,6 +18,7 @@ import { useMenuStore } from '@/shared/stores/menuStore.js'
 import { usePlateStore } from '@/shared/stores/plateStore.js'
 import { useSnackStore } from '@/shared/stores/snackStore.js'
 import { useProfileStore } from '@/shared/stores/profileStore.js'
+import { useFoodHistoryStore } from '@/shared/stores/foodHistoryStore.js'
 import type { Plate, PlateItemSummary } from '@pakulab/shared'
 
 // Mock the stores
@@ -25,6 +26,7 @@ vi.mock('@/shared/stores/menuStore.js')
 vi.mock('@/shared/stores/plateStore.js')
 vi.mock('@/shared/stores/snackStore.js')
 vi.mock('@/shared/stores/profileStore.js')
+vi.mock('@/shared/stores/foodHistoryStore.js')
 
 // Mock TierGate component
 vi.mock('@/shared/components/TierGate.vue', () => ({
@@ -103,6 +105,17 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       savedSnacks: [],
       loading: ref(false),
       fetchSavedSnacks: vi.fn(),
+    } as any)
+    // Default foodHistory store mock: empty cache + no-op fetch. The
+    // snack-history regression test overrides this in its own setup.
+    vi.mocked(useFoodHistoryStore).mockReturnValue({
+      history: new Map(),
+      historyLoading: ref(false),
+      error: ref(null),
+      historyForFood: vi.fn(() => undefined),
+      fetchForFoods: vi.fn(async () => {}),
+      invalidateFood: vi.fn(),
+      clearCache: vi.fn(),
     } as any)
   })
 
@@ -525,18 +538,19 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       expect(exportFrame.props('weekStats')).toBeDefined()
     })
 
-    it('excludes snack rows from the export even when snack columns are visible', async () => {
-      // 15-month baby → grid shows 5 columns (breakfast, snack1, lunch, snack2,
-      // dinner), but the export must render only the 3 main meals.
+    it('includes snack rows in the export following the age-aware order (15 months → 5 slots)', async () => {
+      // 15-month baby → 5 columnas (Desayuno, Colación 1, Comida, Colación 2,
+      // Cena). El export debe respetar exactamente este orden.
       const birthDateForAge = (months: number): Date => {
         const now = new Date()
         return new Date(now.getFullYear(), now.getMonth() - months, 1)
       }
 
       const store = mockMenuStoreWithExport({})
-      // Assign a snack so the (would-be) snack rows have content to leak.
       store.getSnack = vi.fn((dayKey: string, mealKey: string) =>
-        mealKey === 'snack1' && dayKey === 'lun' ? { id: 's1', name: 'Manzana con nuez' } : null,
+        mealKey === 'snack1' && dayKey === 'lun'
+          ? { id: 's1', name: 'Manzana con nuez' }
+          : null,
       ) as any
       vi.mocked(useMenuStore).mockReturnValue(store as any)
       vi.mocked(usePlateStore).mockReturnValue({
@@ -554,15 +568,330 @@ describe('MenuWeekPage — Food Visualization (Phase 2)', () => {
       await flushPromises()
 
       const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
-      const days = exportFrame.props('days') as Array<{ meals: Array<{ type: string }> }>
+      const days = exportFrame.props('days') as Array<{
+        meals: Array<{ type: string; kind: 'plate' | 'snack'; plateName: string | null }>
+      }>
 
-      // Each exported day carries only the 3 main meals — no snack rows.
       expect(days.length).toBe(7)
       for (const day of days) {
-        expect(day.meals.length).toBe(3)
+        expect(day.meals.length).toBe(5)
         const types = day.meals.map((m) => m.type)
-        expect(types.some((t) => t.includes('Colación'))).toBe(false)
+        expect(types).toEqual(['Desayuno', 'Colación 1', 'Comida', 'Colación 2', 'Cena'])
+        // Colaciones marcadas como snack
+        expect(day.meals[1]!.kind).toBe('snack')
+        expect(day.meals[3]!.kind).toBe('snack')
+        // Platos principales marcados como plate
+        expect(day.meals[0]!.kind).toBe('plate')
+        expect(day.meals[2]!.kind).toBe('plate')
+        expect(day.meals[4]!.kind).toBe('plate')
       }
+    })
+
+    it('exports the 4-slot layout for an 11-month baby (Desayuno, Comida, Colación, Cena)', async () => {
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const store = mockMenuStoreWithExport({})
+      store.getSnack = vi.fn(() => null) as any
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(11) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{
+        meals: Array<{ type: string; kind: 'plate' | 'snack' }>
+      }>
+
+      for (const day of days) {
+        expect(day.meals.length).toBe(4)
+        expect(day.meals.map((m) => m.type)).toEqual([
+          'Desayuno',
+          'Comida',
+          'Colación',
+          'Cena',
+        ])
+        // El único slot de snack vive entre Comida y Cena
+        const snack = day.meals.find((m) => m.kind === 'snack')
+        expect(snack).toBeDefined()
+        expect(snack?.type).toBe('Colación')
+      }
+    })
+
+    it('exports 3 plate-only slots for an 8-month baby (no colaciones)', async () => {
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const store = mockMenuStoreWithExport({})
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(8) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{
+        meals: Array<{ type: string; kind: 'plate' | 'snack' }>
+      }>
+
+      for (const day of days) {
+        expect(day.meals.length).toBe(3)
+        expect(day.meals.every((m) => m.kind === 'plate')).toBe(true)
+        expect(day.meals.map((m) => m.type)).toEqual(['Desayuno', 'Comida', 'Cena'])
+      }
+    })
+
+    it('renders assigned snack name and foods in the export (kind=snack)', async () => {
+      // 11 meses → 1 colación por día. Snack asignado lleva nombre + alimentos,
+      // sin clasificación A/L.
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const store = mockMenuStoreWithExport({})
+      store.getSnack = vi.fn((dayKey: string, mealKey: string) => {
+        if (dayKey === 'lun' && mealKey === 'snack1') {
+          return {
+            id: 's1',
+            name: 'Manzana con nuez',
+            items: [
+              { foodId: 'f1', food: { name: 'Manzana', id: 'f1', group: 'FRUIT' } },
+              { foodId: 'f2', food: { name: 'Nuez', id: 'f2', group: 'HEALTHY_FAT' } },
+            ],
+          }
+        }
+        return null
+      }) as any
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(11) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{
+        label: string
+        meals: Array<{
+          type: string
+          kind: 'plate' | 'snack'
+          plateName: string | null
+          foods: Array<{ name: string; alClassification: string }>
+        }>
+      }>
+
+      const monday = days[0]!
+      const snackSlot = monday.meals.find((m) => m.kind === 'snack')!
+      expect(snackSlot.plateName).toBe('Manzana con nuez')
+      expect(snackSlot.foods.map((f) => f.name)).toEqual(['Manzana', 'Nuez'])
+      // Sin clasificación A/L inventada — siempre NEUTRAL en snacks.
+      expect(snackSlot.foods.every((f) => f.alClassification === 'NEUTRAL')).toBe(true)
+    })
+
+    it('renders "Sin colación" for empty snack slots in the export', async () => {
+      // 11 meses → colación entre Comida y Cena. Sin snack asignado.
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const store = mockMenuStoreWithExport({})
+      store.getSnack = vi.fn(() => null) as any
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(11) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{
+        meals: Array<{
+          type: string
+          kind: 'plate' | 'snack'
+          plateName: string | null
+          foods: unknown[]
+        }>
+      }>
+
+      for (const day of days) {
+        const snack = day.meals.find((m) => m.kind === 'snack')!
+        expect(snack.plateName).toBeNull()
+        expect(snack.foods).toEqual([])
+      }
+    })
+
+    // Regression: fix/snacks-in-report — `weekFoodIds` must include assigned
+    // snack foodIds so that foodHistory (timesOffered) gets fetched for them
+    // and the export does not falsely flag snack-exclusive foods as "NUEVO".
+    it('preloads food history for assigned snack foods so cached history is not flagged "primera vez"', async () => {
+      const birthDateForAge = (months: number): Date => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth() - months, 1)
+      }
+
+      const SNACK_ONLY_FOOD_ID = 'snack-only-food'
+      const SNACK_ONLY_FOOD_NAME = 'Papaya'
+
+      // #2: el historial precargado indica exposición previa (timesOffered > 0).
+      // Simulamos que la API ya pobló el cache para ese alimento.
+      const cachedHistory = {
+        timesOffered: 3,
+        firstDate: '2024-01-08',
+        lastDate: '2024-01-20',
+      }
+
+      const fetchForFoodsSpy = vi.fn(
+        async (_pid: string, _ids: string[]): Promise<void> => {
+          // vacio: el cache ya fue poblado abajo (simula el estado post-fetch)
+        },
+      )
+
+      const historyStore = {
+        history: new Map<string, typeof cachedHistory>([
+          [`profile-1:${SNACK_ONLY_FOOD_ID}`, cachedHistory],
+        ]),
+        historyLoading: ref(false),
+        error: ref(null),
+        historyForFood: vi.fn((pid: string, fid: string) =>
+          historyStore.history.get(`${pid}:${fid}`),
+        ),
+        fetchForFoods: fetchForFoodsSpy,
+        invalidateFood: vi.fn(),
+        clearCache: vi.fn(),
+      }
+      vi.mocked(useFoodHistoryStore).mockReturnValue(historyStore as any)
+
+      const store = mockMenuStoreWithExport({})
+      // #1: snack asignado solo en lun:snack1 con un alimento que NO aparece
+      // en ningún plato ni savedPlate.
+      store.getSnack = vi.fn((dayKey: string, mealKey: string) =>
+        dayKey === 'lun' && mealKey === 'snack1'
+          ? {
+              id: 's1',
+              name: 'Fruta con papaya',
+              items: [
+                {
+                  id: 'i1',
+                  foodId: SNACK_ONLY_FOOD_ID,
+                  food: {
+                    id: SNACK_ONLY_FOOD_ID,
+                    name: SNACK_ONLY_FOOD_NAME,
+                    group: 'FRUIT',
+                  },
+                },
+              ],
+            }
+          : null,
+      ) as any
+      store.snackMap = computed(() => ({
+        'lun:snack1': { id: 's1', name: 'Fruta con papaya' },
+      }))
+      vi.mocked(useMenuStore).mockReturnValue(store as any)
+      vi.mocked(usePlateStore).mockReturnValue({
+        savedPlates: [],
+        loading: ref(false),
+        fetchSavedPlates: vi.fn(),
+      } as any)
+      vi.mocked(useProfileStore).mockReturnValue({
+        profiles: [],
+        activeProfile: { id: 'profile-1', name: 'Tomás', birthDate: birthDateForAge(11) },
+        fetchProfiles: vi.fn(),
+      } as any)
+
+      // #1 (cont.): ningún plato contiene el foodId exclusivo de snack
+      expect(store.getPlate('lun', 'desayuno')).toBeNull()
+      expect(store.getPlate('lun', 'comida')).toBeNull()
+      expect(store.getPlate('lun', 'cena')).toBeNull()
+      expect(store.getPlate('mar', 'desayuno')).toBeNull()
+
+      const wrapper = mount(MenuWeekPage)
+      await flushPromises()
+
+      // #2: el historial precargado indica exposición previa
+      const cached = historyStore.historyForFood('profile-1', SNACK_ONLY_FOOD_ID)
+      expect(cached).toBeDefined()
+      expect(cached?.timesOffered).toBeGreaterThan(0)
+
+      // #4: el alimento exportado tiene isNew === false y no aparece en newFoods
+      // (sin el fix, seenSoFar no incluiría este foodId y se marcaría isNew: true).
+      const exportFrame = wrapper.findComponent({ name: 'MenuExportFrame' })
+      const days = exportFrame.props('days') as Array<{
+        label: string
+        newFoods: string[]
+        meals: Array<{
+          type: string
+          kind: 'plate' | 'snack'
+          foods: Array<{ foodId: string; name: string; isNew: boolean }>
+        }>
+      }>
+
+      const monday = days.find((d) => d.label === 'Lunes')!
+      expect(monday).toBeDefined()
+      const snackSlot = monday.meals.find((m) => m.kind === 'snack')!
+      expect(snackSlot).toBeDefined()
+
+      const papayaFood = snackSlot.foods.find((f) => f.foodId === SNACK_ONLY_FOOD_ID)
+      expect(papayaFood).toBeDefined()
+      expect(papayaFood?.isNew).toBe(false)
+
+      // El alimento no aparece en newFoods del día actual ni de la semana completa.
+      expect(monday.newFoods).not.toContain(SNACK_ONLY_FOOD_NAME)
+      expect(days.flatMap((d) => d.newFoods)).not.toContain(SNACK_ONLY_FOOD_NAME)
+
+      // #3: el export solicita/incluye ese ID en fetchForFoods.
+      // Disparamos el botón de export para forzar fetchWeekFoodHistory, que
+      // invoca foodHistoryStore.fetchForFoods(profileId, weekFoodIds.value).
+      const exportBtn = wrapper.find('.export-btn')
+      expect(exportBtn.exists()).toBe(true)
+      await exportBtn.trigger('click')
+      // Permitir que termine la cadena async (fetchForFoods → nextTick → capture).
+      // capture() puede fallar en jsdom, pero fetchForFoods ya fue invocado.
+      for (let i = 0; i < 5; i++) await flushPromises()
+
+      expect(fetchForFoodsSpy).toHaveBeenCalled()
+      const allIds = fetchForFoodsSpy.mock.calls.flatMap(([, ids]) => ids as string[])
+      expect(allIds).toContain(SNACK_ONLY_FOOD_ID)
     })
   })
 

@@ -34,12 +34,13 @@
             v-for="meal in day.meals"
             :key="meal.type"
             class="export-meal"
+            :class="`export-meal--${meal.kind}`"
           >
             <span class="export-meal__type">{{ meal.type }}</span>
             <div class="export-meal__content">
               <template v-if="meal.plateName">
                 <span class="export-meal__plate">{{ meal.plateName }}</span>
-                <!-- Food list with A/L color indicators -->
+                <!-- Lista de alimentos; el dot A/L sólo aparece en slots de plato. -->
                 <ul v-if="meal.foods.length > 0" class="export-foods">
                   <li
                     v-for="(food, index) in meal.foods"
@@ -47,6 +48,7 @@
                     class="export-food"
                   >
                     <span
+                      v-if="meal.kind === 'plate'"
                       class="export-food__dot"
                       :class="`export-food__dot--${food.alClassification.toLowerCase()}`"
                     />
@@ -55,8 +57,16 @@
                   </li>
                 </ul>
               </template>
-              <span v-else class="export-meal__plate export-meal__plate--empty">
-                Sin plato
+              <!--
+                Slot vacío: "Sin plato" para comidas principales; "Sin colación"
+                para snacks. Conserva el copy de plato intacto.
+              -->
+              <span
+                v-else
+                class="export-meal__plate export-meal__plate--empty"
+                :class="{ 'export-meal__plate--snack-empty': meal.kind === 'snack' }"
+              >
+                {{ meal.kind === 'snack' ? 'Sin colación' : 'Sin plato' }}
               </span>
             </div>
           </div>
@@ -119,9 +129,16 @@ interface ExportFood {
   isNew?: boolean
 }
 
-/** Single meal slot (Desayuno/Comida/Cena) */
+/** Single meal slot (Desayuno/Comida/Cena, o Colación cuando `kind === 'snack'`) */
 interface ExportMeal {
   type: string
+  /**
+   * `plate` mantiene el comportamiento previo: dot A/L y "Sin plato" cuando
+   * está vacío. `snack` rinde el nombre de la colación con alimentos sin
+   * dot A/L y "Sin colación" cuando está vacío.
+   */
+  kind: 'plate' | 'snack'
+  /** Nombre del plato (kind=plate) o de la colación (kind=snack). Null cuando está vacío. */
   plateName: string | null
   foods: ExportFood[]
 }
@@ -341,6 +358,10 @@ defineExpose({ capture })
 .export-meal__plate--empty {
   color: #9ca3af;
   font-style: italic;
+}
+
+/* Slot de colación vacío: hereda estilos de --empty; marcador adicional para CSS/tests. */
+.export-meal__plate--snack-empty {
 }
 
 /* Food list */

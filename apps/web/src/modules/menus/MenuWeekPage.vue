@@ -1078,17 +1078,32 @@ const foodExposure = useFoodExposure()
 
 /**
  * Collect all unique food IDs from currently visible week slots and picker plates.
- * Includes assigned plates in the week grid + saved plates in the picker.
+ * Includes assigned plates AND assigned snacks in the week grid, plus saved plates
+ * in the picker. Snacks matter here because `exportData` seeds its `seenSoFar`
+ * set from this list: if a snack-exclusive food is missing, the food-history
+ * cache stays cold for it and the export falsely flags the food as "primera vez".
+ * `savedSnacks` are intentionally NOT included — only the slots actually
+ * rendered in the current week feed the export.
  */
 const weekFoodIds = computed<string[]>(() => {
   const ids = new Set<string>()
-  // Week grid foods
+  // Week grid foods: plates (main meals) + assigned snacks (colaciones).
   for (const day of weekDays.value) {
     for (const meal of MEALS.value) {
-      const plate = menuStore.getPlate(day.key, meal.key as MealKey)
-      if (plate?.items) {
-        for (const item of plate.items) {
-          if (item.foodId) ids.add(item.foodId)
+      const mealKey = meal.key as MealKey
+      if (isSnackSlot(mealKey)) {
+        const snack = menuStore.getSnack(day.key, mealKey)
+        if (snack?.items) {
+          for (const item of snack.items) {
+            if (item.foodId) ids.add(item.foodId)
+          }
+        }
+      } else {
+        const plate = menuStore.getPlate(day.key, mealKey)
+        if (plate?.items) {
+          for (const item of plate.items) {
+            if (item.foodId) ids.add(item.foodId)
+          }
         }
       }
     }
@@ -1158,8 +1173,21 @@ interface ExportFood {
   isNew: boolean
 }
 
+/** Discriminador de slot en el export: plato (comida principal) o snack (colación). */
+type ExportMealKind = 'plate' | 'snack'
+
 interface ExportMeal {
   type: string
+  /**
+   * Tipo de slot. `plate` mantiene el comportamiento previo (dot A/L,
+   * "Sin plato" cuando está vacío). `snack` rinde el nombre del snack,
+   * alimentos sin clasificación A/L, y "Sin colación" cuando está vacío.
+   */
+  kind: ExportMealKind
+  /**
+   * Nombre visible: nombre del plato (slots `plate`) o nombre de la
+   * colación (slots `snack`). `null` cuando el slot está vacío.
+   */
   plateName: string | null
   foods: ExportFood[]
 }
@@ -1203,9 +1231,45 @@ const exportData = computed<ExportDay[]>(() => {
     const newFoodIdsToday = new Set<string>()
     const newFoodNamesToday: string[] = []
 
-    // Snacks are not included in the export (deferred to the snack-catalog PR):
-    // only the main meals (breakfast/lunch/dinner) are rendered.
-    const meals: ExportMeal[] = MEALS.value.filter((meal) => !isSnackSlot(meal.key)).map((meal) => {
+    // El orden de los slots viene de `getMealSlotsForAge` vía MEALS — age-aware
+    // (3 / 4 / 5 comidas). Tanto los slots de plato como los de snack se incluyen
+    // en el export; solo cambia la fuente de datos y la representación.
+    const meals: ExportMeal[] = MEALS.value.map((meal) => {
+      if (isSnackSlot(meal.key)) {
+        const snack = menuStore.getSnack(dayKey, meal.key)
+        const foods: ExportFood[] = snack?.items
+          ? snack.items.map((item) => {
+              const foodId = item.foodId ?? ''
+              const name = item.food?.name ?? 'Alimento'
+              // Marca "primera vez" sólo en la primera aparición por día de un
+              // alimento nunca ofrecido (mismo algoritmo que para platos).
+              const isNew =
+                !!foodId &&
+                !seenSoFar.has(foodId) &&
+                !newFoodIdsToday.has(foodId)
+              if (isNew) {
+                newFoodIdsToday.add(foodId)
+                newFoodNamesToday.push(name)
+              }
+              return {
+                foodId,
+                name,
+                // Los snacks no llevan clasificación A/L en el dominio; usamos
+                // NEUTRAL como placeholder para mantener la forma del modelo.
+                // El frame omite el dot A/L cuando `kind === 'snack'`.
+                alClassification: 'NEUTRAL' as const,
+                isNew,
+              }
+            })
+          : []
+        return {
+          type: meal.name,
+          kind: 'snack',
+          plateName: snack?.name ?? null,
+          foods,
+        }
+      }
+
       const plate = menuStore.getPlate(dayKey, meal.key)
       const foods: ExportFood[] = menuStore.getSlotFoods(dayKey, meal.key).map((item) => {
         const foodId = item.foodId ?? ''
@@ -1229,6 +1293,7 @@ const exportData = computed<ExportDay[]>(() => {
 
       return {
         type: meal.name,
+        kind: 'plate',
         plateName: plate?.name ?? null,
         foods,
       }
