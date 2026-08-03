@@ -98,10 +98,6 @@ Vera Sesiom soporta dos estrategias de infraestructura. La eleccion se hace al i
 > **Empeza simple. Escala cuando duela.**
 > La arquitectura hexagonal garantiza que migrar de VPS a AWS (o viceversa) es cambiar adaptadores de infraestructura, no reescribir el dominio.
 
-Skills relacionadas:
-- [aws-infra](../aws-infra/SKILL.md) — cuando el proyecto requiere AWS
-- [vps-dokploy](../vps-dokploy/SKILL.md) — cuando el proyecto va a VPS
-
 ## Frontend — Criterio de Decision
 
 Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion se hace al inicio y se documenta.
@@ -124,7 +120,7 @@ Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion s
 
 ### Comparacion Rapida
 
-| Criterio | Astro (astro-landing) | Vue (vue-frontend) |
+| Criterio | Astro | Vue |
 |----------|----------------------|-------------------|
 | Tipo de proyecto | Landing page, sitio corporativo, blog | Web app interactiva |
 | Interactividad | Minima (formularios, carruseles) | Alta (dashboards, CRUD, real-time) |
@@ -137,7 +133,3 @@ Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion s
 
 > **Si el sitio es contenido que la gente LEE → Astro.**
 > **Si es una app que la gente USA → Vue.**
-
-Skills relacionadas:
-- [astro-landing](../astro-landing/SKILL.md) — landing pages y sitios de contenido
-- [vue-frontend](../vue-frontend/SKILL.md) — aplicaciones web interactivas

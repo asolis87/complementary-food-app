@@ -103,10 +103,6 @@ Vera Sesiom soporta dos estrategias de infraestructura. La eleccion se hace al i
 > **Empeza simple. Escala cuando duela.**
 > La arquitectura hexagonal garantiza que migrar de VPS a AWS (o viceversa) es cambiar adaptadores de infraestructura, no reescribir el dominio.
 
-Skills relacionadas:
-- [aws-infra](../aws-infra/SKILL.md) — cuando el proyecto requiere AWS
-- [vps-dokploy](../vps-dokploy/SKILL.md) — cuando el proyecto va a VPS
-
 ## Frontend — Criterio de Decision
 
 Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion se hace al inicio y se documenta.
@@ -129,7 +125,7 @@ Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion s
 
 ### Comparacion Rapida
 
-| Criterio | Astro (astro-landing) | Vue (vue-frontend) |
+| Criterio | Astro | Vue |
 |----------|----------------------|-------------------|
 | Tipo de proyecto | Landing page, sitio corporativo, blog | Web app interactiva |
 | Interactividad | Minima (formularios, carruseles) | Alta (dashboards, CRUD, real-time) |
@@ -143,33 +139,9 @@ Vera Sesiom usa dos stacks de frontend según el tipo de proyecto. La eleccion s
 > **Si el sitio es contenido que la gente LEE → Astro.**
 > **Si es una app que la gente USA → Vue.**
 
-Skills relacionadas:
-- [astro-landing](../astro-landing/SKILL.md) — landing pages y sitios de contenido
-- [vue-frontend](../vue-frontend/SKILL.md) — aplicaciones web interactivas
-
----
-
 ## Skill Registry
 
-The following skills define Vera Sesiom development standards.
-Refer to each skill for detailed patterns and rules.
+This repository currently has **no project-level skills registered**. Only the shared global conventions remain at [.agents/skills/_shared/conventions.md](../.agents/skills/_shared/conventions.md).
 
-| Context | Skill | Location |
-|---------|-------|----------|
-| Git branches, commits, PRs, releases | `git-workflow` | [SKILL.md](skills/git-workflow/SKILL.md) |
-| Architecture layers, ports, adapters, use cases | `hexagonal-architecture` | [SKILL.md](skills/hexagonal-architecture/SKILL.md) |
-| Monorepo, workspaces, packages, turborepo | `monorepo-structure` | [SKILL.md](skills/monorepo-structure/SKILL.md) |
-| UI design, Stitch, screen generation, design systems | `stitch-designer` | [SKILL.md](skills/stitch-designer/SKILL.md) |
-| Astro sites, landing pages, static content, SSG | `astro-landing` | [SKILL.md](skills/astro-landing/SKILL.md) |
-| Vue components, composables, Pinia stores | `vue-frontend` | [SKILL.md](skills/vue-frontend/SKILL.md) |
-| Node.js backend, Express, Fastify, Prisma | `node-backend` | [SKILL.md](skills/node-backend/SKILL.md) |
-| Flutter widgets, Riverpod, Dart code | `flutter-mobile` | [SKILL.md](skills/flutter-mobile/SKILL.md) |
-| Writing tests, test strategy, coverage | `testing-strategy` | [SKILL.md](skills/testing-strategy/SKILL.md) |
-| Code review, PR review, review checklist | `code-review` | [SKILL.md](skills/code-review/SKILL.md) |
-| API endpoints, REST design, error handling | `api-design` | [SKILL.md](skills/api-design/SKILL.md) |
-| AWS resources, CDK, Lambda, managed services | `aws-infra` | [SKILL.md](skills/aws-infra/SKILL.md) |
-| VPS, Dokploy, Docker deployments, self-hosted | `vps-dokploy` | [SKILL.md](skills/vps-dokploy/SKILL.md) |
-| Authentication, secrets, security, validation | `security-practices` | [SKILL.md](skills/security-practices/SKILL.md) |
-| Documentation, ADRs, changelogs, README | `documentation-standards` | [SKILL.md](skills/documentation-standards/SKILL.md) |
-| New team member, project setup, onboarding | `onboarding` | [SKILL.md](skills/onboarding/SKILL.md) |
+Skills available at user or global scope are not registered in this file; consult the runtime registry at [.atl/skill-registry.md](../.atl/skill-registry.md) for the global scope. When new project-level skills are added, they MUST live under `.agents/skills/` and the `.claude/skills/` and `.windsurf/skills/` symlinks will resolve them automatically.
 
