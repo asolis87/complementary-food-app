@@ -1,7 +1,7 @@
 # Vera Sesiom — Code Review Rules for GGA
 
 > Reglas de code review para Gentleman Guardian Angel (GGA)
-> Basadas en el skill `code-review` de Vera Sesiom
+> Snapshot histórico de las reglas de code review de Vera Sesiom
 
 ---
 
@@ -187,4 +187,4 @@ Summary: 2 violations found (1 architecture, 1 code quality)
 
 - **Version**: 1.0.0
 - **Last Updated**: 2026-04-22
-- **Based On**: Vera Sesiom code-review skill v1.0
+- **Source**: Vera Sesiom code-review conventions snapshot (skill removed; rules stand on their own)
