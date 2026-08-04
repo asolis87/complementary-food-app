@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -40,7 +40,7 @@ describe('PlateListPage — Tab Integration (REQ-SC1)', () => {
     activeProfile: {
       id: 'profile-1',
       name: 'Test Baby',
-      birthDate: '2025-08-01', // ~11 months old as of 2026-07-07
+      birthDate: '2025-08-01', // ~11 months old at the pinned reference date below
     },
     loading: false,
   }
@@ -59,6 +59,11 @@ describe('PlateListPage — Tab Integration (REQ-SC1)', () => {
     vi.mocked(useAuthStore).mockReturnValue(mockAuthStore as any)
     vi.mocked(useProfileStore).mockReturnValue(mockProfileStore as any)
 
+    // Pin system clock — baby age assertion depends on getAgeMonths() → new Date().
+    // Wall-clock drift past the snapshot breaks the upper bound (issue #140).
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-07T12:00:00Z'))
+
     // Create a real router for testing query params
     router = createRouter({
       history: createMemoryHistory(),
@@ -67,6 +72,16 @@ describe('PlateListPage — Tab Integration (REQ-SC1)', () => {
         { path: '/plates', component: PlateListPage },
       ],
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // Issue #140 cleanup proof: afterAll observes state after the suite's final
+  // afterEach, so any leaked fake timer would surface here.
+  afterAll(() => {
+    expect(vi.isFakeTimers()).toBe(false)
   })
 
   function getMountOptions() {
@@ -165,7 +180,7 @@ describe('PlateListPage — Tab Integration (REQ-SC1)', () => {
 
       const snackSection = wrapper.findComponent({ name: 'SnackListSection' })
       expect(snackSection.exists()).toBe(true)
-      // Baby born 2025-08-01, now 2026-07-07 → ~11 months
+      // Clock pinned to 2026-07-07T12:00:00Z in beforeEach → ~11 months
       expect(snackSection.props('babyAgeMonths')).toBeGreaterThan(10)
       expect(snackSection.props('babyAgeMonths')).toBeLessThan(12)
     })
