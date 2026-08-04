@@ -4,8 +4,10 @@ FROM node:22-alpine AS builder
 # OpenSSL is required by Prisma on Alpine
 RUN apk add --no-cache openssl
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm — pin to exact 9.x patch to keep Docker reproducible with CI
+# (engines.pnpm = ">=9.0.0", lockfileVersion 9.0, CI uses pnpm/action-setup@v4 version: 9).
+# Floating pnpm@latest can resolve pnpm 11 today, which diverges from the validated workspace.
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 WORKDIR /app
 
@@ -34,7 +36,7 @@ RUN pnpm --filter api build
 FROM node:22-alpine AS runner
 
 RUN apk add --no-cache openssl
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 WORKDIR /app
 

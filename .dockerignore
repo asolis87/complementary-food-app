@@ -1,5 +1,7 @@
-# Dependencies — installed inside the container
-node_modules/
+# Dependencies — installed inside the container (recursive to exclude nested
+# apps/*/node_modules and packages/*/node_modules whose symlinks could otherwise
+# leak host pnpm resolution and overwrite in-container pnpm install links).
+**/node_modules/
 .pnpm-store/
 
 # Build outputs — generated inside the container

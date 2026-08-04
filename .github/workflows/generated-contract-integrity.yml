@@ -25,6 +25,12 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      # Single source of truth for the pnpm version enforced everywhere:
+      #   - pnpm/action-setup installs this version for CI.
+      #   - The Dockerfile guard below asserts the same version is pinned in
+      #     apps/api/Dockerfile (no second literal anywhere).
+      PNPM_VERSION: "9.15.9"
 
     steps:
       - name: Checkout code
@@ -35,7 +41,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -72,6 +78,83 @@ jobs:
           pnpm --filter @pakulab/api test
         env:
           CI: "true"
+
+      # Fail-closed structural guard (issue #138):
+      #  - apps/api/Dockerfile must contain exactly two 'corepack prepare
+      #    pnpm@<token>' tokens across the entire file (one for the builder
+      #    stage, one for the runner stage). Each token must be strict semver
+      #    AND must equal pnpm@$PNPM_VERSION exactly. The guard joins
+      #    backslash continuations into logical lines, accepts RUN with
+      #    leading whitespace and BuildKit options in a case-insensitive way,
+      #    and only strips inline shell comments that are preceded by at
+      #    least one whitespace (so a token like pnpm@9.15.9#junk remains
+      #    intact and fails strict semver).
+      #  - .dockerignore must recursively exclude nested node_modules so host
+      #    pnpm symlinks cannot leak into the Docker context.
+      - name: Validate API Dockerfile pnpm pin and .dockerignore recursion
+        run: |
+          set -e
+          DOCKERFILE=apps/api/Dockerfile
+          DOCKERIGNORE=.dockerignore
+          : "${PNPM_VERSION:?PNPM_VERSION env must be set by the job}"
+          if [ ! -f "$DOCKERFILE" ]; then
+            echo "::error::$DOCKERFILE not found."
+            exit 1
+          fi
+          # Join backslash continuations into logical lines; strip inline
+          # shell comments only when preceded by at least one whitespace
+          # (so tokens like pnpm@9.15.9#junk stay intact for strict-semver
+          # rejection below).
+          logical=$(
+            awk '
+              {
+                buf = $0
+                while (buf ~ /\\[[:space:]]*$/) {
+                  sub(/\\[[:space:]]*$/, "", buf)
+                  if ((getline next_line) <= 0) break
+                  buf = buf next_line
+                }
+                print buf
+              }
+            ' "$DOCKERFILE" \
+            | sed -E 's/[[:space:]]+#.*$//'
+          )
+          # Inventory every 'corepack prepare pnpm@<token>' across logical
+          # RUN instructions (Docker RUN is case-insensitive; leading
+          # whitespace + BuildKit RUN options allowed).
+          pins=$(
+            printf '%s\n' "$logical" \
+              | grep -Ei '^[[:space:]]*RUN[[:space:]]' \
+              | grep -oE 'corepack[[:space:]]+prepare[[:space:]]+pnpm@[^[:space:]]+' \
+              | sed -E 's/.*pnpm@([^[:space:]]+).*/\1/'
+          )
+          valid_count=0
+          while IFS= read -r pin; do
+            [ -z "$pin" ] && continue
+            if ! echo "$pin" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::$DOCKERFILE has malformed pnpm token '$pin' (must be strict MAJOR.MINOR.PATCH)."
+              exit 1
+            fi
+            if [ "$pin" != "$PNPM_VERSION" ]; then
+              echo "::error::$DOCKERFILE pins pnpm@$pin; expected exactly pnpm@$PNPM_VERSION."
+              exit 1
+            fi
+            valid_count=$((valid_count + 1))
+          done <<< "$pins"
+          if [ "$valid_count" -ne 2 ]; then
+            echo "::error::$DOCKERFILE has $valid_count corepack prepare pnpm@... tokens; expected exactly 2 across the whole Dockerfile."
+            exit 1
+          fi
+          echo "apps/api/Dockerfile pnpm pins OK: both prepare tokens use pnpm@$PNPM_VERSION"
+          if [ ! -f "$DOCKERIGNORE" ]; then
+            echo "::error::$DOCKERIGNORE not found."
+            exit 1
+          fi
+          if ! grep -qE '^\*\*/node_modules/?[[:space:]]*(#.*)?$' "$DOCKERIGNORE"; then
+            echo "::error::$DOCKERIGNORE must contain the exact recursive exclusion '**/node_modules/' to keep nested apps/*/node_modules out of the Docker context."
+            exit 1
+          fi
+          echo ".dockerignore recursive nested-node_modules exclusion OK"
 
       - name: Build API Docker image
         run: |
