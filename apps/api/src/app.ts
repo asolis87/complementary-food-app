@@ -17,6 +17,7 @@ import prismaPlugin from './shared/plugins/prisma.js'
 import authPlugin from './shared/plugins/auth.js'
 import originGuardPlugin from './shared/plugins/origin-guard.js'
 import cacheControlPlugin from './shared/plugins/cache-control.js'
+import httpRequestObservability from './shared/plugins/http-request-observability.js'
 import { healthRoutes } from './modules/health/health.routes.js'
 import { foodsRoutes } from './modules/foods/foods.routes.js'
 import { platesRoutes } from './modules/plates/plates.routes.js'
@@ -58,12 +59,19 @@ export async function buildApp() {
       level: process.env['NODE_ENV'] === 'production' ? 'info' : 'debug',
     },
     trustProxy: parseTrustProxy(process.env['TRUST_PROXY']),
+    // Privacy-safe observability emits its own structured request events;
+    // disable Fastify's default request logs to avoid duplicate or leaky entries.
+    disableRequestLogging: true,
   })
 
   // Note: No global custom content type parser here.
   // Fastify's built-in JSON parser handles all standard routes.
   // The Stripe webhook uses a scoped preParsing hook (in billing.routes.ts) to capture rawBody.
   // BetterAuth routes (auth.routes.ts) override the parser to leave the stream unconsumed.
+
+  // === Privacy-safe HTTP request observability ===
+  // Registered FIRST so its hooks wrap every other plugin (origin-guard 4xx, auth 401, etc.).
+  await app.register(httpRequestObservability)
 
   // === Security Plugins ===
   // Audit H-04 (A05:2021): tightened CSP. The API serves JSON only, so
